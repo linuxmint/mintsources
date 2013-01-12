@@ -183,6 +183,32 @@ class Application(object):
                         path = url_parts.path
                     template.mirror_set[url_parts.netloc] = aptsources.distinfo.Mirror(url_parts.scheme, url_parts.netloc, path)
                 self.sourceslist.matcher.templates.append(template)
+                template.children = []
+                child_index = 1
+                while "child_%d_codename"%child_index in repo:
+                    child_codename = repo["child_%d_codename"%child_index]
+                    child_components = [aptsources.distinfo.Component(c.rstrip().lstrip()) for c in repo["child_%d_components"%child_index].split(",") if c.rstrip().lstrip() != ""]
+                    child_path = repo["child_%d_path"%child_index]
+                    child_template = aptsources.distinfo.Template()
+                    child_template.name = child_codename
+                    child_template.match_name = "^" + child_codename + "$"
+                    child_template.base_uri = repo["baseuri"]
+                    child_template.type = "deb"
+                    child_template.components = child_components
+                    child_template.match_uri = repo["matchuri"]
+                    child_template.distribution = repo["distributionid"]
+                    child_template.mirror_set = {}
+                    f = open(repo["mirrors_list"])
+                    mirrors = f.read().splitlines()
+                    f.close()
+                    for mirror in mirrors:
+                        url_parts = urlparse.urlparse(mirror)
+                        child_template.mirror_set[url_parts.netloc] = aptsources.distinfo.Mirror(url_parts.scheme, url_parts.netloc, child_path)
+                    child_template.parents = [template]
+                    child_template.child = True
+                    template.children.append(child_template)
+                    self.sourceslist.matcher.templates.append(child_template)
+                    child_index += 1
                 self.sourceslist.refresh()
             distro = aptsources.distro.get_distro(repo["distributionid"], repo["codename"], "foo", repo["release"])
             distro.get_sources(self.sourceslist)
