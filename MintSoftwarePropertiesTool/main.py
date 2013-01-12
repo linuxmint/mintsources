@@ -3,8 +3,10 @@
 
 import os
 import gtk
+import urlparse
 import ConfigParser
 import aptsources.distro
+import aptsources.distinfo
 from aptsources.sourceslist import SourcesList
 
 class ComponentToggleCheckBox(gtk.CheckButton):
@@ -160,6 +162,28 @@ class Application(object):
             repo = {'section': section, "advanced_components": ""}
             for param in config_parser.options(section):
                 repo[param] = config_parser.get(section, param)
+            if "mirrors_list" in repo:
+                template = aptsources.distinfo.Template()
+                template.name = repo["codename"]
+                template.match_name = "^" + repo["codename"] + "$"
+                template.base_uri = repo["baseuri"]
+                template.type = "deb"
+                template.components = [aptsources.distinfo.Component(c.rstrip().lstrip()) for c in repo["components"].split(",") if c.rstrip().lstrip() != ""]
+                template.match_uri = repo["matchuri"]
+                template.distribution = repo["distributionid"]
+                template.mirror_set = {}
+                f = open(repo["mirrors_list"])
+                mirrors = f.read().splitlines()
+                f.close()
+                for mirror in mirrors:
+                    url_parts = urlparse.urlparse(mirror)
+                    if "path" in repo:
+                        path = repo["path"]
+                    else:
+                        path = url_parts.path
+                    template.mirror_set[url_parts.netloc] = aptsources.distinfo.Mirror(url_parts.scheme, url_parts.netloc, path)
+                self.sourceslist.matcher.templates.append(template)
+                self.sourceslist.refresh()
             distro = aptsources.distro.get_distro(repo["distributionid"], repo["codename"], "foo", repo["release"])
             distro.get_sources(self.sourceslist)
             repo["distro"] = distro
