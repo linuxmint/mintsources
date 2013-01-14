@@ -28,8 +28,34 @@ class ComponentToggleCheckBox(gtk.CheckButton):
         self._application.save_sourceslist()
 
 class ServerSelectionComboBox(gtk.ComboBox):
-    def __init__(self, repo):
+    def __init__(self, application, repo):
         gtk.ComboBox.__init__(self)
+        
+        self._repo = repo
+        self._application = application
+        
+        self._model = gtk.ListStore(str, str, bool, bool)
+        self.set_model(self._model)
+        
+        cell = gtk.CellRendererText()
+        self.pack_start(cell, True)
+        self.add_attribute(cell, 'text', 0)
+        
+        self.set_row_separator_func(lambda m,i: m.get(i, 3)[0])
+        
+        self.refresh()
+    
+    def refresh(self):
+        selected_iter = None
+        for name, url, active in self._repo["distro"].get_server_list():
+            tree_iter = self._model.append((name, url, active, False))
+            if active:
+                selected_iter = tree_iter
+        self._model.append((None, None, None, True))
+        self._model.append((_("Other..."), None, None, False))
+        
+        if selected_iter is not None:
+            self.set_active_iter(selected_iter)
 
 class Application(object):
     def __init__(self, options):
@@ -141,7 +167,7 @@ class Application(object):
             vbox.pack_start(server_hbox, False, False)
             label = gtk.Label(_("Server:"))
             server_hbox.pack_start(label, False, False)
-            server_hbox.pack_start(ServerSelectionComboBox(repo), True, True)
+            server_hbox.pack_start(ServerSelectionComboBox(self, repo), True, True)
     
     def _load_official_repositories(self):
         config_parser = ConfigParser.RawConfigParser()
