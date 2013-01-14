@@ -27,47 +27,6 @@ class ComponentToggleCheckBox(gtk.CheckButton):
             self._repo["distro"].disable_component(self._component.name)
         self._application.save_sourceslist()
 
-class SourceCodeToggleCheckBox(gtk.CheckButton):
-    def __init__(self, application, sourceslist, repo):
-        gtk.CheckButton.__init__(self, _("Source code"))
-        self.set_active(len(repo["distro"].source_code_sources) > 0)
-        
-        self._repo = repo
-        self._application = application
-        self._sourceslist = sourceslist
-        
-        self.connect("toggled", self._on_toggled)
-    
-    def _on_toggled(self, widget):
-        sources = []
-        sources.extend(self._repo["distro"].main_sources)
-        sources.extend(self._repo["distro"].child_sources)
-
-        # remove all exisiting sources
-        for source in self._repo["distro"].source_code_sources:
-            self._sourceslist.remove(source)
-            
-        if widget.get_active():
-            for source in sources:
-                self._sourceslist.add("deb-src",
-                                     source.uri,
-                                     source.dist,
-                                     source.comps,
-                                     "Added by mint-software-properties-tool",
-                                     self._sourceslist.list.index(source)+1,
-                                     source.file)
-            for source in self._repo["distro"].cdrom_sources:
-                self._sourceslist.add("deb-src",
-                                     self._repo["distro"].source_template.base_uri,
-                                     self._repo["distro"].source_template.name,
-                                     source.comps,
-                                     "Added by mint-software-properties-tool",
-                                     self._sourceslist.list.index(source)+1,
-                                     source.file)
-        else:
-            pass
-        self._application.save_sourceslist()
-
 class ServerSelectionComboBox(gtk.ComboBox):
     def __init__(self, repo):
         gtk.ComboBox.__init__(self)
@@ -82,6 +41,7 @@ class Application(object):
         self._main_window = builder.get_object("main_window")
         self._notebook = builder.get_object("notebook")
         self._official_repositories_box = builder.get_object("official_repositories_box")
+        self._source_code_cb = builder.get_object("source_code_cb")
         
         self.sourceslist = SourcesList()
         
@@ -99,6 +59,38 @@ class Application(object):
         for i in range(len(self._tab_buttons)):
             self._tab_buttons[i].connect("clicked", self._on_tab_button_clicked, i)
             self._tab_buttons[i].set_active(False)
+        
+        self._source_code_cb.connect("toggled", self._on_source_code_cb_toggled)
+    
+    def _on_source_code_cb_toggled(self, widget):
+        for repo in self._official_repositories:
+            sources = []
+            sources.extend(repo["distro"].main_sources)
+            sources.extend(repo["distro"].child_sources)
+            
+            for source in repo["distro"].source_code_sources:
+                if source in self.sourceslist.list:
+                    self.sourceslist.remove(source)
+            
+            if widget.get_active():
+                for source in sources:
+                    self.sourceslist.add("deb-src",
+                                         source.uri,
+                                         source.dist,
+                                         source.comps,
+                                         "Added by mint-software-properties-tool",
+                                         self.sourceslist.list.index(source)+1,
+                                         source.file)
+                for source in repo["distro"].cdrom_sources:
+                    self.sourceslist.add("deb-src",
+                                         repo["distro"].source_template.base_uri,
+                                         repo["distro"].source_template.name,
+                                         source.comps,
+                                         "Added by mint-software-properties-tool",
+                                         self.sourceslist.list.index(source)+1,
+                                         source.file)
+        
+        self.save_sourceslist()
     
     def save_sourceslist(self):
         self.sourceslist.backup(".save")
@@ -134,9 +126,6 @@ class Application(object):
                     cb = ComponentToggleCheckBox(self, repo, component)
                     components_table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
                     nb_components += 1
-            cb = SourceCodeToggleCheckBox(self, self.sourceslist, repo)
-            components_table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
-            nb_components += 1
             if repo["advanced_components"]:
                 if nb_components > 0:
                     line = nb_components - 1
@@ -212,6 +201,8 @@ class Application(object):
                 self.sourceslist.refresh()
             distro = aptsources.distro.get_distro(repo["distributionid"], repo["codename"], "foo", repo["release"])
             distro.get_sources(self.sourceslist)
+            if len(distro.source_code_sources) > 0:
+                self._source_code_cb.set_active(True)
             repo["distro"] = distro
             repo["advanced_components"] = [c.rstrip().lstrip() for c in repo["advanced_components"].split(",") if c.rstrip().lstrip() != ""]
             self._official_repositories.append(repo)
