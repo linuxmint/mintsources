@@ -61,6 +61,7 @@ class Application(object):
             self._tab_buttons[i].set_active(False)
         
         self._source_code_cb.connect("toggled", self._on_source_code_cb_toggled)
+        builder.get_object("menu_item_close").connect("activate", lambda w: gtk.main_quit())
     
     def _on_source_code_cb_toggled(self, widget):
         for repo in self._official_repositories:
