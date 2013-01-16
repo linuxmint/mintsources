@@ -4,12 +4,17 @@
 from MintSoftwarePropertiesTool.main import Application
 import optparse
 import gettext
+import os
+import sys
 
 gettext.install("mint-software-properties-tool", "/usr/share/linuxmint/locale")
 
 if __name__ == "__main__":
-    optparser = optparse.OptionParser()
-    optparser.add_option('--dev-mode', dest = "dev_mode", action = "store_true", help = _("Enable development mode (Load resources files from the current folder)"))
-    options, args = optparser.parse_args()
-    
-    Application(options).run()
+    if os.getuid() != 0:
+        os.execvp("gksu", ("", " ".join(sys.argv)))
+    else:
+        optparser = optparse.OptionParser()
+        optparser.add_option('--dev-mode', dest = "dev_mode", action = "store_true", help = _("Enable development mode (Load resources files from the current folder)"))
+        options, args = optparser.parse_args()
+        
+        Application(options).run()
