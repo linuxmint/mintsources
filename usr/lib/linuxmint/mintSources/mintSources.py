@@ -4,7 +4,6 @@
 import os
 import gtk
 import urlparse
-import ConfigParser
 import aptsources.distro
 import aptsources.distinfo
 from aptsources.sourceslist import SourcesList
@@ -66,9 +65,8 @@ class ServerSelectionComboBox(gtk.ComboBox):
             self.set_active_iter(selected_iter)
 
 class Application(object):
-    def __init__(self, options):
-        self._cli_options = options
-        glade_file = self._get_resource_file("/usr/lib/linuxmint/mintSources/mintSources.glade")
+    def __init__(self):
+        glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
             
         builder = gtk.Builder()
         builder.add_from_file(glade_file)
@@ -241,13 +239,6 @@ class Application(object):
             repo["distro"] = distro
             repo["advanced_components"] = [c.rstrip().lstrip() for c in repo["advanced_components"].split(",") if c.rstrip().lstrip() != ""]
             self._official_repositories.append(repo)
-    
-    def _get_resource_file(self, filename):
-        if self._cli_options.dev_mode:
-            base_path = os.path.join(os.getcwd(), "files")
-        else:
-            base_path = ""
-        return base_path + filename
         
     def _on_tab_button_clicked(self, button, page_index):
         if page_index == self._notebook.get_current_page() and button.get_active() == True:
@@ -268,8 +259,4 @@ if __name__ == "__main__":
     if os.getuid() != 0:
         os.execvp("gksu", ("", " ".join(sys.argv)))
     else:
-        optparser = optparse.OptionParser()
-        optparser.add_option('--dev-mode', dest = "dev_mode", action = "store_true", help = _("Enable development mode (Load resources files from the current folder)"))
-        options, args = optparser.parse_args()
-        
-        Application(options).run()
+        Application().run()
