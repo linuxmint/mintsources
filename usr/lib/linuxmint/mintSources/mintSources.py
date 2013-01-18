@@ -51,8 +51,25 @@ class ServerSelectionComboBox(gtk.ComboBox):
         self.set_row_separator_func(lambda m,i: m.get(i, 3)[0])
         
         self.refresh()
+        
+        self._block_on_changed = False
+        self.connect("changed", self._on_changed)
+    
+    def _on_changed(self, widget):
+        if self._block_on_changed:
+            return
+        url = self._model[widget.get_active()][1]
+        if url == None:
+            url = self._application.mirror_selection_dialog.run(self._repo)
+        print url
+        if url != None:
+            self._repo["distro"].change_server(url)
+            self._application.save_sourceslist()
+        self.refresh()
     
     def refresh(self):
+        self._block_on_changed = True
+        self._model.clear()
         selected_iter = None
         for name, url, active in self._repo["distro"].get_server_list():
             tree_iter = self._model.append((name, url, active, False))
@@ -63,6 +80,48 @@ class ServerSelectionComboBox(gtk.ComboBox):
         
         if selected_iter is not None:
             self.set_active_iter(selected_iter)
+        
+        self._block_on_changed = False
+
+class MirrorSelectionDialog(object):
+    def __init__(self, application, ui_builder):
+        self._application = application
+        self._ui_builder = ui_builder
+        
+        self._dialog = ui_builder.get_object("mirror_selection_dialog")
+        self._dialog.set_transient_for(application._main_window)
+        
+        self._current_repo = None
+        self._mirrors_model = gtk.ListStore(object, str, int)
+        self._treeview = ui_builder.get_object("mirrors_treeview")
+        self._treeview.set_model(self._mirrors_model)
+        
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("URL"), r, text = 1)
+        self._treeview.append_column(col)
+        
+        r = gtk.CellRendererProgress()
+        col = gtk.TreeViewColumn(_("Speed"), r, value = 2)
+        self._treeview.append_column(col)
+    
+    def _update_list(self):
+        self._mirrors_model.clear()
+        for i in self._current_repo["distro"].source_template.mirror_set:
+            self._mirrors_model.append((i, self._current_repo["distro"].source_template.mirror_set[i].get_repo_urls()[0], -1))
+    
+    def run(self, repo):
+        self._current_repo = repo
+        self._update_list()
+        self._dialog.show_all()
+        if self._dialog.run() == gtk.RESPONSE_APPLY:
+            model, path = self._treeview.get_selection().get_selected_rows()
+            iter = model.get_iter(path[0])
+            res = model.get(iter, 1)[0]
+        else:
+            res = None
+        self._dialog.hide()
+        self._current_repo = None
+        return res
 
 class Application(object):
     def __init__(self):
@@ -94,6 +153,8 @@ class Application(object):
         
         self._source_code_cb.connect("toggled", self._on_source_code_cb_toggled)
         builder.get_object("menu_item_close").connect("activate", lambda w: gtk.main_quit())
+        
+        self.mirror_selection_dialog = MirrorSelectionDialog(self, builder)
     
     def _on_source_code_cb_toggled(self, widget):
         for repo in self._official_repositories:
