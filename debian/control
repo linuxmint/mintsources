@@ -1,0 +1,12 @@
+Source: mintsources
+Section: admin
+Priority: optional
+Maintainer: Clement Lefebvre <root@linuxmint.com>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: mintsources
+Architecture: all
+Depends: python (>= 2.4), python (<< 3), python-gtk2, python-glade2, mint-common
+Description: Software Sources configuration tool
+ Configure the sources for installable software and updates.

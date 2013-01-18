@@ -1,0 +1,6 @@
+#!/bin/bash
+
+sudo rm -rf /usr/lib/linuxmint/mintSources
+sudo cp -R etc /
+sudo cp -R usr /
+mintsources

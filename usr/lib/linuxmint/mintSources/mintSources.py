@@ -8,6 +8,14 @@ import ConfigParser
 import aptsources.distro
 import aptsources.distinfo
 from aptsources.sourceslist import SourcesList
+import optparse
+import gettext
+
+gettext.install("mintsources", "/usr/share/linuxmint/locale")
+
+# i18n for menu item
+menuName = _("Software Sources")
+menuComment = _("Configure the sources for installable software and updates")
 
 class ComponentToggleCheckBox(gtk.CheckButton):
     def __init__(self, application, repo, component):
@@ -60,7 +68,7 @@ class ServerSelectionComboBox(gtk.ComboBox):
 class Application(object):
     def __init__(self, options):
         self._cli_options = options
-        glade_file = self._get_resource_file("/usr/share/mint-software-properties-tool/mint-software-properties-tool.glade")
+        glade_file = self._get_resource_file("/usr/lib/linuxmint/mintSources/mintSources.glade")
             
         builder = gtk.Builder()
         builder.add_from_file(glade_file)
@@ -105,7 +113,7 @@ class Application(object):
                                          source.uri,
                                          source.dist,
                                          source.comps,
-                                         "Added by mint-software-properties-tool",
+                                         _("Added by Software Sources"),
                                          self.sourceslist.list.index(source)+1,
                                          source.file)
                 for source in repo["distro"].cdrom_sources:
@@ -113,7 +121,7 @@ class Application(object):
                                          repo["distro"].source_template.base_uri,
                                          repo["distro"].source_template.name,
                                          source.comps,
-                                         "Added by mint-software-properties-tool",
+                                         _("Added by Software Sources"),
                                          self.sourceslist.list.index(source)+1,
                                          source.file)
         
@@ -171,7 +179,7 @@ class Application(object):
     
     def _load_official_repositories(self):
         config_parser = ConfigParser.RawConfigParser()
-        config_parser.read(self._get_resource_file("/etc/mint-software-properties-tool/repositories.conf"))
+        config_parser.read(self._get_resource_file("/usr/share/mintsources/repositories.conf"))
         self._official_repositories = []
         self.sourceslist.refresh()
         for section in config_parser.sections():
@@ -254,3 +262,14 @@ class Application(object):
     def run(self):
         self._main_window.show_all()
         gtk.main()
+
+
+if __name__ == "__main__":
+    if os.getuid() != 0:
+        os.execvp("gksu", ("", " ".join(sys.argv)))
+    else:
+        optparser = optparse.OptionParser()
+        optparser.add_option('--dev-mode', dest = "dev_mode", action = "store_true", help = _("Enable development mode (Load resources files from the current folder)"))
+        options, args = optparser.parse_args()
+        
+        Application(options).run()
