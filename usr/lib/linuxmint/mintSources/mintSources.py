@@ -4,10 +4,10 @@
 import os
 import gtk
 import urlparse
+import ConfigParser
 import aptsources.distro
 import aptsources.distinfo
 from aptsources.sourceslist import SourcesList
-import optparse
 import gettext
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
@@ -177,7 +177,7 @@ class Application(object):
     
     def _load_official_repositories(self):
         config_parser = ConfigParser.RawConfigParser()
-        config_parser.read(self._get_resource_file("/usr/share/mintsources/repositories.conf"))
+        config_parser.read("/usr/share/mintsources/repositories.conf")
         self._official_repositories = []
         self.sourceslist.refresh()
         for section in config_parser.sections():
