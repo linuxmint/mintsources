@@ -9,6 +9,6 @@ gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
 launcher = commands.getoutput("/usr/lib/linuxmint/common/mint-which-launcher.py \"%s\""%_("Please enter your password to start Software Sources"))
 
-command = "%s /usr/lib/linuxmint/mintSources/mintSources.py")
+command = "%s /usr/lib/linuxmint/mintSources/mintSources.py"
 os.system(command)
 
