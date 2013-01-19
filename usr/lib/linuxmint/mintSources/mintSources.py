@@ -2,13 +2,18 @@
 # -*- coding=utf-8 -*-
 
 import os
+import sys
 import gtk
+import gobject
 import urlparse
 import ConfigParser
 import aptsources.distro
 import aptsources.distinfo
 from aptsources.sourceslist import SourcesList
 import gettext
+import thread
+import pycurl
+import cStringIO
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
@@ -94,25 +99,85 @@ class MirrorSelectionDialog(object):
         self._dialog.set_transient_for(application._main_window)
         
         self._current_repo = None
-        self._mirrors_model = gtk.ListStore(object, str, int)
+        self._mirrors_model = gtk.ListStore(object, str, float, float)
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
+        self._treeview.set_headers_clickable(True)
+        
+        self._mirrors_model.set_sort_column_id(2, gtk.SORT_DESCENDING)
         
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("URL"), r, text = 1)
         self._treeview.append_column(col)
+        col.set_sort_column_id(1)
         
         r = gtk.CellRendererProgress()
-        col = gtk.TreeViewColumn(_("Speed"), r, value = 2)
+        col = gtk.TreeViewColumn(_("Speed"), r, value = 3)
         self._treeview.append_column(col)
+        col.set_sort_column_id(2)
+        
+        self._speed_test_lock = thread.allocate_lock()
+        self._current_speed_test_index = -1
+        self._best_speed = -1
     
     def _update_list(self):
         self._mirrors_model.clear()
         for i in self._current_repo["distro"].source_template.mirror_set:
-            self._mirrors_model.append((i, self._current_repo["distro"].source_template.mirror_set[i].get_repo_urls()[0], -1))
+            self._mirrors_model.append((i, self._current_repo["distro"].source_template.mirror_set[i].get_repo_urls()[0], -1, 0))
+        self._next_speed_test()
+    
+    def _next_speed_test(self):
+        test_mirror = None
+        for i in range(len(self._mirrors_model)):
+            url = self._mirrors_model[i][1]
+            speed = self._mirrors_model[i][2]
+            if speed == -1:
+                test_mirror = url
+                self._current_speed_test_index = i
+                break
+        if test_mirror:
+            self._speed_test_result = None
+            gobject.timeout_add(100, self._check_speed_test_done)
+            thread.start_new_thread(self._speed_test, (test_mirror,))
+    
+    def _check_speed_test_done(self):
+        self._speed_test_lock.acquire()
+        speed_test_result = self._speed_test_result
+        self._speed_test_lock.release()
+        if speed_test_result != None and len(self._mirrors_model) > 0:
+            self._mirrors_model[self._current_speed_test_index][2] = speed_test_result
+            self._best_speed = max(self._best_speed, speed_test_result)
+            self._update_relative_speeds()
+            self._next_speed_test()
+            return False
+        else:
+            return True
+    
+    def _update_relative_speeds(self):
+        if self._best_speed > 0:
+            for i in range(len(self._mirrors_model)):
+                self._mirrors_model[i][3] = 100 * self._mirrors_model[i][2] / self._best_speed
+    
+    def _speed_test(self, url):
+        try:
+            c = pycurl.Curl()
+            buff = cStringIO.StringIO()
+            c.setopt(pycurl.URL, url)
+            c.setopt(pycurl.CONNECTTIMEOUT, 10)
+            c.setopt(pycurl.TIMEOUT, 10)
+            c.setopt(pycurl.FOLLOWLOCATION, 1)
+            c.setopt(pycurl.WRITEFUNCTION, buff.write)
+            c.perform()
+            download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD)
+        except:
+            download_speed = -2
+        self._speed_test_lock.acquire()
+        self._speed_test_result = download_speed
+        self._speed_test_lock.release()
     
     def run(self, repo):
         self._current_repo = repo
+        self._best_speed = -1
         self._update_list()
         self._dialog.show_all()
         if self._dialog.run() == gtk.RESPONSE_APPLY:
@@ -122,6 +187,7 @@ class MirrorSelectionDialog(object):
         else:
             res = None
         self._dialog.hide()
+        self._mirrors_model.clear()
         self._current_repo = None
         return res
 
@@ -315,6 +381,7 @@ class Application(object):
         button.set_active(True)
     
     def run(self):
+        gobject.threads_init()
         self._main_window.show_all()
         gtk.main()
 

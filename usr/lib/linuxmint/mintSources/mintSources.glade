@@ -414,6 +414,8 @@
   </object>
   <object class="GtkAction" id="action1"/>
   <object class="GtkDialog" id="mirror_selection_dialog">
+    <property name="width_request">500</property>
+    <property name="height_request">400</property>
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
     <child internal-child="vbox">
