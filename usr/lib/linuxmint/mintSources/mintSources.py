@@ -63,8 +63,10 @@ class ServerSelectionComboBox(gtk.ComboBox):
             url = self._application.mirror_selection_dialog.run(self._repo)
         print url
         if url != None:
+            self._repo["distro"].main_server = url
             self._repo["distro"].change_server(url)
             self._application.save_sourceslist()
+            self._repo["distro"].get_sources(self._application.sourceslist)
         self.refresh()
     
     def refresh(self):
@@ -189,6 +191,7 @@ class Application(object):
     def save_sourceslist(self):
         self.sourceslist.backup(".save")
         self.sourceslist.save()
+        self.sourceslist.refresh()
     
     def _build_official_repositories_tab(self):
         first_repo = True
