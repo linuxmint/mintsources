@@ -21,6 +21,9 @@ gettext.install("mintsources", "/usr/share/linuxmint/locale")
 menuName = _("Software Sources")
 menuComment = _("Configure the sources for installable software and updates")
 
+SPEED_PIX_WIDTH = 125
+SPEED_PIX_HEIGHT = 16
+
 class ComponentToggleCheckBox(gtk.CheckButton):
     def __init__(self, application, repo, component):
         gtk.CheckButton.__init__(self, "%s (%s)" % (component.get_description(), component.name))
@@ -99,7 +102,7 @@ class MirrorSelectionDialog(object):
         self._dialog.set_transient_for(application._main_window)
         
         self._current_repo = None
-        self._mirrors_model = gtk.ListStore(object, str, float, float)
+        self._mirrors_model = gtk.ListStore(object, str, float, gtk.gdk.Pixbuf)
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
@@ -111,19 +114,21 @@ class MirrorSelectionDialog(object):
         self._treeview.append_column(col)
         col.set_sort_column_id(1)
         
-        r = gtk.CellRendererProgress()
-        col = gtk.TreeViewColumn(_("Speed"), r, value = 3)
+        r = gtk.CellRendererPixbuf()
+        col = gtk.TreeViewColumn(_("Speed"), r, pixbuf = 3)
         self._treeview.append_column(col)
         col.set_sort_column_id(2)
         
         self._speed_test_lock = thread.allocate_lock()
         self._current_speed_test_index = -1
         self._best_speed = -1
+        
+        self._speed_pixbufs = {}
     
     def _update_list(self):
         self._mirrors_model.clear()
         for i in self._current_repo["distro"].source_template.mirror_set:
-            self._mirrors_model.append((i, self._current_repo["distro"].source_template.mirror_set[i].get_repo_urls()[0], -1, 0))
+            self._mirrors_model.append((i, self._current_repo["distro"].source_template.mirror_set[i].get_repo_urls()[0], -1, None))
         self._next_speed_test()
     
     def _next_speed_test(self):
@@ -156,7 +161,34 @@ class MirrorSelectionDialog(object):
     def _update_relative_speeds(self):
         if self._best_speed > 0:
             for i in range(len(self._mirrors_model)):
-                self._mirrors_model[i][3] = 100 * self._mirrors_model[i][2] / self._best_speed
+                self._mirrors_model[i][3] = self._get_speed_pixbuf(int(100 * self._mirrors_model[i][2] / self._best_speed))
+    
+    def _get_speed_pixbuf(self, speed):
+        represented_speed = 10 * (speed / 10)
+        if speed > 0:
+            if not speed in self._speed_pixbufs:
+                color_pix = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, SPEED_PIX_WIDTH * speed / 100, SPEED_PIX_HEIGHT)
+                red = 0xff000000
+                green = 0x00ff0000
+                if represented_speed > 50:
+                    red_level = (100 - represented_speed) / 50.
+                    green_level = 1
+                else:
+                    red_level = 1
+                    green_level = (represented_speed / 50.)
+                red_level = int(255 * red_level) * 0x01000000
+                green_level = int(255 * green_level) * 0x00010000
+                color = red_level + green_level
+                color_pix.fill(color)
+                final_pix = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, SPEED_PIX_WIDTH, SPEED_PIX_HEIGHT)
+                final_pix.fill(0xffffffff)
+                color_pix.copy_area(0, 0, SPEED_PIX_WIDTH * speed / 100, SPEED_PIX_HEIGHT, final_pix, 0, 0)
+                del color_pix
+                self._speed_pixbufs[speed] = final_pix
+            pix = self._speed_pixbufs[speed]
+        else:
+            pix = None
+        return pix
     
     def _speed_test(self, url):
         try:
