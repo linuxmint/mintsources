@@ -118,6 +118,7 @@ class MirrorSelectionDialog(object):
         col = gtk.TreeViewColumn(_("Speed"), r, pixbuf = 3)
         self._treeview.append_column(col)
         col.set_sort_column_id(2)
+        col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))
         
         self._speed_test_lock = thread.allocate_lock()
         self._current_speed_test_index = -1
