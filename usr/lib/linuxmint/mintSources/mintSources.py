@@ -14,6 +14,7 @@ import gettext
 import thread
 import pycurl
 import cStringIO
+from CountryInformation import CountryInformation
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
@@ -94,6 +95,11 @@ class ServerSelectionComboBox(gtk.ComboBox):
         self._block_on_changed = False
 
 class MirrorSelectionDialog(object):
+    MIRROR_COLUMN = 0
+    MIRROR_URL_COLUMN = 1
+    MIRROR_COUNTRY_COLUMN = 2
+    MIRROR_SPEED_COLUMN = 3
+    MIRROR_SPEED_BAR_COLUMN = 4
     def __init__(self, application, ui_builder):
         self._application = application
         self._ui_builder = ui_builder
@@ -102,22 +108,27 @@ class MirrorSelectionDialog(object):
         self._dialog.set_transient_for(application._main_window)
         
         self._current_repo = None
-        self._mirrors_model = gtk.ListStore(object, str, float, gtk.gdk.Pixbuf)
+        self._mirrors_model = gtk.ListStore(object, str, str, float, gtk.gdk.Pixbuf)
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
         
-        self._mirrors_model.set_sort_column_id(2, gtk.SORT_DESCENDING)
+        self._mirrors_model.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN, gtk.SORT_DESCENDING)
         
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("URL"), r, text = 1)
+        col = gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_URL_COLUMN)
         self._treeview.append_column(col)
-        col.set_sort_column_id(1)
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_URL_COLUMN)
+        
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("Country"), r, text = MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
+        self._treeview.append_column(col)
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
         
         r = gtk.CellRendererPixbuf()
-        col = gtk.TreeViewColumn(_("Speed"), r, pixbuf = 3)
+        col = gtk.TreeViewColumn(_("Speed"), r, pixbuf = MirrorSelectionDialog.MIRROR_SPEED_BAR_COLUMN)
         self._treeview.append_column(col)
-        col.set_sort_column_id(2)
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN)
         col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))
         
         self._speed_test_lock = thread.allocate_lock()
@@ -125,18 +136,25 @@ class MirrorSelectionDialog(object):
         self._best_speed = -1
         
         self._speed_pixbufs = {}
+        self.country_info = CountryInformation()
     
     def _update_list(self):
         self._mirrors_model.clear()
         for i in self._current_repo["distro"].source_template.mirror_set:
-            self._mirrors_model.append((i, self._current_repo["distro"].source_template.mirror_set[i].get_repo_urls()[0], -1, None))
+            self._mirrors_model.append((
+                self._current_repo["distro"].source_template.mirror_set[i],
+                self._current_repo["distro"].source_template.mirror_set[i].get_repo_urls()[0],
+                self.country_info.get_country_name(self._current_repo["distro"].source_template.mirror_set[i].location),
+                -1,
+                None
+            ))
         self._next_speed_test()
     
     def _next_speed_test(self):
         test_mirror = None
         for i in range(len(self._mirrors_model)):
-            url = self._mirrors_model[i][1]
-            speed = self._mirrors_model[i][2]
+            url = self._mirrors_model[i][MirrorSelectionDialog.MIRROR_URL_COLUMN]
+            speed = self._mirrors_model[i][MirrorSelectionDialog.MIRROR_SPEED_COLUMN]
             if speed == -1:
                 test_mirror = url
                 self._current_speed_test_index = i
@@ -151,7 +169,7 @@ class MirrorSelectionDialog(object):
         speed_test_result = self._speed_test_result
         self._speed_test_lock.release()
         if speed_test_result != None and len(self._mirrors_model) > 0:
-            self._mirrors_model[self._current_speed_test_index][2] = speed_test_result
+            self._mirrors_model[self._current_speed_test_index][MirrorSelectionDialog.MIRROR_SPEED_COLUMN] = speed_test_result
             self._best_speed = max(self._best_speed, speed_test_result)
             self._update_relative_speeds()
             self._next_speed_test()
@@ -162,7 +180,7 @@ class MirrorSelectionDialog(object):
     def _update_relative_speeds(self):
         if self._best_speed > 0:
             for i in range(len(self._mirrors_model)):
-                self._mirrors_model[i][3] = self._get_speed_pixbuf(int(100 * self._mirrors_model[i][2] / self._best_speed))
+                self._mirrors_model[i][MirrorSelectionDialog.MIRROR_SPEED_BAR_COLUMN] = self._get_speed_pixbuf(int(100 * self._mirrors_model[i][MirrorSelectionDialog.MIRROR_SPEED_COLUMN] / self._best_speed))
     
     def _get_speed_pixbuf(self, speed):
         represented_speed = 10 * (speed / 10)
@@ -216,7 +234,7 @@ class MirrorSelectionDialog(object):
         if self._dialog.run() == gtk.RESPONSE_APPLY:
             model, path = self._treeview.get_selection().get_selected_rows()
             iter = model.get_iter(path[0])
-            res = model.get(iter, 1)[0]
+            res = model.get(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)[0]
         else:
             res = None
         self._dialog.hide()
