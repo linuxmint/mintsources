@@ -39,7 +39,13 @@ class Component():
 class Mirror():
     def __init__(self, url, country_code):
         self.url = url
-        self.country_code = country_code                
+        self.country_code = country_code        
+
+class Repository():
+    def __init__(self, line, file, selected):
+        self.line = line
+        self.file = file        
+        self.selected = selected
 
 class ComponentToggleCheckBox(gtk.CheckButton):
     def __init__(self, application, component):
@@ -49,7 +55,18 @@ class ComponentToggleCheckBox(gtk.CheckButton):
         self.connect("toggled", self._on_toggled)
     
     def _on_toggled(self, widget):
-        self.component.selected = widget.get_active()        
+        self.component.selected = widget.get_active()     
+
+class RepositoryToggleCheckBox(gtk.CheckButton):
+    def __init__(self, repository):
+        self.repository = repository        
+        gtk.CheckButton.__init__(self, self.repository.line)
+        self.set_active(repository.selected)      
+        self.set_tooltip_text(self.repository.file)              
+        self.connect("toggled", self._on_toggled)
+    
+    def _on_toggled(self, widget):
+        self.repository.selected = widget.get_active()
 
 class ServerSelectionComboBox(gtk.ComboBox):
     def __init__(self, application, repo):
@@ -259,8 +276,7 @@ class MirrorSelectionDialog(object):
 class Application(object):
     def __init__(self):
 
-        self.lsb_codename = commands.getoutput("lsb_release -sc")
-        print "Using codename: %s" % self.lsb_codename
+        self.lsb_codename = commands.getoutput("lsb_release -sc")        
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
             
@@ -329,7 +345,61 @@ class Application(object):
             else:
                 if country_code is not None:
                     mirror = Mirror(line, country_code)
-                    self.base_mirrors.append(mirror)        
+                    self.base_mirrors.append(mirror)     
+        
+        self.repositories = []
+        self.ppas = []
+
+        source_files = []
+        if os.path.exists("/etc/apt/sources.list"):
+            source_files.append("/etc/apt/sources.list")        
+        for file in os.listdir("/etc/apt/sources.list.d"):
+            if file.endswith(".list"):
+                source_files.append("/etc/apt/sources.list.d/%s" % file)
+        
+        if "/etc/apt/sources.list.d/official-package-repositories.list" in source_files:
+            source_files.remove("/etc/apt/sources.list.d/official-package-repositories.list")
+
+        if "/etc/apt/sources.list.d/official-source-repositories.list" in source_files:
+            source_files.remove("/etc/apt/sources.list.d/official-source-repositories.list")
+
+        for source_file in source_files:
+            file = open(source_file, "r")
+            for line in file.readlines():
+                line = line.strip()
+                if line != "":   
+                    selected = True                                    
+                    if line.startswith("#"):
+                        line = line.replace('#', '').strip()
+                        selected = False
+                    if line.startswith("deb"):
+                        repository = Repository(line.replace('#', '').strip(), source_file, selected)                    
+                        if "ppa.launchpad" in line:
+                            self.ppas.append(repository)                                                
+                        else:                        
+                            self.repositories.append(repository)
+            file.close() 
+
+        if (len(self.ppas) > 0):            
+            table = gtk.Table()
+            self.builder.get_object("vbox_ppa").pack_start(table, True, True)
+            self.builder.get_object("vbox_ppa").show_all()
+            nb_components = 0
+            for repository in self.ppas:
+                cb = RepositoryToggleCheckBox(repository)
+                table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
+                nb_components += 1   
+
+        if (len(self.repositories) > 0):            
+            table = gtk.Table()
+            self.builder.get_object("vbox_repositories").pack_start(table, True, True)
+            self.builder.get_object("vbox_repositories").show_all()
+            nb_components = 0
+            for repository in self.repositories:                
+                cb = RepositoryToggleCheckBox(repository)
+                table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
+                nb_components += 1                        
+        
 
         self.detect_official_sources()     
 
