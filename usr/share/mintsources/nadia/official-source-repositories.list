@@ -1,0 +1,8 @@
+deb-src $mirror $codename main upstream import $backports $romeo
+
+deb-src $basemirror $basecodename main restricted universe multiverse
+deb-src $basemirror $basecodename-updates main restricted universe multiverse
+deb-src $basemirror $basecodename-security main restricted universe multiverse
+deb-src $basemirror $basecodename partner
+deb-src $basemirror $basecodename free non-free
+

@@ -15,6 +15,7 @@ import thread
 import pycurl
 import cStringIO
 from CountryInformation import CountryInformation
+import commands
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
@@ -25,23 +26,30 @@ menuComment = _("Configure the sources for installable software and updates")
 SPEED_PIX_WIDTH = 125
 SPEED_PIX_HEIGHT = 16
 
+class Component():
+    def __init__(self, name, description, selected):
+        self.name = name
+        self.description = description
+        self.selected = selected
+        self.widget = None
+
+    def set_widget(self, widget):
+        self.widget = widget
+
+class Mirror():
+    def __init__(self, url, country_code):
+        self.url = url
+        self.country_code = country_code                
+
 class ComponentToggleCheckBox(gtk.CheckButton):
-    def __init__(self, application, repo, component):
-        gtk.CheckButton.__init__(self, "%s (%s)" % (component.get_description(), component.name))
-        self.set_active(component.name in repo["distro"].enabled_comps)
-        
-        self._repo = repo
-        self._component = component
-        self._application = application
-        
+    def __init__(self, application, component):
+        self.component = component        
+        gtk.CheckButton.__init__(self, self.component.description)
+        self.set_active(component.selected)                    
         self.connect("toggled", self._on_toggled)
     
     def _on_toggled(self, widget):
-        if widget.get_active():
-            self._repo["distro"].enable_component(self._component.name)
-        else:
-            self._repo["distro"].disable_component(self._component.name)
-        self._application.save_sourceslist()
+        self.component.selected = widget.get_active()        
 
 class ServerSelectionComboBox(gtk.ComboBox):
     def __init__(self, application, repo):
@@ -107,23 +115,23 @@ class MirrorSelectionDialog(object):
         self._dialog = ui_builder.get_object("mirror_selection_dialog")
         self._dialog.set_transient_for(application._main_window)
         
-        self._current_repo = None
-        self._mirrors_model = gtk.ListStore(object, str, str, float, gtk.gdk.Pixbuf)
+        self._mirrors = None
+        self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, gtk.gdk.Pixbuf)
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
         
         self._mirrors_model.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN, gtk.SORT_DESCENDING)
         
+        r = gtk.CellRendererPixbuf()
+        col = gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
+        self._treeview.append_column(col)
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
+
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_URL_COLUMN)
         self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_URL_COLUMN)
-        
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Country"), r, text = MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
-        self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_URL_COLUMN)            
         
         r = gtk.CellRendererPixbuf()
         col = gtk.TreeViewColumn(_("Speed"), r, pixbuf = MirrorSelectionDialog.MIRROR_SPEED_BAR_COLUMN)
@@ -140,11 +148,14 @@ class MirrorSelectionDialog(object):
     
     def _update_list(self):
         self._mirrors_model.clear()
-        for i in self._current_repo["distro"].source_template.mirror_set:
+        for mirror in self._mirrors:
+            flag = "/usr/lib/linuxmint/mintSources/flags/generic.png"
+            if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
+                flag = "/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()            
             self._mirrors_model.append((
-                self._current_repo["distro"].source_template.mirror_set[i],
-                self._current_repo["distro"].source_template.mirror_set[i].get_repo_urls()[0],
-                self.country_info.get_country_name(self._current_repo["distro"].source_template.mirror_set[i].location),
+                mirror,
+                mirror.url,
+                gtk.gdk.pixbuf_new_from_file(flag),
                 -1,
                 None
             ))
@@ -226,201 +237,139 @@ class MirrorSelectionDialog(object):
         self._speed_test_result = download_speed
         self._speed_test_lock.release()
     
-    def run(self, repo):
-        self._current_repo = repo
+    def run(self, mirrors):
+        self._mirrors = mirrors
         self._best_speed = -1
         self._update_list()
         self._dialog.show_all()
         if self._dialog.run() == gtk.RESPONSE_APPLY:
-            model, path = self._treeview.get_selection().get_selected_rows()
-            iter = model.get_iter(path[0])
-            res = model.get(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)[0]
+            try:
+                model, path = self._treeview.get_selection().get_selected_rows()
+                iter = model.get_iter(path[0])
+                res = model.get(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)[0]
+            except:
+                res = None
         else:
             res = None
         self._dialog.hide()
         self._mirrors_model.clear()
-        self._current_repo = None
+        self._mirrors = None
         return res
 
 class Application(object):
     def __init__(self):
+
+        self.lsb_codename = commands.getoutput("lsb_release -sc")
+        print "Using codename: %s" % self.lsb_codename
+
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
             
-        builder = gtk.Builder()
-        builder.add_from_file(glade_file)
-        self._main_window = builder.get_object("main_window")
-        self._notebook = builder.get_object("notebook")
-        self._official_repositories_box = builder.get_object("official_repositories_box")
-        self._source_code_cb = builder.get_object("source_code_cb")
+        self.builder = gtk.Builder()
+        self.builder.add_from_file(glade_file)
+        self._main_window = self.builder.get_object("main_window")
+        self._notebook = self.builder.get_object("notebook")
+        self._official_repositories_box = self.builder.get_object("official_repositories_box")        
+               
+        config_parser = ConfigParser.RawConfigParser()
+        config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % self.lsb_codename)
+        self.config = {}
+        self.optional_components = []
+        for section in config_parser.sections():
+            if section.startswith("optional_component"):
+                component = Component(config_parser.get(section, "name"), config_parser.get(section, "description"), False)
+                self.optional_components.append(component)
+            else:
+                self.config[section] = {}                        
+                for param in config_parser.options(section):                
+                    self.config[section][param] = config_parser.get(section, param)          
+
+        self.builder.get_object("label_mirrors").set_markup("<b>%s</b>" % _("Mirrors"))    
+        self.builder.get_object("label_mirror_description").set_markup("%s (%s)" % (_("Main"), self.config["general"]["codename"]) )
+        self.builder.get_object("label_base_mirror_description").set_markup("%s (%s)" % (_("Base"), self.config["general"]["base_codename"]) )
+        self.builder.get_object("button_mirror").set_tooltip_text("Select server...")
+        self.builder.get_object("button_base_mirror").set_tooltip_text("Select server...")
+
+        self.builder.get_object("label_optional_components").set_markup("<b>%s</b>" % _("Optional components"))                    
+        self.builder.get_object("label_source_code").set_markup("<b>%s</b>" % _("Source code"))
         
-        self.sourceslist = SourcesList()
+        self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
+        self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
+               
+        self.selected_components = []
+        if (len(self.optional_components) > 0):            
+            components_table = gtk.Table()
+            self.builder.get_object("vbox_optional_components").pack_start(components_table, True, True)
+            self.builder.get_object("vbox_optional_components").show_all()
+            nb_components = 0
+            for i in range(len(self.optional_components)):
+                component = self.optional_components[i]                
+                cb = ComponentToggleCheckBox(self, component)
+                component.set_widget(cb)
+                components_table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
+                nb_components += 1   
+
+
+        self.mirrors = []
+        mirrorsfile = open(self.config["mirrors"]["mirrors"], "r")
+        for line in mirrorsfile.readlines():
+            line = line.strip()
+            if ("#LOC:" in line):
+                country_code = line.split(":")[1]
+            else:
+                if country_code is not None:
+                    mirror = Mirror(line, country_code)
+                    self.mirrors.append(mirror)
+
+        self.base_mirrors = []
+        mirrorsfile = open(self.config["mirrors"]["base_mirrors"], "r")
+        for line in mirrorsfile.readlines():
+            line = line.strip()
+            if ("#LOC:" in line):
+                country_code = line.split(":")[1]
+            else:
+                if country_code is not None:
+                    mirror = Mirror(line, country_code)
+                    self.base_mirrors.append(mirror)        
+
+        self.detect_official_sources()     
+
+        self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)
         
-        self._load_official_repositories()
-        self._build_official_repositories_tab()
+        self.builder.get_object("apply_button").connect("clicked", self.apply_official_sources)
         
         self._tab_buttons = [
-            builder.get_object("toggle_official_repos"),
-            builder.get_object("toggle_ppas"),
-            builder.get_object("toggle_additional_repos"),
-            builder.get_object("toggle_authentication_keys")
+            self.builder.get_object("toggle_official_repos"),
+            self.builder.get_object("toggle_ppas"),
+            self.builder.get_object("toggle_additional_repos"),
+            self.builder.get_object("toggle_authentication_keys")
         ]
         
         self._main_window.connect("delete_event", lambda w,e: gtk.main_quit())
         for i in range(len(self._tab_buttons)):
             self._tab_buttons[i].connect("clicked", self._on_tab_button_clicked, i)
             self._tab_buttons[i].set_active(False)
+                
+        self.builder.get_object("menu_item_close").connect("activate", lambda w: gtk.main_quit())
         
-        self._source_code_cb.connect("toggled", self._on_source_code_cb_toggled)
-        builder.get_object("menu_item_close").connect("activate", lambda w: gtk.main_quit())
-        
-        self.mirror_selection_dialog = MirrorSelectionDialog(self, builder)
-    
-    def _on_source_code_cb_toggled(self, widget):
-        for repo in self._official_repositories:
-            sources = []
-            sources.extend(repo["distro"].main_sources)
-            sources.extend(repo["distro"].child_sources)
-            
-            for source in repo["distro"].source_code_sources:
-                if source in self.sourceslist.list:
-                    self.sourceslist.remove(source)
-            
-            if widget.get_active():
-                for source in sources:
-                    self.sourceslist.add("deb-src",
-                                         source.uri,
-                                         source.dist,
-                                         source.comps,
-                                         _("Added by Software Sources"),
-                                         self.sourceslist.list.index(source)+1,
-                                         source.file)
-                for source in repo["distro"].cdrom_sources:
-                    self.sourceslist.add("deb-src",
-                                         repo["distro"].source_template.base_uri,
-                                         repo["distro"].source_template.name,
-                                         source.comps,
-                                         _("Added by Software Sources"),
-                                         self.sourceslist.list.index(source)+1,
-                                         source.file)
-        
-        self.save_sourceslist()
-    
-    def save_sourceslist(self):
-        self.sourceslist.backup(".save")
-        self.sourceslist.save()
-        self.sourceslist.refresh()
-    
-    def _build_official_repositories_tab(self):
-        first_repo = True
-        for repo in self._official_repositories:
-            if first_repo:
-                first_repo = False
-            else:
-                self._official_repositories_box.pack_start(gtk.HSeparator(), False, False)
-            frame = gtk.Frame()
-            label = gtk.Label()
-            label.set_markup("<b>%s</b>" % repo["section"])
-            frame.set_label_widget(label)
-            self._official_repositories_box.pack_start(frame, False, False)
-            frame.set_shadow_type(gtk.SHADOW_NONE)
-            alignment = gtk.Alignment()
-            frame.add(alignment)
-            alignment.set_padding(0, 0, 12, 0)
-            alignment.set(0.5, 0.5, 1, 1)
-            
-            vbox = gtk.VBox()
-            vbox.set_spacing(10)
-            alignment.add(vbox)
-            components_table = gtk.Table()
-            vbox.pack_start(components_table, True, True)
-            nb_components = 0
-            for i in range(len(repo["distro"].source_template.components)):
-                component = repo["distro"].source_template.components[i]
-                if not component.name in repo["advanced_components"]:
-                    cb = ComponentToggleCheckBox(self, repo, component)
-                    components_table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
-                    nb_components += 1
-            if repo["advanced_components"]:
-                if nb_components > 0:
-                    line = nb_components - 1
-                else:
-                    line = nb_components
-                    components_table.attach(gtk.Label(), 0, 1, line, line + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
-                advanced_components_button = gtk.Button(_("Advanced options"))
-                components_table.attach(advanced_components_button, 1, 2, line, line + 1, xoptions = 0, yoptions = 0)
-            
-            server_hbox = gtk.HBox()
-            server_hbox.set_spacing(5)
-            vbox.pack_start(server_hbox, False, False)
-            label = gtk.Label(_("Server:"))
-            server_hbox.pack_start(label, False, False)
-            server_hbox.pack_start(ServerSelectionComboBox(self, repo), True, True)
-    
-    def _load_official_repositories(self):
-        config_parser = ConfigParser.RawConfigParser()
-        config_parser.read("/usr/share/mintsources/repositories.conf")
-        self._official_repositories = []
-        self.sourceslist.refresh()
-        for section in config_parser.sections():
-            repo = {'section': section, "advanced_components": ""}
-            for param in config_parser.options(section):
-                repo[param] = config_parser.get(section, param)
-            if "mirrors_list" in repo:
-                template = aptsources.distinfo.Template()
-                template.name = repo["codename"]
-                template.match_name = "^" + repo["codename"] + "$"
-                template.base_uri = repo["baseuri"]
-                template.type = "deb"
-                template.components = [aptsources.distinfo.Component(c.rstrip().lstrip()) for c in repo["components"].split(",") if c.rstrip().lstrip() != ""]
-                template.match_uri = repo["matchuri"]
-                template.distribution = repo["distributionid"]
-                template.mirror_set = {}
-                f = open(repo["mirrors_list"])
-                mirrors = f.read().splitlines()
-                f.close()
-                for mirror in mirrors:
-                    url_parts = urlparse.urlparse(mirror)
-                    if "path" in repo:
-                        path = repo["path"]
-                    else:
-                        path = url_parts.path
-                    template.mirror_set[url_parts.netloc] = aptsources.distinfo.Mirror(url_parts.scheme, url_parts.netloc, path)
-                self.sourceslist.matcher.templates.append(template)
-                template.children = []
-                child_index = 1
-                while "child_%d_codename"%child_index in repo:
-                    child_codename = repo["child_%d_codename"%child_index]
-                    child_components = [aptsources.distinfo.Component(c.rstrip().lstrip()) for c in repo["child_%d_components"%child_index].split(",") if c.rstrip().lstrip() != ""]
-                    child_path = repo["child_%d_path"%child_index]
-                    child_template = aptsources.distinfo.Template()
-                    child_template.name = child_codename
-                    child_template.match_name = "^" + child_codename + "$"
-                    child_template.base_uri = repo["baseuri"]
-                    child_template.type = "deb"
-                    child_template.components = child_components
-                    child_template.match_uri = repo["matchuri"]
-                    child_template.distribution = repo["distributionid"]
-                    child_template.mirror_set = {}
-                    f = open(repo["mirrors_list"])
-                    mirrors = f.read().splitlines()
-                    f.close()
-                    for mirror in mirrors:
-                        url_parts = urlparse.urlparse(mirror)
-                        child_template.mirror_set[url_parts.netloc] = aptsources.distinfo.Mirror(url_parts.scheme, url_parts.netloc, child_path)
-                    child_template.parents = [template]
-                    child_template.child = True
-                    template.children.append(child_template)
-                    self.sourceslist.matcher.templates.append(child_template)
-                    child_index += 1
-                self.sourceslist.refresh()
-            distro = aptsources.distro.get_distro(repo["distributionid"], repo["codename"], "foo", repo["release"])
-            distro.get_sources(self.sourceslist)
-            if len(distro.source_code_sources) > 0:
-                self._source_code_cb.set_active(True)
-            repo["distro"] = distro
-            repo["advanced_components"] = [c.rstrip().lstrip() for c in repo["advanced_components"].split(",") if c.rstrip().lstrip() != ""]
-            self._official_repositories.append(repo)
-        
+        self.mirror_selection_dialog = MirrorSelectionDialog(self, self.builder)
+
+        self.builder.get_object("button_mirror").connect("clicked", self.select_new_mirror)
+        self.builder.get_object("button_base_mirror").connect("clicked", self.select_new_base_mirror)
+
+    def select_new_mirror(self, widget):
+        url = self.mirror_selection_dialog.run(self.mirrors)
+        if url is not None:
+            self.selected_mirror = url
+            self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
+        self.update_flags()
+
+    def select_new_base_mirror(self, widget):
+        url = self.mirror_selection_dialog.run(self.base_mirrors)
+        if url is not None:
+            self.selected_base_mirror = url
+            self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
+        self.update_flags()
+
     def _on_tab_button_clicked(self, button, page_index):
         if page_index == self._notebook.get_current_page() and button.get_active() == True:
             return
@@ -436,6 +385,113 @@ class Application(object):
         self._main_window.show_all()
         gtk.main()
 
+    def revert_to_default_sources(self, widget):
+        self.selected_mirror = self.config["mirrors"]["default"]
+        self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
+        self.selected_base_mirror = self.config["mirrors"]["base_default"]
+        self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
+        self.update_flags()
+
+        self.builder.get_object("source_code_cb").set_active(False)
+
+        for component in self.optional_components:
+            component.selected = False
+            component.widget.set_active(False)
+
+        self.apply_official_sources()
+
+
+    def apply_official_sources(self, widget=None):
+
+        # Check which components are selected
+        selected_components = []        
+        for component in self.optional_components:
+            if component.selected:
+                selected_components.append(component.name)
+
+        # Update official packages repositories
+        os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")                
+        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r').read()
+        template = template.replace("$codename", self.config["general"]["codename"])
+        template = template.replace("$basecodename", self.config["general"]["base_codename"])
+        template = template.replace("$optionalcomponents", ' '.join(selected_components))  
+        template = template.replace("$mirror", self.selected_mirror)
+        template = template.replace("$basemirror", self.selected_base_mirror)
+
+        with open("/etc/apt/sources.list.d/official-package-repositories.list", "w") as text_file:
+            text_file.write(template)
+
+        # Update official sources repositories
+        os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
+        if (self.builder.get_object("source_code_cb").get_active()):
+            template = open('/usr/share/mintsources/%s/official-source-repositories.list' % self.lsb_codename, 'r').read()
+            template = template.replace("$codename", self.config["general"]["codename"])
+            template = template.replace("$basecodename", self.config["general"]["base_codename"])
+            template = template.replace("$optionalcomponents", ' '.join(selected_components))
+            template = template.replace("$mirror", self.selected_mirror)
+            template = template.replace("$basemirror", self.selected_base_mirror)
+            with open("/etc/apt/sources.list.d/official-source-repositories.list", "w") as text_file:
+                text_file.write(template)        
+
+    def detect_official_sources(self):
+        self.selected_mirror = self.config["mirrors"]["default"]
+        self.selected_base_mirror = self.config["mirrors"]["base_default"]
+
+        # Detect source code repositories
+        self.builder.get_object("source_code_cb").set_active(os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list"))
+
+        listfile = open('/etc/apt/sources.list.d/official-package-repositories.list', 'r')
+        for line in listfile.readlines():
+            if (self.config["detection"]["main_identifier"] in line):
+                for component in self.optional_components:
+                    if component.name in line:
+                        component.widget.set_active(True)
+                elements = line.split(" ")
+                if elements[0] == "deb":                    
+                    mirror = elements[1]                    
+                    if "$" not in mirror:
+                        self.selected_mirror = mirror
+            if (self.config["detection"]["base_identifier"] in line):
+                elements = line.split(" ")
+                if elements[0] == "deb":                    
+                    mirror = elements[1]
+                    if "$" not in mirror:
+                        self.selected_base_mirror = mirror
+
+        self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
+        self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror) 
+
+        self.update_flags()
+    
+    def update_flags(self):
+        self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png") 
+        self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png") 
+
+        selected_mirror = self.selected_mirror
+        if selected_mirror[-1] == "/":
+            selected_mirror = selected_mirror[:-1]
+
+        selected_base_mirror = self.selected_base_mirror
+        if selected_base_mirror[-1] == "/":
+            selected_base_mirror = selected_base_mirror[:-1]
+
+        for mirror in self.mirrors:
+            if mirror.url[-1] == "/":
+                url = mirror.url[:-1]
+            else:
+                url = mirror.url
+            if url in selected_mirror:
+                if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
+                    self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()) 
+
+        for mirror in self.base_mirrors:
+            if mirror.url[-1] == "/":
+                url = mirror.url[:-1]
+            else:
+                url = mirror.url
+            if url in selected_base_mirror:
+                if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
+                    self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()) 
 
 if __name__ == "__main__":
     if os.getuid() != 0:

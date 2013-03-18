@@ -1,0 +1,8 @@
+deb $mirror $codename main upstream import $optionalcomponents
+
+deb $basemirror $basecodename main restricted universe multiverse
+deb $basemirror $basecodename-updates main restricted universe multiverse
+deb $basemirror $basecodename-security main restricted universe multiverse
+deb $basemirror $basecodename partner
+deb $basemirror $basecodename free non-free
+
