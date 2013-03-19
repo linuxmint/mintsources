@@ -42,20 +42,41 @@ class Mirror():
         self.country_code = country_code        
 
 class Repository():
-    def __init__(self, line, file, selected):
+    def __init__(self, application, line, file, selected):
+        self.application = application
         self.line = line
         self.file = file        
         self.selected = selected
 
+    def switch(self):
+        self.selected = (not self.selected)
+        
+        readfile = open(self.file, "r")
+        content = readfile.read()
+        readfile.close()
+
+        if self.selected:
+            content = content.replace("#%s" % self.line, self.line)
+            content = content.replace("# %s" % self.line, self.line)            
+        else:
+            content = content.replace(self.line, "# %s" % self.line)        
+
+        with open(self.file, "w") as writefile:
+            writefile.write(content)
+
+        self.application.enable_reload_button()
+
 class ComponentToggleCheckBox(gtk.CheckButton):
     def __init__(self, application, component):
+        self.application = application
         self.component = component        
         gtk.CheckButton.__init__(self, self.component.description)
         self.set_active(component.selected)                    
         self.connect("toggled", self._on_toggled)
     
     def _on_toggled(self, widget):
-        self.component.selected = widget.get_active()     
+        self.component.selected = widget.get_active()
+        self.application.apply_official_sources()
 
 class RepositoryToggleCheckBox(gtk.CheckButton):
     def __init__(self, repository):
@@ -271,21 +292,21 @@ class MirrorSelectionDialog(object):
         self._dialog.hide()
         self._mirrors_model.clear()
         self._mirrors = None
-        return res
+        return res        
 
 class Application(object):
     def __init__(self):
 
         self.lsb_codename = commands.getoutput("lsb_release -sc")        
 
-        glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
+        glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"        
             
         self.builder = gtk.Builder()
         self.builder.add_from_file(glade_file)
         self._main_window = self.builder.get_object("main_window")
         self._notebook = self.builder.get_object("notebook")
         self._official_repositories_box = self.builder.get_object("official_repositories_box")        
-               
+            
         config_parser = ConfigParser.RawConfigParser()
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % self.lsb_codename)
         self.config = {}
@@ -302,14 +323,16 @@ class Application(object):
         self.builder.get_object("label_mirrors").set_markup("<b>%s</b>" % _("Mirrors"))    
         self.builder.get_object("label_mirror_description").set_markup("%s (%s)" % (_("Main"), self.config["general"]["codename"]) )
         self.builder.get_object("label_base_mirror_description").set_markup("%s (%s)" % (_("Base"), self.config["general"]["base_codename"]) )
-        self.builder.get_object("button_mirror").set_tooltip_text("Select server...")
-        self.builder.get_object("button_base_mirror").set_tooltip_text("Select server...")
+        self.builder.get_object("button_mirror").set_tooltip_text("Select a faster server...")
+        self.builder.get_object("button_base_mirror").set_tooltip_text("Select a faster server...")
 
         self.builder.get_object("label_optional_components").set_markup("<b>%s</b>" % _("Optional components"))                    
         self.builder.get_object("label_source_code").set_markup("<b>%s</b>" % _("Source code"))
         
         self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
         self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
+
+        self.builder.get_object("source_code_cb").connect("toggled", self.apply_official_sources)
                
         self.selected_components = []
         if (len(self.optional_components) > 0):            
@@ -373,7 +396,7 @@ class Application(object):
                         line = line.replace('#', '').strip()
                         selected = False
                     if line.startswith("deb"):
-                        repository = Repository(line.replace('#', '').strip(), source_file, selected)                    
+                        repository = Repository(self, line.replace('#', '').strip(), source_file, selected)                    
                         if "ppa.launchpad" in line:
                             self.ppas.append(repository)                                                
                         else:                        
@@ -381,14 +404,52 @@ class Application(object):
             file.close() 
 
         if (len(self.ppas) > 0):            
-            table = gtk.Table()
-            self.builder.get_object("vbox_ppa").pack_start(table, True, True)
-            self.builder.get_object("vbox_ppa").show_all()
-            nb_components = 0
+            self._ppa_model = gtk.ListStore(object, bool, str, str, str, str)
+            self._ppa_treeview = self.builder.get_object("treeview_ppa")
+            self._ppa_treeview.set_model(self._ppa_model)
+            self._ppa_treeview.set_headers_clickable(True)
+            
+            self._ppa_model.set_sort_column_id(2, gtk.SORT_DESCENDING)
+
+            r = gtk.CellRendererToggle()
+            r.connect("toggled", self.ppa_toggled)        
+            col = gtk.TreeViewColumn(_("Enabled"), r)
+            col.set_cell_data_func(r, self.datafunction_checkbox)
+            self._ppa_treeview.append_column(col)
+            col.set_sort_column_id(1)
+            
+            r = gtk.CellRendererText()
+            col = gtk.TreeViewColumn(_("PPA"), r, text = 2)
+            self._ppa_treeview.append_column(col)
+            col.set_sort_column_id(2)
+
+            r = gtk.CellRendererText()
+            col = gtk.TreeViewColumn(_("Type"), r, text = 3)
+            self._ppa_treeview.append_column(col)
+            col.set_sort_column_id(3)      
+
+            r = gtk.CellRendererText()
+            col = gtk.TreeViewColumn(_("URL"), r, text = 4)
+            self._ppa_treeview.append_column(col)
+            col.set_sort_column_id(4)      
+
+            r = gtk.CellRendererText()
+            col = gtk.TreeViewColumn(_("File"), r, text = 5)
+            self._ppa_treeview.append_column(col)
+            col.set_sort_column_id(5)                                               
+                    
             for repository in self.ppas:
-                cb = RepositoryToggleCheckBox(repository)
-                table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
-                nb_components += 1   
+                if repository.line.startswith("deb-src"):
+                    type = _("Sources")
+                else:
+                    type = _("Packages")
+                elements = repository.line.split(" ")
+                name = elements[1].replace("deb-src", "")
+                name = name.replace("deb", "")
+                name = name.replace("http://ppa.launchpad.net/", "")
+                name = name.replace("/ubuntu", "")
+                name = name.replace("/ppa", "")
+                tree_iter = self._ppa_model.append((repository, repository.selected, name, type, repository.line, repository.file))
 
         if (len(self.repositories) > 0):            
             table = gtk.Table()
@@ -403,9 +464,9 @@ class Application(object):
 
         self.detect_official_sources()     
 
-        self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)
-        
-        self.builder.get_object("apply_button").connect("clicked", self.apply_official_sources)
+        self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)            
+        self.builder.get_object("label_revert").set_markup(_("Restore the default settings"))
+        self.builder.get_object("revert_button").set_tooltip_text("Restore the official repositories to their default settings")
         
         self._tab_buttons = [
             self.builder.get_object("toggle_official_repos"),
@@ -419,26 +480,40 @@ class Application(object):
             self._tab_buttons[i].connect("clicked", self._on_tab_button_clicked, i)
             self._tab_buttons[i].set_active(False)
                 
-        self.builder.get_object("menu_item_close").connect("activate", lambda w: gtk.main_quit())
+       
         
         self.mirror_selection_dialog = MirrorSelectionDialog(self, self.builder)
 
         self.builder.get_object("button_mirror").connect("clicked", self.select_new_mirror)
         self.builder.get_object("button_base_mirror").connect("clicked", self.select_new_base_mirror)
+        self.builder.get_object("reload_button").connect("clicked", self.update_apt_cache)
+
+    def datafunction_checkbox(self, column, cell, model, iter):
+        cell.set_property("activatable", True)        
+        if (model.get_value(iter, 0).selected):
+            cell.set_property("active", True)
+        else:
+            cell.set_property("active", False)
+
+    def ppa_toggled(self, renderer, path):        
+        iter = self._ppa_model.get_iter(path)
+        if (iter != None):
+            repository = self._ppa_model.get_value(iter, 0)            
+            repository.switch()     
 
     def select_new_mirror(self, widget):
         url = self.mirror_selection_dialog.run(self.mirrors)
         if url is not None:
             self.selected_mirror = url
-            self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
-        self.update_flags()
+            self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)       
+        self.apply_official_sources()
 
     def select_new_base_mirror(self, widget):
         url = self.mirror_selection_dialog.run(self.base_mirrors)
         if url is not None:
             self.selected_base_mirror = url
-            self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
-        self.update_flags()
+            self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)        
+        self.apply_official_sources()
 
     def _on_tab_button_clicked(self, button, page_index):
         if page_index == self._notebook.get_current_page() and button.get_active() == True:
@@ -460,8 +535,6 @@ class Application(object):
         self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
         self.selected_base_mirror = self.config["mirrors"]["base_default"]
         self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
-        self.update_flags()
-
         self.builder.get_object("source_code_cb").set_active(False)
 
         for component in self.optional_components:
@@ -470,8 +543,28 @@ class Application(object):
 
         self.apply_official_sources()
 
+    def enable_reload_button(self):
+        self.builder.get_object("reload_button").set_sensitive(True)
+        self.builder.get_object("reload_button_label").set_markup("<b>%s</b>" % _("Update the cache"))
+        self.builder.get_object("reload_button").set_tooltip_text(_("Click here to update your APT cache with your new sources"))
+        self.builder.get_object("reload_button_image").set_from_stock(gtk.STOCK_REFRESH, gtk.ICON_SIZE_BUTTON)
+
+    def disable_reload_button(self):
+        self.builder.get_object("reload_button").set_sensitive(False)
+        self.builder.get_object("reload_button_label").set_markup("%s" % _("No action required"))
+        self.builder.get_object("reload_button").set_tooltip_text(_("Your APT cache is up to date"))
+        self.builder.get_object("reload_button_image").set_from_stock(gtk.STOCK_OK, gtk.ICON_SIZE_BUTTON)
+
+    def update_apt_cache(self, widget=None):        
+        self.disable_reload_button()                
+        from subprocess import Popen, PIPE
+        cmd = ["sudo", "/usr/sbin/synaptic", "--hide-main-window", "--update-at-startup", "--non-interactive"]        
+        comnd = Popen(' '.join(cmd), shell=True)
+        #returnCode = comnd.wait()             
 
     def apply_official_sources(self, widget=None):
+
+        self.update_flags()
 
         # Check which components are selected
         selected_components = []        
@@ -501,7 +594,9 @@ class Application(object):
             template = template.replace("$mirror", self.selected_mirror)
             template = template.replace("$basemirror", self.selected_base_mirror)
             with open("/etc/apt/sources.list.d/official-source-repositories.list", "w") as text_file:
-                text_file.write(template)        
+                text_file.write(template)   
+
+        self.enable_reload_button()
 
     def detect_official_sources(self):
         self.selected_mirror = self.config["mirrors"]["default"]
