@@ -16,6 +16,31 @@ import pycurl
 import cStringIO
 from CountryInformation import CountryInformation
 import commands
+import re
+import json
+try:
+    import urllib.request
+    from urllib.error import URLError
+    import urllib.parse
+except ImportError:
+    import pycurl
+
+class CurlCallback:
+    def __init__(self):
+        self.contents = ''
+
+    def body_callback(self, buf):
+        self.contents = self.contents + buf
+
+
+class PPAException(Exception):
+
+    def __init__(self, value, original_error=None):
+        self.value = value
+        self.original_error = original_error
+
+    def __str__(self):
+        return repr(self.value)
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
@@ -436,41 +461,41 @@ class Application(object):
                             self.repositories.append(repository)
             file.close() 
 
-        if (len(self.ppas) > 0):            
-            self._ppa_model = gtk.ListStore(object, bool, str, str, str, str)
-            self._ppa_treeview = self.builder.get_object("treeview_ppa")
-            self._ppa_treeview.set_model(self._ppa_model)
-            self._ppa_treeview.set_headers_clickable(True)
-            
-            self._ppa_model.set_sort_column_id(2, gtk.SORT_DESCENDING)
+        self._ppa_model = gtk.ListStore(object, bool, str, str, str, str)
+        self._ppa_treeview = self.builder.get_object("treeview_ppa")
+        self._ppa_treeview.set_model(self._ppa_model)
+        self._ppa_treeview.set_headers_clickable(True)
+        
+        self._ppa_model.set_sort_column_id(2, gtk.SORT_DESCENDING)
 
-            r = gtk.CellRendererToggle()
-            r.connect("toggled", self.ppa_toggled)        
-            col = gtk.TreeViewColumn(_("Enabled"), r)
-            col.set_cell_data_func(r, self.datafunction_checkbox)
-            self._ppa_treeview.append_column(col)
-            col.set_sort_column_id(1)
-            
-            r = gtk.CellRendererText()
-            col = gtk.TreeViewColumn(_("PPA"), r, text = 2)
-            self._ppa_treeview.append_column(col)
-            col.set_sort_column_id(2)
+        r = gtk.CellRendererToggle()
+        r.connect("toggled", self.ppa_toggled)        
+        col = gtk.TreeViewColumn(_("Enabled"), r)
+        col.set_cell_data_func(r, self.datafunction_checkbox)
+        self._ppa_treeview.append_column(col)
+        col.set_sort_column_id(1)
+        
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("PPA"), r, text = 2)
+        self._ppa_treeview.append_column(col)
+        col.set_sort_column_id(2)
 
-            r = gtk.CellRendererText()
-            col = gtk.TreeViewColumn(_("Type"), r, text = 3)
-            self._ppa_treeview.append_column(col)
-            col.set_sort_column_id(3)      
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("Type"), r, text = 3)
+        self._ppa_treeview.append_column(col)
+        col.set_sort_column_id(3)      
 
-            r = gtk.CellRendererText()
-            col = gtk.TreeViewColumn(_("URL"), r, text = 4)
-            self._ppa_treeview.append_column(col)
-            col.set_sort_column_id(4)      
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("URL"), r, text = 4)
+        self._ppa_treeview.append_column(col)
+        col.set_sort_column_id(4)      
 
-            r = gtk.CellRendererText()
-            col = gtk.TreeViewColumn(_("File"), r, text = 5)
-            self._ppa_treeview.append_column(col)
-            col.set_sort_column_id(5)                                               
-                    
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("File"), r, text = 5)
+        self._ppa_treeview.append_column(col)
+        col.set_sort_column_id(5)      
+
+        if (len(self.ppas) > 0):                                                                                    
             for repository in self.ppas:
                 if repository.line.startswith("deb-src"):
                     type = _("Sources")
@@ -521,8 +546,62 @@ class Application(object):
         self.builder.get_object("button_base_mirror").connect("clicked", self.select_new_base_mirror)
         self.builder.get_object("reload_button").connect("clicked", self.update_apt_cache)
 
+        self.builder.get_object("button_ppa_add").connect("clicked", self.add_ppa)
         self.builder.get_object("button_ppa_edit").connect("clicked", self.edit_ppa)
         self.builder.get_object("button_ppa_remove").connect("clicked", self.remove_ppa)
+
+    def add_ppa(self, widget):
+        image = gtk.Image()
+        image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
+
+        line = self.show_entry_dialog(self._main_window, _("Please enter the name of the PPA you want to add:"), "ppa:username/ppa", image)
+        if line is not None:
+            user, sep, ppa_name = line.split(":")[1].partition("/")
+            ppa_name = ppa_name or "ppa"
+            try:
+                ppa_info = self.get_ppa_info_from_lp(user, ppa_name)                
+            except Exception, detail:
+                self.show_error_dialog(self._main_window, _("Cannot add PPA: '%s'.") % detail)
+                return
+        
+            image = gtk.Image()
+            image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
+            if self.show_confirmation_dialog(self._main_window, "<b>%s</b>\n\n%s\n\n<i>%s</i>" % (line, ppa_info["description"], str(ppa_info["web_link"])), image):                                
+                (deb_line, file) = self.expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
+                deb_line = self.expand_http_line(deb_line, self.config["general"]["base_codename"])
+                debsrc_line = 'deb-src' + deb_line[3:]
+                # Add the key
+                short_key = ppa_info["signing_key_fingerprint"][-8:]
+                os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % short_key)
+                # Add the PPA in sources.list.d
+                with open(file, "w") as text_file:
+                    text_file.write("%s\n" % deb_line)
+                    text_file.write("%s\n" % debsrc_line)
+                
+                # Add the package line in the UI                
+                repository = Repository(self, deb_line, file, True)
+                self.ppas.append(repository)                
+                elements = repository.line.split(" ")
+                name = elements[1].replace("deb-src", "")
+                name = name.replace("deb", "")
+                name = name.replace("http://ppa.launchpad.net/", "")
+                name = name.replace("/ubuntu", "")
+                name = name.replace("/ppa", "")
+                tree_iter = self._ppa_model.append((repository, repository.selected, name, _("Packages"), repository.line, repository.file))
+
+                # Add the source line in the UI                
+                repository = Repository(self, debsrc_line, file, True)
+                self.ppas.append(repository)                
+                elements = repository.line.split(" ")
+                name = elements[1].replace("deb-src", "")
+                name = name.replace("deb", "")
+                name = name.replace("http://ppa.launchpad.net/", "")
+                name = name.replace("/ubuntu", "")
+                name = name.replace("/ppa", "")
+                tree_iter = self._ppa_model.append((repository, repository.selected, name, _("Sources"), repository.line, repository.file))
+
+                self.enable_reload_button()
+                
 
     def edit_ppa(self, widget):        
         selection = self._ppa_treeview.get_selection()
@@ -545,12 +624,36 @@ class Application(object):
                 self.ppas.remove(repository)
             
 
-    def show_confirmation_dialog(self, parent, message):        
+    def show_confirmation_dialog(self, parent, message, image=None):
         d = gtk.MessageDialog(parent,
                               gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                               gtk.MESSAGE_WARNING,
                               gtk.BUTTONS_OK_CANCEL,
                               message)
+        d.set_markup(message)
+        if image is not None:
+            image.show()
+            d.set_image(image)
+        
+        d.set_default_response(gtk.RESPONSE_OK)
+        r = d.run()        
+        d.destroy()
+        if r == gtk.RESPONSE_OK:
+            return True
+        else:
+            return False
+
+    def show_error_dialog(self, parent, message, image=None):        
+        d = gtk.MessageDialog(parent,
+                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                              gtk.MESSAGE_ERROR,
+                              gtk.BUTTONS_OK_CANCEL,
+                              message)
+
+        d.set_markup(message)
+        if image is not None:
+            image.show()
+            d.set_image(image)
         
         d.set_default_response(gtk.RESPONSE_OK)
         r = d.run()        
@@ -560,12 +663,18 @@ class Application(object):
         else:
             return False
         
-    def show_entry_dialog(self, parent, message, default=''):        
+    def show_entry_dialog(self, parent, message, default='', image=None):        
         d = gtk.MessageDialog(parent,
                               gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                               gtk.MESSAGE_QUESTION,
                               gtk.BUTTONS_OK_CANCEL,
                               message)
+
+        d.set_markup(message)
+        if image is not None:
+            image.show()
+            d.set_image(image)
+
         entry = gtk.Entry()
         entry.set_text(default)
         entry.show()
@@ -580,6 +689,80 @@ class Application(object):
             return text
         else:
             return None
+
+    def get_ppa_info_from_lp(self, owner_name, ppa_name):
+        DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
+        # maintained until 2015
+        LAUNCHPAD_PPA_API = 'https://launchpad.net/api/1.0/~%s/+archive/%s'
+        # Specify to use the system default SSL store; change to a different path
+        # to test with custom certificates.
+        LAUNCHPAD_PPA_CERT = "/etc/ssl/certs/ca-certificates.crt"
+
+        lp_url = LAUNCHPAD_PPA_API % (owner_name, ppa_name)
+        try:
+            try:
+                request = urllib.request.Request(str(lp_url), headers={"Accept":" application/json"})
+                lp_page = urllib.request.urlopen(request, cafile=LAUNCHPAD_PPA_CERT)
+                json_data = lp_page.read().decode("utf-8", "strict")
+            except URLError as e:
+                raise PPAException("Error reading %s: %s" % (lp_url, e.reason), e)
+        except PPAException:
+            raise
+        except:
+            import pycurl
+            try:
+                callback = CurlCallback()
+                curl = pycurl.Curl()
+                curl.setopt(pycurl.SSL_VERIFYPEER, 1)
+                curl.setopt(pycurl.SSL_VERIFYHOST, 2)
+                curl.setopt(pycurl.WRITEFUNCTION, callback.body_callback)
+                if LAUNCHPAD_PPA_CERT:
+                    curl.setopt(pycurl.CAINFO, LAUNCHPAD_PPA_CERT)
+                curl.setopt(pycurl.URL, str(lp_url))
+                curl.setopt(pycurl.HTTPHEADER, ["Accept: application/json"])
+                curl.perform()
+                curl.close()
+                json_data = callback.contents
+            except pycurl.error as e:
+                raise PPAException("Error reading %s: %s" % (lp_url, e), e)
+        return json.loads(json_data)
+
+    def encode(self, s):
+        return re.sub("[^a-zA-Z0-9_-]", "_", s)
+
+    def expand_ppa_line(self, abrev, distro_codename):        
+        # leave non-ppa: lines unchanged
+        if not abrev.startswith("ppa:"):
+            return (abrev, None)
+        # FIXME: add support for dependency PPAs too (once we can get them
+        #        via some sort of API, see LP #385129)
+        abrev = abrev.split(":")[1]
+        ppa_owner = abrev.split("/")[0]
+        try:
+            ppa_name = abrev.split("/")[1]
+        except IndexError as e:
+            ppa_name = "ppa"
+        sourceslistd = "/etc/apt/sources.list.d"
+        line = "deb http://ppa.launchpad.net/%s/%s/ubuntu %s main" % (ppa_owner, ppa_name, distro_codename)
+        filename = os.path.join(sourceslistd, "%s-%s-%s.list" % (self.encode(ppa_owner), self.encode(ppa_name), distro_codename))
+        return (line, filename)
+
+    def expand_http_line(self, line, distro_codename):
+        """
+        short cut - this:
+          apt-add-repository http://packages.medibuntu.org free non-free
+        same as
+          apt-add-repository 'deb http://packages.medibuntu.org/ '$(lsb_release -cs)' free non-free'
+        """
+        if not line.startswith("http"):
+          return line
+        repo = line.split()[0]
+        try:
+            areas = line.split(" ",1)[1]
+        except IndexError:
+            areas = "main"
+        line = "deb %s %s %s" % ( repo, distro_codename, areas )
+        return line
 
     def datafunction_checkbox(self, column, cell, model, iter):
         cell.set_property("activatable", True)        
