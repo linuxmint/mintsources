@@ -59,11 +59,30 @@ class Repository():
             content = content.replace("#%s" % self.line, self.line)
             content = content.replace("# %s" % self.line, self.line)            
         else:
-            content = content.replace(self.line, "# %s" % self.line)        
+            content = content.replace(self.line, "# %s" % self.line)
 
         with open(self.file, "w") as writefile:
             writefile.write(content)
 
+        self.application.enable_reload_button()
+
+    def edit(self, newline):
+        readfile = open(self.file, "r")
+        content = readfile.read()
+        readfile.close()
+        content = content.replace(self.line, newline)
+        with open(self.file, "w") as writefile:
+            writefile.write(content)
+        self.line = newline
+        self.application.enable_reload_button()
+
+    def delete(self):
+        readfile = open(self.file, "r")
+        content = readfile.read()
+        readfile.close()
+        content = content.replace(self.line, "")
+        with open(self.file, "w") as writefile:
+            writefile.write(content)
         self.application.enable_reload_button()
 
 class ComponentToggleCheckBox(gtk.CheckButton):
@@ -333,6 +352,10 @@ class Application(object):
 
         self.builder.get_object("label_optional_components").set_markup("<b>%s</b>" % _("Optional components"))                    
         self.builder.get_object("label_source_code").set_markup("<b>%s</b>" % _("Source code"))
+
+        self.builder.get_object("label_ppa_add").set_markup("%s" % _("Add a new PPA..."))
+        self.builder.get_object("label_ppa_edit").set_markup("%s" % _("Edit URL..."))
+        self.builder.get_object("label_ppa_remove").set_markup("%s" % _("Remove permanently"))
         
         self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
         self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
@@ -492,6 +515,39 @@ class Application(object):
         self.builder.get_object("button_mirror").connect("clicked", self.select_new_mirror)
         self.builder.get_object("button_base_mirror").connect("clicked", self.select_new_base_mirror)
         self.builder.get_object("reload_button").connect("clicked", self.update_apt_cache)
+
+        self.builder.get_object("button_ppa_edit").connect("clicked", self.edit_ppa)
+
+    def edit_ppa(self, widget):        
+        selection = self._ppa_treeview.get_selection()
+        (model, iter) = selection.get_selected()
+        if (iter != None):            
+            repository = model.get(iter, 0)[0]
+            url = self.show_entry_dialog(self._main_window, _("Edit the URL of the PPA"), repository.line)
+            if url is not None:
+                repository.edit(url)
+                model.set_value(iter, 4, url)
+        
+    def show_entry_dialog(self, parent, message, default=''):        
+        d = gtk.MessageDialog(parent,
+                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                              gtk.MESSAGE_QUESTION,
+                              gtk.BUTTONS_OK_CANCEL,
+                              message)
+        entry = gtk.Entry()
+        entry.set_text(default)
+        entry.show()
+        d.vbox.pack_end(entry)
+        entry.connect('activate', lambda _: d.response(gtk.RESPONSE_OK))
+        d.set_default_response(gtk.RESPONSE_OK)
+
+        r = d.run()
+        text = entry.get_text().decode('utf8')
+        d.destroy()
+        if r == gtk.RESPONSE_OK:
+            return text
+        else:
+            return None
 
     def datafunction_checkbox(self, column, cell, model, iter):
         cell.set_property("activatable", True)        
