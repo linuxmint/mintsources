@@ -62,7 +62,7 @@ class Repository():
             content = content.replace(self.line, "# %s" % self.line)
 
         with open(self.file, "w") as writefile:
-            writefile.write(content)
+            writefile.write(content)        
 
         self.application.enable_reload_button()
 
@@ -83,6 +83,11 @@ class Repository():
         content = content.replace(self.line, "")
         with open(self.file, "w") as writefile:
             writefile.write(content)
+
+        # If the file no longer contains any "deb" instances, delete it as well
+        if "deb" not in content:
+            os.unlink(self.file)
+
         self.application.enable_reload_button()
 
 class ComponentToggleCheckBox(gtk.CheckButton):
@@ -517,6 +522,7 @@ class Application(object):
         self.builder.get_object("reload_button").connect("clicked", self.update_apt_cache)
 
         self.builder.get_object("button_ppa_edit").connect("clicked", self.edit_ppa)
+        self.builder.get_object("button_ppa_remove").connect("clicked", self.remove_ppa)
 
     def edit_ppa(self, widget):        
         selection = self._ppa_treeview.get_selection()
@@ -527,6 +533,32 @@ class Application(object):
             if url is not None:
                 repository.edit(url)
                 model.set_value(iter, 4, url)
+
+    def remove_ppa(self, widget):        
+        selection = self._ppa_treeview.get_selection()
+        (model, iter) = selection.get_selected()
+        if (iter != None):            
+            repository = model.get(iter, 0)[0]
+            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this PPA?"))):
+                model.remove(iter)                
+                repository.delete()
+                self.ppas.remove(repository)
+            
+
+    def show_confirmation_dialog(self, parent, message):        
+        d = gtk.MessageDialog(parent,
+                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                              gtk.MESSAGE_WARNING,
+                              gtk.BUTTONS_OK_CANCEL,
+                              message)
+        
+        d.set_default_response(gtk.RESPONSE_OK)
+        r = d.run()        
+        d.destroy()
+        if r == gtk.RESPONSE_OK:
+            return True
+        else:
+            return False
         
     def show_entry_dialog(self, parent, message, default=''):        
         d = gtk.MessageDialog(parent,
