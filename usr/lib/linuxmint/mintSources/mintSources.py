@@ -61,6 +61,18 @@ class Component():
     def set_widget(self, widget):
         self.widget = widget
 
+class Key():
+    def __init__(self, pub):
+        self.pub = pub
+        self.sub = ""
+        self.uid = ""
+
+    def delete(self):
+        os.system("apt-key del %s" % self.pub)
+
+    def get_name(self):            
+        return "<b>%s</b>\n<small><i>%s</i></small>" % (gobject.markup_escape_text(self.uid), gobject.markup_escape_text(self.pub))
+
 class Mirror():
     def __init__(self, url, country_code):
         self.url = url
@@ -385,10 +397,13 @@ class Application(object):
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % self.lsb_codename)
         self.config = {}
         self.optional_components = []
+        self.system_keys = []
         for section in config_parser.sections():
             if section.startswith("optional_component"):
                 component = Component(config_parser.get(section, "name"), config_parser.get(section, "description"), False)
                 self.optional_components.append(component)
+            elif section.startswith("key"):
+                self.system_keys.append(config_parser.get(section, "pub"))
             else:
                 self.config[section] = {}                        
                 for param in config_parser.options(section):                
@@ -415,6 +430,10 @@ class Application(object):
         self.builder.get_object("label_repository_add").set_markup("%s" % _("Add a new repository..."))
         self.builder.get_object("label_repository_edit").set_markup("%s" % _("Edit URL..."))
         self.builder.get_object("label_repository_remove").set_markup("%s" % _("Remove permanently"))
+
+        self.builder.get_object("label_keys_add").set_markup("%s" % _("Import key file..."))
+        self.builder.get_object("label_keys_fetch").set_markup("%s" % _("Download a key..."))
+        self.builder.get_object("label_keys_remove").set_markup("%s" % _("Remove permanently"))
         
         self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
         self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
@@ -537,6 +556,20 @@ class Application(object):
         if (len(self.repositories) > 0):                                                                                    
             for repository in self.repositories:                                                
                 tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
+
+        self._keys_model = gtk.ListStore(object, str)
+        self._keys_treeview = self.builder.get_object("treeview_keys")
+        self._keys_treeview.set_model(self._keys_model)
+        self._keys_treeview.set_headers_clickable(True)
+        
+        self._keys_model.set_sort_column_id(1, gtk.SORT_DESCENDING)        
+        
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("Key"), r, markup = 1)
+        self._keys_treeview.append_column(col)
+        col.set_sort_column_id(1)        
+
+        self.load_keys()
        
         self.detect_official_sources()     
 
@@ -571,6 +604,66 @@ class Application(object):
         self.builder.get_object("button_repository_edit").connect("clicked", self.edit_repository)
         self.builder.get_object("button_repository_remove").connect("clicked", self.remove_repository)
 
+        self.builder.get_object("button_keys_add").connect("clicked", self.add_key)
+        self.builder.get_object("button_keys_fetch").connect("clicked", self.fetch_key)
+        self.builder.get_object("button_keys_remove").connect("clicked", self.remove_key)
+
+    def load_keys(self):
+        self.keys = []        
+        key = None
+        output = commands.getoutput("apt-key list")
+        for line in output.split("\n"):
+            line = line.strip()            
+            if line.startswith("pub"):                
+                pub = line[3:].strip()  
+                pub = pub[6:]
+                pub = pub.split(" ")[0]
+                key = Key(pub)
+                if pub not in self.system_keys:
+                    self.keys.append(key)
+            elif line.startswith("uid") and key is not None:
+                key.uid = line[3:].strip()
+            elif line.startswith("sub") and key is not None:
+                key.sub = line[3:].strip()
+    
+        self._keys_model.clear()
+        for key in self.keys:
+            tree_iter = self._keys_model.append((key, key.get_name()))
+
+    def add_key(self, widget):
+        dialog = gtk.FileChooserDialog("Open..", 
+                               None,
+                               gtk.FILE_CHOOSER_ACTION_OPEN,
+                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        dialog.set_default_response(gtk.RESPONSE_OK)
+        response = dialog.run()
+        if response == gtk.RESPONSE_OK:
+            os.system("apt-key add %s" % dialog.get_filename())
+            self.load_keys()
+            self.enable_reload_button()
+        dialog.destroy()        
+
+    def fetch_key(self, widget):
+        image = gtk.Image()
+        image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
+        line = self.show_entry_dialog(self._main_window, _("Please enter the 8 characters of the public key you want to download from keyserver.ubuntu.com:"), "", image)
+        if line is not None:
+            res = os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % line)            
+            self.load_keys()
+            self.enable_reload_button()
+
+    def remove_key(self, widget):
+        selection = self._keys_treeview.get_selection()
+        (model, iter) = selection.get_selected()
+        if (iter != None):            
+            key = model.get(iter, 0)[0]
+            image = gtk.Image()
+            image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
+            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image)):                
+                key.delete()
+                self.load_keys()                
+
     def add_ppa(self, widget):
         image = gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
@@ -591,9 +684,12 @@ class Application(object):
                 (deb_line, file) = self.expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = self.expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
+                
                 # Add the key
                 short_key = ppa_info["signing_key_fingerprint"][-8:]
                 os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % short_key)
+                self.load_keys()
+
                 # Add the PPA in sources.list.d
                 with open(file, "w") as text_file:
                     text_file.write("%s\n" % deb_line)
@@ -607,7 +703,7 @@ class Application(object):
                 # Add the source line in the UI                
                 repository = Repository(self, debsrc_line, file, True)
                 self.ppas.append(repository)                         
-                tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
+                tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))                        
 
                 self.enable_reload_button()
                 
