@@ -1,3 +1,9 @@
+mintsources (1.0.1) olivia; urgency=low
+
+  * Feature-complete
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 20 Mar 2013 00:55:35 +0000
+
 mintsources (1.0.0) olivia; urgency=low
 
   * Initial release

@@ -1,0 +1,217 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-03-20 00:55+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:48
+msgid "Software Sources"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:49
+msgid "Configure the sources for installable software and updates"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:138
+#: usr/lib/linuxmint/mintSources/mintSources.py:152
+msgid "Sources"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:211
+msgid "Other..."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:240
+msgid "Country"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:245
+msgid "URL"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:250
+msgid "Speed"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:401
+msgid "Official repositories"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:402
+msgid "PPAs"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:403
+msgid "Additional repositories"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:404
+msgid "Authentication keys"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:406
+msgid "Mirrors"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:407
+msgid "Main"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:408
+msgid "Base"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:412
+msgid "Optional components"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:413
+msgid "Source code"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:415
+msgid "Add a new PPA..."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:416
+#: usr/lib/linuxmint/mintSources/mintSources.py:420
+msgid "Edit URL..."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:417
+#: usr/lib/linuxmint/mintSources/mintSources.py:421
+#: usr/lib/linuxmint/mintSources/mintSources.py:425
+msgid "Remove permanently"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:419
+msgid "Add a new repository..."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:423
+msgid "Import key file..."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:424
+msgid "Download a key..."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:427
+msgid "Fix MergeList problems"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:428
+msgid ""
+"If you experience MergeList problems, click this button to solve the problem."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:429
+msgid "Purge residual configuration"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:430
+msgid ""
+"Packages sometimes leave configuration files on the system even after they "
+"are removed."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:516
+#: usr/lib/linuxmint/mintSources/mintSources.py:540
+msgid "Enabled"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:522
+msgid "PPA"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:546
+msgid "Repository"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:562
+msgid "Key"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:571
+msgid "Restore the default settings"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:613
+msgid "There is no more residual configuration on the system."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:619
+msgid "The problem was fixed. Please reload the cache."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:661
+msgid ""
+"Please enter the 8 characters of the public key you want to download from "
+"keyserver.ubuntu.com:"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:674
+msgid "Are you sure you want to permanently remove this key?"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:682
+msgid "Please enter the name of the PPA you want to add:"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:689
+#, python-format
+msgid "Cannot add PPA: '%s'."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:727
+msgid "Edit the URL of the PPA"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:737
+msgid "Are you sure you want to permanently remove this PPA?"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:746
+msgid "Please enter the name of the repository you want to add:"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:765
+msgid "Edit the URL of the repository"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:775
+msgid "Are you sure you want to permanently remove this repository?"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:991
+msgid "Update the cache"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:992
+msgid "Click here to update your APT cache with your new sources"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:997
+msgid "No action required"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:998
+msgid "Your APT cache is up to date"
+msgstr ""
+
+#: /usr/bin/mintsources:10
+msgid "Please enter your password to start Software Sources"
+msgstr ""
