@@ -164,17 +164,6 @@ class ComponentToggleCheckBox(gtk.CheckButton):
         self.component.selected = widget.get_active()
         self.application.apply_official_sources()
 
-class RepositoryToggleCheckBox(gtk.CheckButton):
-    def __init__(self, repository):
-        self.repository = repository        
-        gtk.CheckButton.__init__(self, self.repository.line)
-        self.set_active(repository.selected)      
-        self.set_tooltip_text(self.repository.file)              
-        self.connect("toggled", self._on_toggled)
-    
-    def _on_toggled(self, widget):
-        self.repository.selected = widget.get_active()
-
 class ServerSelectionComboBox(gtk.ComboBox):
     def __init__(self, application, repo):
         gtk.ComboBox.__init__(self)
@@ -434,6 +423,11 @@ class Application(object):
         self.builder.get_object("label_keys_add").set_markup("%s" % _("Import key file..."))
         self.builder.get_object("label_keys_fetch").set_markup("%s" % _("Download a key..."))
         self.builder.get_object("label_keys_remove").set_markup("%s" % _("Remove permanently"))
+
+        self.builder.get_object("button_mergelist_label").set_markup("%s" % _("Fix MergeList problems"))
+        self.builder.get_object("button_mergelist").set_tooltip_text("%s" % _("If you experience MergeList problems, click this button to solve the problem."))
+        self.builder.get_object("button_purge_label").set_markup("%s" % _("Purge residual configuration"))
+        self.builder.get_object("button_purge").set_tooltip_text("%s" % _("Packages sometimes leave configuration files on the system even after they are removed."))
         
         self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
         self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
@@ -581,7 +575,8 @@ class Application(object):
             self.builder.get_object("toggle_official_repos"),
             self.builder.get_object("toggle_ppas"),
             self.builder.get_object("toggle_additional_repos"),
-            self.builder.get_object("toggle_authentication_keys")
+            self.builder.get_object("toggle_authentication_keys"),
+            self.builder.get_object("toggle_maintenance")
         ]
         
         self._main_window.connect("delete_event", lambda w,e: gtk.main_quit())
@@ -607,6 +602,22 @@ class Application(object):
         self.builder.get_object("button_keys_add").connect("clicked", self.add_key)
         self.builder.get_object("button_keys_fetch").connect("clicked", self.fetch_key)
         self.builder.get_object("button_keys_remove").connect("clicked", self.remove_key)
+
+        self.builder.get_object("button_mergelist").connect("clicked", self.fix_mergelist)
+        self.builder.get_object("button_purge").connect("clicked", self.fix_purge)
+
+    def fix_purge(self, widget):
+        os.system("aptitude purge ~c -y")
+        image = gtk.Image()
+        image.set_from_file("/usr/lib/linuxmint/mintSources/maintenance.png")
+        self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)        
+
+    def fix_mergelist(self, widget):
+        os.system("rm /var/lib/apt/lists/* -vf")
+        image = gtk.Image()
+        image.set_from_file("/usr/lib/linuxmint/mintSources/maintenance.png")
+        self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
+        self.enable_reload_button()
 
     def load_keys(self):
         self.keys = []        
@@ -767,11 +778,18 @@ class Application(object):
                 self.repositories.remove(repository)
             
 
-    def show_confirmation_dialog(self, parent, message, image=None):
-        d = gtk.MessageDialog(parent,
+    def show_confirmation_dialog(self, parent, message, image=None, affirmation=None):
+        if affirmation is None:
+            d = gtk.MessageDialog(parent,
                               gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                               gtk.MESSAGE_WARNING,
                               gtk.BUTTONS_OK_CANCEL,
+                              message)
+        else:
+            d = gtk.MessageDialog(parent,
+                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                              gtk.MESSAGE_INFO,
+                              gtk.BUTTONS_OK,
                               message)
         d.set_markup(message)
         if image is not None:
