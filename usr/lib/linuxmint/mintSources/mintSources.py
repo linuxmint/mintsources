@@ -451,23 +451,25 @@ class Application(object):
         mirrorsfile = open(self.config["mirrors"]["mirrors"], "r")
         for line in mirrorsfile.readlines():
             line = line.strip()
-            if ("#LOC:" in line):
-                country_code = line.split(":")[1]
-            else:
-                if country_code is not None:
-                    mirror = Mirror(line, country_code)
-                    self.mirrors.append(mirror)
+            if line != "":
+                if ("#LOC:" in line):
+                    country_code = line.split(":")[1]
+                else:
+                    if country_code is not None:
+                        mirror = Mirror(line, country_code)
+                        self.mirrors.append(mirror)
 
         self.base_mirrors = []
         mirrorsfile = open(self.config["mirrors"]["base_mirrors"], "r")
         for line in mirrorsfile.readlines():
             line = line.strip()
-            if ("#LOC:" in line):
-                country_code = line.split(":")[1]
-            else:
-                if country_code is not None:
-                    mirror = Mirror(line, country_code)
-                    self.base_mirrors.append(mirror)     
+            if line != "":
+                if ("#LOC:" in line):
+                    country_code = line.split(":")[1]
+                else:
+                    if country_code is not None:
+                        mirror = Mirror(line, country_code)
+                        self.base_mirrors.append(mirror)     
         
         self.repositories = []
         self.ppas = []
