@@ -20,7 +20,7 @@ menuComment = menuComment.replace("\"", "")
 menuComment = menuComment.replace(")", "")
 menuComment = menuComment.strip()
 
-desktopFile = open("usr/share/applications/mintSources.desktop", "w")
+desktopFile = open("usr/share/applications/software-sources.desktop", "w")
 desktopFile.writelines("""[Desktop Entry]
 Name=Software Sources
 """)
@@ -48,8 +48,8 @@ for directory in os.listdir("/usr/share/linuxmint/locale"):
 		except:
 			pass
 
-desktopFile.writelines("""Exec=mintsources
-Icon=software-properties
+desktopFile.writelines("""Exec=software-sources
+Icon=/usr/share/icons/hicolor/scalable/apps/software-sources.svg
 Terminal=false
 X-MultipleArgs=false
 Type=Application

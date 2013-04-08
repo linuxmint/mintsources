@@ -378,6 +378,9 @@ class Application(object):
         self.builder = gtk.Builder()
         self.builder.add_from_file(glade_file)
         self._main_window = self.builder.get_object("main_window")
+
+        self._main_window.set_icon_from_file("/usr/share/icons/hicolor/scalable/apps/software-sources.svg")
+
         self._notebook = self.builder.get_object("notebook")
         self._official_repositories_box = self.builder.get_object("official_repositories_box")        
             

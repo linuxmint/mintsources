@@ -1,9 +1,8 @@
 [Desktop Entry]
 Name=Software Sources
-GenericName=Software Sources
 Comment=Configure the sources for installable software and updates
-Exec=mintsources
-Icon=software-properties
+Exec=software-sources
+Icon=/usr/share/icons/hicolor/scalable/apps/software-sources.svg
 Terminal=false
 X-MultipleArgs=false
 Type=Application
