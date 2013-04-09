@@ -398,7 +398,10 @@ class Application(object):
             else:
                 self.config[section] = {}                        
                 for param in config_parser.options(section):                
-                    self.config[section][param] = config_parser.get(section, param)     
+                    self.config[section][param] = config_parser.get(section, param)   
+
+        if self.config["general"]["use_ppas"] == "false":
+            self.builder.get_object("vbuttonbox1").remove(self.builder.get_object("toggle_ppas"))
 
         self.builder.get_object("label_title_official").set_markup("%s" % _("Official repositories"))     
         self.builder.get_object("label_title_ppa").set_markup("%s" % _("PPAs"))     
