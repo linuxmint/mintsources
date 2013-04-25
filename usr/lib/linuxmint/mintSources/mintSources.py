@@ -572,6 +572,10 @@ class Application(object):
 
         self.load_keys()
        
+        if not os.path.exists("/etc/apt/sources.list.d/official-package-repositories.list"):
+            print "Sources missing, generating default sources list!"
+            self.generate_missing_sources()
+
         self.detect_official_sources()     
 
         self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)            
@@ -1047,6 +1051,20 @@ class Application(object):
                 text_file.write(template)   
 
         self.enable_reload_button()
+
+    def generate_missing_sources(self):
+        os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")                
+        os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
+        
+        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r').read()
+        template = template.replace("$codename", self.config["general"]["codename"])
+        template = template.replace("$basecodename", self.config["general"]["base_codename"])
+        template = template.replace("$optionalcomponents", '')  
+        template = template.replace("$mirror", self.config["mirrors"]["default"])
+        template = template.replace("$basemirror", self.config["mirrors"]["base_default"])
+
+        with open("/etc/apt/sources.list.d/official-package-repositories.list", "w") as text_file:
+            text_file.write(template)
 
     def detect_official_sources(self):
         self.selected_mirror = self.config["mirrors"]["default"]
