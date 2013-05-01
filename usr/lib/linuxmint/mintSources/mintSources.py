@@ -226,6 +226,8 @@ class MirrorSelectionDialog(object):
         
         self._dialog = ui_builder.get_object("mirror_selection_dialog")
         self._dialog.set_transient_for(application._main_window)
+
+        self._dialog.set_title(_("Select a mirror"))
         
         self._mirrors = None
         self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, gtk.gdk.Pixbuf)
@@ -379,6 +381,8 @@ class Application(object):
         self.builder.add_from_file(glade_file)
         self._main_window = self.builder.get_object("main_window")
 
+        self._main_window.set_title(_("Software Sources"))
+
         self._main_window.set_icon_from_file("/usr/share/icons/hicolor/scalable/apps/software-sources.svg")
 
         self._notebook = self.builder.get_object("notebook")
@@ -391,7 +395,13 @@ class Application(object):
         self.system_keys = []
         for section in config_parser.sections():
             if section.startswith("optional_component"):
-                component = Component(config_parser.get(section, "name"), config_parser.get(section, "description"), False)
+                component_name = config_parser.get(section, "name")
+                component_description = config_parser.get(section, "description")
+                if component_name in ["backport", "backports"]:
+                    component_description = "%s (%s)" % (_("Backported packages"), component_name)
+                elif component_name in ["romeo", "unstable"]:
+                    component_description = "%s (%s)" % (_("Unstable packages"), component_name)
+                component = Component(component_name, component_description, False)
                 self.optional_components.append(component)
             elif section.startswith("key"):
                 self.system_keys.append(config_parser.get(section, "pub"))
@@ -403,6 +413,8 @@ class Application(object):
         if self.config["general"]["use_ppas"] == "false":
             self.builder.get_object("vbuttonbox1").remove(self.builder.get_object("toggle_ppas"))
 
+        self.builder.get_object("reload_button_label").set_markup("%s" % _("No action required"))
+
         self.builder.get_object("label_title_official").set_markup("%s" % _("Official repositories"))     
         self.builder.get_object("label_title_ppa").set_markup("%s" % _("PPAs"))     
         self.builder.get_object("label_title_3rd").set_markup("%s" % _("Additional repositories"))     
@@ -411,8 +423,8 @@ class Application(object):
         self.builder.get_object("label_mirrors").set_markup("<b>%s</b>" % _("Mirrors"))    
         self.builder.get_object("label_mirror_description").set_markup("%s (%s)" % (_("Main"), self.config["general"]["codename"]) )
         self.builder.get_object("label_base_mirror_description").set_markup("%s (%s)" % (_("Base"), self.config["general"]["base_codename"]) )
-        self.builder.get_object("button_mirror").set_tooltip_text("Select a faster server...")
-        self.builder.get_object("button_base_mirror").set_tooltip_text("Select a faster server...")
+        self.builder.get_object("button_mirror").set_tooltip_text(_("Select a faster server..."))
+        self.builder.get_object("button_base_mirror").set_tooltip_text(_("Select a faster server..."))
 
         self.builder.get_object("label_optional_components").set_markup("<b>%s</b>" % _("Optional components"))                    
         self.builder.get_object("label_source_code").set_markup("<b>%s</b>" % _("Source code"))
@@ -436,6 +448,8 @@ class Application(object):
         
         self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
         self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
+
+        self.builder.get_object("source_code_cb").set_label(_("Enable source code repositories"))
 
         self.builder.get_object("source_code_cb").connect("toggled", self.apply_official_sources)
                
@@ -580,7 +594,7 @@ class Application(object):
 
         self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)            
         self.builder.get_object("label_revert").set_markup(_("Restore the default settings"))
-        self.builder.get_object("revert_button").set_tooltip_text("Restore the official repositories to their default settings")
+        self.builder.get_object("revert_button").set_tooltip_text(_("Restore the official repositories to their default settings"))
         
         self._tab_buttons = [
             self.builder.get_object("toggle_official_repos"),
@@ -653,7 +667,7 @@ class Application(object):
             tree_iter = self._keys_model.append((key, key.get_name()))
 
     def add_key(self, widget):
-        dialog = gtk.FileChooserDialog("Open..", 
+        dialog = gtk.FileChooserDialog(_("Open.."), 
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
                                (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
