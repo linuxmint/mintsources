@@ -24,6 +24,118 @@ try:
 except ImportError:
     import pycurl
 
+
+
+def add_ppa_via_cli(line, codename):   
+
+    if line is not None:
+        user, sep, ppa_name = line.split(":")[1].partition("/")
+        ppa_name = ppa_name or "ppa"
+        try:
+            ppa_info = get_ppa_info_from_lp(user, ppa_name)
+        except Exception, detail:
+            print _("Cannot add PPA: '%s'.") % detail
+            sys.exit(1)
+
+        if "private" in ppa_info and ppa_info["private"]:
+            print(_("Adding private PPAs is not supported currently"))
+            sys.exit(1)
+        
+        print(_("You are about to add the following PPA to your system:"))            
+        print(" %s" % (ppa_info["description"] or ""))            
+        print(_(" More info: %s") % str(ppa_info["web_link"]))
+
+        if sys.stdin.isatty():
+            print(_("Press [ENTER] to continue or ctrl-c to cancel adding it"))
+            sys.stdin.readline()
+        
+            (deb_line, file) = expand_ppa_line(line.strip(), codename)
+            deb_line = expand_http_line(deb_line, codename)
+            debsrc_line = 'deb-src' + deb_line[3:]
+            
+            # Add the key
+            short_key = ppa_info["signing_key_fingerprint"][-8:]
+            os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % short_key)
+
+            # Add the PPA in sources.list.d
+            with open(file, "w") as text_file:
+                text_file.write("%s\n" % deb_line)
+                text_file.write("%s\n" % debsrc_line)  
+
+def get_ppa_info_from_lp(owner_name, ppa_name):
+    DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
+    # maintained until 2015
+    LAUNCHPAD_PPA_API = 'https://launchpad.net/api/1.0/~%s/+archive/%s'
+    # Specify to use the system default SSL store; change to a different path
+    # to test with custom certificates.
+    LAUNCHPAD_PPA_CERT = "/etc/ssl/certs/ca-certificates.crt"
+
+    lp_url = LAUNCHPAD_PPA_API % (owner_name, ppa_name)
+    try:
+        try:
+            request = urllib.request.Request(str(lp_url), headers={"Accept":" application/json"})
+            lp_page = urllib.request.urlopen(request, cafile=LAUNCHPAD_PPA_CERT)
+            json_data = lp_page.read().decode("utf-8", "strict")
+        except URLError as e:
+            raise PPAException("Error reading %s: %s" % (lp_url, e.reason), e)
+    except PPAException:
+        raise
+    except:
+        import pycurl
+        try:
+            callback = CurlCallback()
+            curl = pycurl.Curl()
+            curl.setopt(pycurl.SSL_VERIFYPEER, 1)
+            curl.setopt(pycurl.SSL_VERIFYHOST, 2)
+            curl.setopt(pycurl.WRITEFUNCTION, callback.body_callback)
+            if LAUNCHPAD_PPA_CERT:
+                curl.setopt(pycurl.CAINFO, LAUNCHPAD_PPA_CERT)
+            curl.setopt(pycurl.URL, str(lp_url))
+            curl.setopt(pycurl.HTTPHEADER, ["Accept: application/json"])
+            curl.perform()
+            curl.close()
+            json_data = callback.contents
+        except pycurl.error as e:
+            raise PPAException("Error reading %s: %s" % (lp_url, e), e)
+    return json.loads(json_data)
+
+def encode(s):
+    return re.sub("[^a-zA-Z0-9_-]", "_", s)
+
+def expand_ppa_line(abrev, distro_codename):        
+    # leave non-ppa: lines unchanged
+    if not abrev.startswith("ppa:"):
+        return (abrev, None)
+    # FIXME: add support for dependency PPAs too (once we can get them
+    #        via some sort of API, see LP #385129)
+    abrev = abrev.split(":")[1]
+    ppa_owner = abrev.split("/")[0]
+    try:
+        ppa_name = abrev.split("/")[1]
+    except IndexError as e:
+        ppa_name = "ppa"
+    sourceslistd = "/etc/apt/sources.list.d"
+    line = "deb http://ppa.launchpad.net/%s/%s/ubuntu %s main" % (ppa_owner, ppa_name, distro_codename)
+    filename = os.path.join(sourceslistd, "%s-%s-%s.list" % (encode(ppa_owner), encode(ppa_name), distro_codename))
+    return (line, filename)
+
+def expand_http_line(line, distro_codename):
+    """
+    short cut - this:
+      apt-add-repository http://packages.medibuntu.org free non-free
+    same as
+      apt-add-repository 'deb http://packages.medibuntu.org/ '$(lsb_release -cs)' free non-free'
+    """
+    if not line.startswith("http"):
+      return line
+    repo = line.split()[0]
+    try:
+        areas = line.split(" ",1)[1]
+    except IndexError:
+        areas = "main"
+    line = "deb %s %s %s" % ( repo, distro_codename, areas )
+    return line
+
 class CurlCallback:
     def __init__(self):
         self.contents = ''
@@ -709,7 +821,7 @@ class Application(object):
             user, sep, ppa_name = line.split(":")[1].partition("/")
             ppa_name = ppa_name or "ppa"
             try:
-                ppa_info = self.get_ppa_info_from_lp(user, ppa_name)                
+                ppa_info = get_ppa_info_from_lp(user, ppa_name)                
             except Exception, detail:
                 self.show_error_dialog(self._main_window, _("Cannot add PPA: '%s'.") % detail)
                 return
@@ -717,8 +829,8 @@ class Application(object):
             image = gtk.Image()
             image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
             if self.show_confirmation_dialog(self._main_window, "<b>%s</b>\n\n%s\n\n<i>%s</i>" % (line, ppa_info["description"], str(ppa_info["web_link"])), image):                                
-                (deb_line, file) = self.expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
-                deb_line = self.expand_http_line(deb_line, self.config["general"]["base_codename"])
+                (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
+                deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
                 
                 # Add the key
@@ -742,6 +854,8 @@ class Application(object):
                 tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))                        
 
                 self.enable_reload_button()
+
+                                          
                 
 
     def edit_ppa(self, widget):        
@@ -874,81 +988,7 @@ class Application(object):
         if r == gtk.RESPONSE_OK:
             return text
         else:
-            return None
-
-    def get_ppa_info_from_lp(self, owner_name, ppa_name):
-        DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
-        # maintained until 2015
-        LAUNCHPAD_PPA_API = 'https://launchpad.net/api/1.0/~%s/+archive/%s'
-        # Specify to use the system default SSL store; change to a different path
-        # to test with custom certificates.
-        LAUNCHPAD_PPA_CERT = "/etc/ssl/certs/ca-certificates.crt"
-
-        lp_url = LAUNCHPAD_PPA_API % (owner_name, ppa_name)
-        try:
-            try:
-                request = urllib.request.Request(str(lp_url), headers={"Accept":" application/json"})
-                lp_page = urllib.request.urlopen(request, cafile=LAUNCHPAD_PPA_CERT)
-                json_data = lp_page.read().decode("utf-8", "strict")
-            except URLError as e:
-                raise PPAException("Error reading %s: %s" % (lp_url, e.reason), e)
-        except PPAException:
-            raise
-        except:
-            import pycurl
-            try:
-                callback = CurlCallback()
-                curl = pycurl.Curl()
-                curl.setopt(pycurl.SSL_VERIFYPEER, 1)
-                curl.setopt(pycurl.SSL_VERIFYHOST, 2)
-                curl.setopt(pycurl.WRITEFUNCTION, callback.body_callback)
-                if LAUNCHPAD_PPA_CERT:
-                    curl.setopt(pycurl.CAINFO, LAUNCHPAD_PPA_CERT)
-                curl.setopt(pycurl.URL, str(lp_url))
-                curl.setopt(pycurl.HTTPHEADER, ["Accept: application/json"])
-                curl.perform()
-                curl.close()
-                json_data = callback.contents
-            except pycurl.error as e:
-                raise PPAException("Error reading %s: %s" % (lp_url, e), e)
-        return json.loads(json_data)
-
-    def encode(self, s):
-        return re.sub("[^a-zA-Z0-9_-]", "_", s)
-
-    def expand_ppa_line(self, abrev, distro_codename):        
-        # leave non-ppa: lines unchanged
-        if not abrev.startswith("ppa:"):
-            return (abrev, None)
-        # FIXME: add support for dependency PPAs too (once we can get them
-        #        via some sort of API, see LP #385129)
-        abrev = abrev.split(":")[1]
-        ppa_owner = abrev.split("/")[0]
-        try:
-            ppa_name = abrev.split("/")[1]
-        except IndexError as e:
-            ppa_name = "ppa"
-        sourceslistd = "/etc/apt/sources.list.d"
-        line = "deb http://ppa.launchpad.net/%s/%s/ubuntu %s main" % (ppa_owner, ppa_name, distro_codename)
-        filename = os.path.join(sourceslistd, "%s-%s-%s.list" % (self.encode(ppa_owner), self.encode(ppa_name), distro_codename))
-        return (line, filename)
-
-    def expand_http_line(self, line, distro_codename):
-        """
-        short cut - this:
-          apt-add-repository http://packages.medibuntu.org free non-free
-        same as
-          apt-add-repository 'deb http://packages.medibuntu.org/ '$(lsb_release -cs)' free non-free'
-        """
-        if not line.startswith("http"):
-          return line
-        repo = line.split()[0]
-        try:
-            areas = line.split(" ",1)[1]
-        except IndexError:
-            areas = "main"
-        line = "deb %s %s %s" % ( repo, distro_codename, areas )
-        return line
+            return None    
 
     def datafunction_checkbox(self, column, cell, model, iter):
         cell.set_property("activatable", True)        
@@ -1143,5 +1183,13 @@ class Application(object):
 if __name__ == "__main__":
     if os.getuid() != 0:
         os.execvp("gksu", ("", " ".join(sys.argv)))
-    else:
-        Application().run()
+    else:        
+        if len(sys.argv) > 2 and (sys.argv[1] == "add-apt-repository"):
+            ppa_line = sys.argv[2]
+            lsb_codename = commands.getoutput("lsb_release -sc")
+            config_parser = ConfigParser.RawConfigParser()
+            config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
+            codename = config_parser.get("general", "base_codename")
+            add_ppa_via_cli(ppa_line, codename)
+        else:
+            Application().run()

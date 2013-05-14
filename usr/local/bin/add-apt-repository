@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+import os, sys
+import gettext
+
+gettext.install("mintsources", "/usr/share/linuxmint/locale")
+
+if os.geteuid() != 0:
+    print(_("Error: must run as root"))
+    sys.exit(1)
+
+if (len(sys.argv) < 2):
+    print(_("Error: need a repository as argument"))
+    sys.exit(1)
+
+os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository \"%s\"" % sys.argv[1])
