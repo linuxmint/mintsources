@@ -332,6 +332,8 @@ class MirrorSelectionDialog(object):
     MIRROR_COUNTRY_COLUMN = 2
     MIRROR_SPEED_COLUMN = 3
     MIRROR_SPEED_BAR_COLUMN = 4
+    MIRROR_COUNTRY_CODE_COLUMN = 5 # invisible
+    
     def __init__(self, application, ui_builder):
         self._application = application
         self._ui_builder = ui_builder
@@ -342,7 +344,8 @@ class MirrorSelectionDialog(object):
         self._dialog.set_title(_("Select a mirror"))
         
         self._mirrors = None
-        self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, gtk.gdk.Pixbuf)
+        self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, gtk.gdk.Pixbuf, str)
+        # mirror, name, flag, speed, speed chart, country code (used to sort by flag)
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
@@ -352,7 +355,7 @@ class MirrorSelectionDialog(object):
         r = gtk.CellRendererPixbuf()
         col = gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
         self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_COUNTRY_CODE_COLUMN)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_URL_COLUMN)
@@ -383,7 +386,8 @@ class MirrorSelectionDialog(object):
                 mirror.url,
                 gtk.gdk.pixbuf_new_from_file(flag),
                 -1,
-                None
+                None,
+                mirror.country_code.lower()
             ))
         self._next_speed_test()
     
