@@ -484,6 +484,9 @@ class MirrorSelectionDialog(object):
 
 class Application(object):
     def __init__(self):
+        
+        # Prevent settings from being saved until the interface is fully loaded
+        self._interface_loaded = False
 
         self.lsb_codename = commands.getoutput("lsb_release -sc")        
 
@@ -742,6 +745,9 @@ class Application(object):
 
         self.builder.get_object("button_mergelist").connect("clicked", self.fix_mergelist)
         self.builder.get_object("button_purge").connect("clicked", self.fix_purge)
+        
+        # From now on, we handle modifications to the settings and save them when they happen
+        self._interface_loaded = True
 
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
@@ -1071,6 +1077,9 @@ class Application(object):
         #returnCode = comnd.wait()             
 
     def apply_official_sources(self, widget=None):
+        # As long as the interface isn't fully loaded, don't save anything
+        if not self._interface_loaded:
+            return
 
         self.update_flags()
 
