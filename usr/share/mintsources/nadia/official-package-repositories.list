@@ -5,5 +5,3 @@ deb $basemirror $basecodename-updates main restricted universe multiverse
 
 deb http://security.ubuntu.com/ubuntu/ $basecodename-security main restricted universe multiverse
 deb http://archive.canonical.com/ubuntu/ $basecodename partner
-deb http://packages.medibuntu.org/ $basecodename free non-free
-
