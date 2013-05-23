@@ -240,8 +240,8 @@ class Repository():
 
     def get_ppa_name(self):
         elements = self.line.split(" ")
-        name = elements[1].replace("deb-src", "")
-        name = name.replace("deb", "")
+        name = elements[1].replace("deb-src ", "")
+        name = name.replace("deb ", "")
         name = name.replace("http://ppa.launchpad.net/", "")
         name = name.replace("/ubuntu", "")
         name = name.replace("/ppa", "")
@@ -251,8 +251,8 @@ class Repository():
 
     def get_repository_name(self):
         elements = self.line.split(" ")
-        name = elements[1].replace("deb-src", "")
-        name = name.replace("deb", "")
+        name = elements[1].replace("deb-src ", "")
+        name = name.replace("deb ", "")
         if name.startswith("http://") or name.startswith("ftp://"):                    
             name = name.replace("http://", "")
             name = name.replace("ftp://", "")
