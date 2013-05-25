@@ -459,6 +459,7 @@ class MirrorSelectionDialog(object):
             c.setopt(pycurl.TIMEOUT, 10)
             c.setopt(pycurl.FOLLOWLOCATION, 1)
             c.setopt(pycurl.WRITEFUNCTION, buff.write)
+            c.setopt(pycurl.NOSIGNAL, 1)
             c.perform()
             download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD)
         except:
