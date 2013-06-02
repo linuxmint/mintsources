@@ -839,7 +839,7 @@ class Application(object):
         
             image = gtk.Image()
             image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
-            if self.show_confirmation_dialog(self._main_window, "<b>%s</b>\n\n%s\n\n<i>%s</i>" % (line, ppa_info["description"], str(ppa_info["web_link"])), image):                                
+            if self.show_confirmation_dialog(self._main_window, "<b>%s</b>\n\n%s\n\n<i>%s</i>" % (line, ppa_info["description"].replace("<", "&lt;").replace(">", "&gt;"), str(ppa_info["web_link"])), image):                                
                 (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
