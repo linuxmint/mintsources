@@ -587,29 +587,8 @@ class Application(object):
                 nb_components += 1   
 
 
-        self.mirrors = []
-        mirrorsfile = open(self.config["mirrors"]["mirrors"], "r")
-        for line in mirrorsfile.readlines():
-            line = line.strip()
-            if line != "":
-                if ("#LOC:" in line):
-                    country_code = line.split(":")[1]
-                else:
-                    if country_code is not None:
-                        mirror = Mirror(line, country_code)
-                        self.mirrors.append(mirror)
-
-        self.base_mirrors = []
-        mirrorsfile = open(self.config["mirrors"]["base_mirrors"], "r")
-        for line in mirrorsfile.readlines():
-            line = line.strip()
-            if line != "":
-                if ("#LOC:" in line):
-                    country_code = line.split(":")[1]
-                else:
-                    if country_code is not None:
-                        mirror = Mirror(line, country_code)
-                        self.base_mirrors.append(mirror)     
+        self.mirrors = self.read_mirror_list(self.config["mirrors"]["mirrors"])
+        self.base_mirrors = self.read_mirror_list(self.config["mirrors"]["base_mirrors"])
         
         self.repositories = []
         self.ppas = []
@@ -753,6 +732,22 @@ class Application(object):
         
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
+
+    def read_mirror_list(self, path):
+        mirror_list = []
+        country_code = None
+        mirrorsfile = open(path, "r")
+        for line in mirrorsfile.readlines():
+            line = line.strip()
+            if line != "":
+                if ("#LOC:" in line):
+                    country_code = line.split(":")[1]
+                else:
+                    if country_code is not None:
+                        if ("ubuntu-ports" not in line):
+                            mirror = Mirror(line, country_code)
+                            mirror_list.append(mirror)
+        return mirror_list
 
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
