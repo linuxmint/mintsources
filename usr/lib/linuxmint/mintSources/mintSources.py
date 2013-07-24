@@ -26,9 +26,9 @@ except ImportError:
 
 
 
-def add_ppa_via_cli(line, codename):   
+def add_repository_via_cli(line, codename):
 
-    if line is not None:
+    if line.startswith("ppa:"):
         user, sep, ppa_name = line.split(":")[1].partition("/")
         ppa_name = ppa_name or "ppa"
         try:
@@ -60,7 +60,10 @@ def add_ppa_via_cli(line, codename):
             # Add the PPA in sources.list.d
             with open(file, "w") as text_file:
                 text_file.write("%s\n" % deb_line)
-                text_file.write("%s\n" % debsrc_line)  
+                text_file.write("%s\n" % debsrc_line)
+    else if line.startswith("deb "):
+        with open("/etc/apt/sources.list.d/additional-repositories.list", "a") as text_file:
+            text_file.write("%s\n" % expand_http_line(line, codename))
 
 def get_ppa_info_from_lp(owner_name, ppa_name):
     DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
@@ -1199,6 +1202,6 @@ if __name__ == "__main__":
             config_parser = ConfigParser.RawConfigParser()
             config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
             codename = config_parser.get("general", "base_codename")
-            add_ppa_via_cli(ppa_line, codename)
+            add_repository_via_cli(ppa_line, codename)
         else:
             Application().run()
