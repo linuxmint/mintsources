@@ -17,9 +17,6 @@ parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
 
 (options, args) = parser.parse_args()
 
-print options
-print args
-
 if (len(args) == 0):
     print(_("Error: need a repository as argument"))
     sys.exit(1)
