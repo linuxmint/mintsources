@@ -23,10 +23,10 @@ try:
     import urllib.parse
 except ImportError:
     import pycurl
+from optparse import OptionParser
 
 
-
-def add_repository_via_cli(line, codename):
+def add_repository_via_cli(line, codename, forceYes):   
 
     if line.startswith("ppa:"):
         user, sep, ppa_name = line.split(":")[1].partition("/")
@@ -46,8 +46,9 @@ def add_repository_via_cli(line, codename):
         print(_(" More info: %s") % str(ppa_info["web_link"]))
 
         if sys.stdin.isatty():
-            print(_("Press [ENTER] to continue or ctrl-c to cancel adding it"))
-            sys.stdin.readline()
+            if not(forceYes):
+                print(_("Press [ENTER] to continue or ctrl-c to cancel adding it"))
+                sys.stdin.readline()
         
             (deb_line, file) = expand_ppa_line(line.strip(), codename)
             deb_line = expand_http_line(deb_line, codename)
@@ -1196,12 +1197,19 @@ if __name__ == "__main__":
     if os.getuid() != 0:
         os.execvp("gksu", ("", " ".join(sys.argv)))
     else:        
-        if len(sys.argv) > 2 and (sys.argv[1] == "add-apt-repository"):
-            ppa_line = sys.argv[2]
+        usage = "usage: %prog [options] [repository]"
+        parser = OptionParser(usage=usage)
+        parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
+            help="force yes on all confirmation questions", default=False)
+
+        (options, args) = parser.parse_args()
+
+        if len(args) > 1 and (args[0] == "add-apt-repository"):
+            ppa_line = args[1]
             lsb_codename = commands.getoutput("lsb_release -sc")
             config_parser = ConfigParser.RawConfigParser()
             config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
             codename = config_parser.get("general", "base_codename")
-            add_repository_via_cli(ppa_line, codename)
+            add_repository_via_cli(ppa_line, codename, options.forceYes)
         else:
             Application().run()

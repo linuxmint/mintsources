@@ -2,6 +2,7 @@
 
 import os, sys
 import gettext
+from optparse import OptionParser
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
@@ -9,8 +10,18 @@ if os.geteuid() != 0:
     print(_("Error: must run as root"))
     sys.exit(1)
 
-if (len(sys.argv) < 2):
+usage = "usage: %prog [options] repository"
+parser = OptionParser(usage=usage)
+parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
+    help="force yes on all confirmation questions", default=False)
+
+(options, args) = parser.parse_args()
+
+if (len(args) == 0):
     print(_("Error: need a repository as argument"))
     sys.exit(1)
 
-os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository \"%s\"" % sys.argv[1])
+if options.forceYes:
+	os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository -y \"%s\"" % args[0])
+else:
+	os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository \"%s\"" % args[0])
