@@ -1,6 +1,6 @@
 deb $mirror $codename main upstream import $optionalcomponents
 
-deb http://extra.linuxmint.com $codename main
+deb http://extra.linuxmint.com petra main
 
 deb $basemirror $basecodename main restricted universe multiverse
 deb $basemirror $basecodename-updates main restricted universe multiverse
