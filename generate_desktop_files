@@ -20,7 +20,7 @@ menuComment = menuComment.replace("\"", "")
 menuComment = menuComment.replace(")", "")
 menuComment = menuComment.strip()
 
-desktopFile = open("usr/share/applications/software-sources.desktop", "w")
+desktopFile = open("usr/share/applications/mintsources.desktop", "w")
 desktopFile.writelines("""[Desktop Entry]
 Name=Software Sources
 """)
@@ -53,10 +53,9 @@ Icon=/usr/share/icons/hicolor/scalable/apps/software-sources.svg
 Terminal=false
 X-MultipleArgs=false
 Type=Application
-Categories=GNOME;GTK;Settings;X-GNOME-SystemSettings;X-GNOME-Settings-Panel;
+Categories=GNOME;GTK;System;Settings;X-GNOME-SystemSettings;X-GNOME-Settings-Panel;
 X-GNOME-Settings-Panel=software-properties
 MimeType=text/x-apt-sources-list;
 X-KDE-SubstituteUID=true
 X-Ubuntu-Gettext-Domain=software-properties
 """)
-
