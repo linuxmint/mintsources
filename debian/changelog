@@ -1,3 +1,9 @@
+mintsources (1.2.3) debian; urgency=low
+
+  * 1.2.3
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 03 Feb 2014 14:26:27 +0000
+
 mintsources (1.2.2) debian; urgency=low
 
   * 1.2.2
