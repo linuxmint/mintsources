@@ -749,6 +749,8 @@ class Application(object):
                 else:
                     if country_code is not None:
                         if ("ubuntu-ports" not in line):
+                            if line[-1] == "/":
+                                line = line[:-1]
                             mirror = Mirror(line, country_code)
                             mirror_list.append(mirror)
         return mirror_list
