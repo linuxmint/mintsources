@@ -1152,13 +1152,13 @@ class Application(object):
                 if elements[0] == "deb":                    
                     mirror = elements[1]                    
                     if "$" not in mirror:
-                        self.selected_mirror = mirror
+                        self.selected_mirror = mirror.rstrip('/')
             if (self.config["detection"]["base_identifier"] in line):
                 elements = line.split(" ")
                 if elements[0] == "deb":                    
                     mirror = elements[1]
                     if "$" not in mirror:
-                        self.selected_base_mirror = mirror
+                        self.selected_base_mirror = mirror.rstrip('/')
 
         self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
         self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror) 
