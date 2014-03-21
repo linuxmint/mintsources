@@ -56,7 +56,7 @@ def add_repository_via_cli(line, codename, forceYes):
             
             # Add the key
             short_key = ppa_info["signing_key_fingerprint"][-8:]
-            os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % short_key)
+            os.system("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys %s" % short_key)
 
             # Add the PPA in sources.list.d
             with open(file, "w") as text_file:
