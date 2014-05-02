@@ -8,5 +8,6 @@ Standards-Version: 3.7.2
 Package: mintsources
 Architecture: all
 Depends: python (>= 2.4), python (<< 3), python-gtk2, python-glade2, python-pycurl
+Conflicts: software-properties-gtk, software-properties-kde
 Description: Software Sources configuration tool
  Configure the sources for installable software and updates.
