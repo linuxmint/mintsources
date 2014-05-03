@@ -42,7 +42,7 @@ def add_repository_via_cli(line, codename, forceYes):
             sys.exit(1)
         
         print(_("You are about to add the following PPA to your system:"))            
-        print(" %s" % (ppa_info["description"] or ""))            
+        print(" %s" % (ppa_info["description"].encode("utf-8") or ""))            
         print(_(" More info: %s") % str(ppa_info["web_link"]))
 
         if sys.stdin.isatty():
