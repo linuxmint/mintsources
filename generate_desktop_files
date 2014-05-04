@@ -1,54 +1,18 @@
 #!/usr/bin/python
 
-import commands, os
+DOMAIN = "mintsources"
+PATH = "/usr/share/linuxmint/locale"
 
-sourceFile = "usr/lib/linuxmint/mintSources/mintSources.py"
+import os, gettext, sys
+sys.path.append('/usr/lib/linuxmint/common')
+import additionalfiles
 
-menuName = commands.getoutput("cat " + sourceFile + " | grep menuName")
-menuName = menuName.replace("menuName", "")
-menuName = menuName.replace("=", "")
-menuName = menuName.replace("_(", "")
-menuName = menuName.replace("\"", "")
-menuName = menuName.replace(")", "")
-menuName = menuName.strip()
+os.environ['LANG'] = "en_US.UTF-8"
+gettext.install(DOMAIN, PATH)
 
-menuComment = commands.getoutput("cat " + sourceFile + " | grep menuComment")
-menuComment = menuComment.replace("menuComment", "")
-menuComment = menuComment.replace("=", "")
-menuComment = menuComment.replace("_(", "")
-menuComment = menuComment.replace("\"", "")
-menuComment = menuComment.replace(")", "")
-menuComment = menuComment.strip()
+prefix = "[Desktop Entry]\n"
 
-desktopFile = open("usr/share/applications/mintsources.desktop", "w")
-desktopFile.writelines("""[Desktop Entry]
-Name=Software Sources
-""")
-
-import gettext
-gettext.install("mintsources", "/usr/share/linuxmint/locale")
-
-for directory in os.listdir("/usr/share/linuxmint/locale"):
-	if os.path.isdir(os.path.join("/usr/share/linuxmint/locale", directory)):
-		try:
-			language = gettext.translation('mintsources', "/usr/share/linuxmint/locale", languages=[directory])
-			language.install()
-			desktopFile.writelines("Name[%s]=%s\n" % (directory, _(menuName)))
-		except:
-			pass
-
-desktopFile.writelines("Comment=Configure the sources for installable software and updates\n")
-
-for directory in os.listdir("/usr/share/linuxmint/locale"):
-	if os.path.isdir(os.path.join("/usr/share/linuxmint/locale", directory)):
-		try:
-			language = gettext.translation('mintsources', "/usr/share/linuxmint/locale", languages=[directory])
-			language.install()			
-			desktopFile.writelines("Comment[%s]=%s\n" % (directory, _(menuComment)))
-		except:
-			pass
-
-desktopFile.writelines("""Exec=software-sources
+suffix = """Exec=software-sources
 Icon=/usr/share/icons/hicolor/scalable/apps/software-sources.svg
 Terminal=false
 X-MultipleArgs=false
@@ -58,4 +22,6 @@ X-GNOME-Settings-Panel=software-properties
 MimeType=text/x-apt-sources-list;
 X-KDE-SubstituteUID=true
 X-Ubuntu-Gettext-Domain=software-properties
-""")
+"""
+
+additionalfiles.generate(DOMAIN, PATH, "usr/share/applications/mintsources.desktop", prefix, _("Software Sources"), _("Configure the sources for installable software and updates"), suffix)

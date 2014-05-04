@@ -159,10 +159,6 @@ class PPAException(Exception):
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
-# i18n for menu item
-menuName = _("Software Sources")
-menuComment = _("Configure the sources for installable software and updates")
-
 SPEED_PIX_WIDTH = 125
 SPEED_PIX_HEIGHT = 16
 
