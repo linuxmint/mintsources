@@ -285,7 +285,7 @@ class ComponentToggleCheckBox(gtk.CheckButton):
                 else:
                     widget.set_active(not widget.get_active())
             elif self.component.name == "backport":
-                if self.application.show_confirmation_dialog(self.application._main_window, _("Backports are packages coming from newer Linux Mint releases. When backports are made available, the development team publishes an official announcement on http://blog.linuxmint.com. This announcement might include important information about the new features, design decisions or even known issues wich relate to you. It is therefore strongly recommended to not enable backports until you have read this information. Are you sure you want to enable backports?"), yes_no=True):
+                if self.application.show_confirmation_dialog(self.application._main_window, _("Backports are packages coming from newer Linux Mint releases. When backports are made available, the development team publishes an official announcement on http://blog.linuxmint.com. This announcement might include important information about the new features, design decisions or even known issues which relate to you. It is therefore strongly recommended to not enable backports until you have read this information. Are you sure you want to enable backports?"), yes_no=True):
                     self.component.selected = widget.get_active()
                     self.application.apply_official_sources()
                 else:
