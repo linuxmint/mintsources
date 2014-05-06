@@ -264,16 +264,38 @@ class Repository():
         return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
 
 class ComponentToggleCheckBox(gtk.CheckButton):
-    def __init__(self, application, component):
+    def __init__(self, application, component, window):
         self.application = application
         self.component = component        
+        self.window_object = window
         gtk.CheckButton.__init__(self, self.component.description)
         self.set_active(component.selected)                    
         self.connect("toggled", self._on_toggled)
     
     def _on_toggled(self, widget):
-        self.component.selected = widget.get_active()
-        self.application.apply_official_sources()
+        # As long as the interface isn't fully loaded, don't do anything
+        if not self.application._interface_loaded:
+            return
+
+        if widget.get_active() and os.path.exists("/etc/linuxmint/info"):
+            if self.component.name == "romeo":
+                if self.application.show_confirmation_dialog(self.application._main_window, _("Linux Mint uses Romeo to publish packages which are not tested. Once these packages are tested, they are then moved to the official repositories. Unless you are participating in beta-testing, you should not enable this repository. Are you sure you want to enable Romeo?"), yes_no=True):
+                    self.component.selected = widget.get_active()
+                    self.application.apply_official_sources()
+                else:
+                    widget.set_active(not widget.get_active())
+            elif self.component.name == "backport":
+                if self.application.show_confirmation_dialog(self.application._main_window, _("Backports are packages coming from newer Linux Mint releases. When backports are made available, the development team publishes an official announcement on http://blog.linuxmint.com. This announcement might include important information about the new features, design decisions or even known issues wich relate to you. It is therefore strongly recommended to not enable backports until you have read this information. Are you sure you want to enable backports?"), yes_no=True):
+                    self.component.selected = widget.get_active()
+                    self.application.apply_official_sources()
+                else:
+                    widget.set_active(not widget.get_active())
+            else:
+                self.component.selected = widget.get_active()
+                self.application.apply_official_sources()        
+        else:
+            self.component.selected = widget.get_active()
+            self.application.apply_official_sources()
 
 class ServerSelectionComboBox(gtk.ComboBox):
     def __init__(self, application, repo):
@@ -574,18 +596,25 @@ class Application(object):
         self.builder.get_object("source_code_cb").connect("toggled", self.apply_official_sources)
                
         self.selected_components = []
-        if (len(self.optional_components) > 0):            
+        if (len(self.optional_components) > 0):
+            if os.path.exists("/etc/linuxmint/info"):
+                # This is Mint, we want to warn people about Romeo/Backport
+                warning_label = gtk.Label()
+                warning_label.set_alignment(0, 0.5)
+                warning_label.set_markup("<span font_style='oblique' font_stretch='ultracondensed' foreground='#3c3c3c'>%s</span>" % _("Warning: Backports and unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))                
+                warning_label.set_line_wrap(True)
+                warning_label.connect("size-allocate", self.label_size_allocate)
+                self.builder.get_object("vbox_optional_components").pack_start(warning_label, True, True, 6)
             components_table = gtk.Table()
             self.builder.get_object("vbox_optional_components").pack_start(components_table, True, True)
             self.builder.get_object("vbox_optional_components").show_all()
             nb_components = 0
             for i in range(len(self.optional_components)):
                 component = self.optional_components[i]                
-                cb = ComponentToggleCheckBox(self, component)
+                cb = ComponentToggleCheckBox(self, component, self._main_window)
                 component.set_widget(cb)
                 components_table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
-                nb_components += 1   
-
+                nb_components += 1
 
         self.mirrors = self.read_mirror_list(self.config["mirrors"]["mirrors"])
         self.base_mirrors = self.read_mirror_list(self.config["mirrors"]["base_mirrors"])
@@ -733,6 +762,9 @@ class Application(object):
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
 
+    def label_size_allocate(self, widget, rect):
+        widget.set_size_request(rect.width, -1)
+
     def read_mirror_list(self, path):
         mirror_list = []
         country_code = None
@@ -816,7 +848,7 @@ class Application(object):
             key = model.get(iter, 0)[0]
             image = gtk.Image()
             image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
-            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image)):                
+            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image, yes_no=True)):                
                 key.delete()
                 self.load_keys()                
 
@@ -881,7 +913,7 @@ class Application(object):
         (model, iter) = selection.get_selected()
         if (iter != None):            
             repository = model.get(iter, 0)[0]
-            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this PPA?"))):
+            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this PPA?"), yes_no=True)):
                 model.remove(iter)                
                 repository.delete()
                 self.ppas.remove(repository)
@@ -919,18 +951,26 @@ class Application(object):
         (model, iter) = selection.get_selected()
         if (iter != None):            
             repository = model.get(iter, 0)[0]
-            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this repository?"))):
+            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this repository?"), yes_no=True)):
                 model.remove(iter)                
                 repository.delete()
                 self.repositories.remove(repository)
             
 
-    def show_confirmation_dialog(self, parent, message, image=None, affirmation=None):
+    def show_confirmation_dialog(self, parent, message, image=None, affirmation=None, yes_no=False):
+        buttons = gtk.BUTTONS_OK_CANCEL
+        default_button = gtk.RESPONSE_OK
+        confirmation_button = gtk.RESPONSE_OK
+        if yes_no:
+            buttons = gtk.BUTTONS_YES_NO
+            default_button = gtk.RESPONSE_NO
+            confirmation_button = gtk.RESPONSE_YES
+
         if affirmation is None:
             d = gtk.MessageDialog(parent,
                               gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                               gtk.MESSAGE_WARNING,
-                              gtk.BUTTONS_OK_CANCEL,
+                              buttons,
                               message)
         else:
             d = gtk.MessageDialog(parent,
@@ -943,10 +983,10 @@ class Application(object):
             image.show()
             d.set_image(image)
         
-        d.set_default_response(gtk.RESPONSE_OK)
+        d.set_default_response(default_button)
         r = d.run()        
         d.destroy()
-        if r == gtk.RESPONSE_OK:
+        if r == confirmation_button:
             return True
         else:
             return False
