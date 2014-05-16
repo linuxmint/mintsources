@@ -41,8 +41,9 @@ def add_repository_via_cli(line, codename, forceYes):
             print(_("Adding private PPAs is not supported currently"))
             sys.exit(1)
         
-        print(_("You are about to add the following PPA to your system:"))            
-        print(" %s" % (ppa_info["description"].encode("utf-8") or ""))            
+        print(_("You are about to add the following PPA to your system:")) 
+        if ppa_info["description"] is not None:            
+            print(" %s" % (ppa_info["description"].encode("utf-8") or ""))
         print(_(" More info: %s") % str(ppa_info["web_link"]))
 
         if sys.stdin.isatty():
@@ -868,7 +869,11 @@ class Application(object):
         
             image = gtk.Image()
             image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
-            if self.show_confirmation_dialog(self._main_window, "<b>%s</b>\n\n%s\n\n<i>%s</i>" % (line, ppa_info["description"].replace("<", "&lt;").replace(">", "&gt;"), str(ppa_info["web_link"])), image):                                
+            description = ""
+            if ppa_info["description"] is not None:
+                description = ppa_info["description"].encode("utf-8")
+                description = description.replace("<", "&lt;").replace(">", "&gt;")
+            if self.show_confirmation_dialog(self._main_window, "<b>%s</b>\n\n%s\n\n<i>%s</i>" % (line, description, str(ppa_info["web_link"])), image):                                
                 (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
