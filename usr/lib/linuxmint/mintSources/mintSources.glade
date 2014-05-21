@@ -104,6 +104,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
+                <property name="padding">5</property>
                 <property name="pack_type">end</property>
                 <property name="position">0</property>
               </packing>
