@@ -36,7 +36,7 @@ Encoding=UTF-8
 MimeType=text/x-apt-sources-list;
 Categories=Qt;KDE;Settings;
 X-KDE-StartupNotify=false
-OnlyShowIn=KDE
+OnlyShowIn=KDE;
 """
 
 additionalfiles.generate(DOMAIN, PATH, "usr/share/applications/kde4/mintsources.desktop", prefix, _("Software Sources"), _("Configure the sources for installable software and updates"), suffix, genericName=_("Configure the sources for installable software and updates"))
