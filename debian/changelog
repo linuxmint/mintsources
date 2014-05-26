@@ -1,3 +1,11 @@
+mintsources (1.3.3) qiana; urgency=low
+
+  * [8ce6fca] KDE desktop file generation
+  * [502938f] GNOME based desktop file hidden in KDE
+  * [148ca58] New KDE4 desktop file
+
+ -- Frédéric Gaudet <fred@linuxmint.com>  Mon, 26 May 2014 12:01:21 +0200
+
 mintsources (1.3.2) qiana; urgency=medium
 
   * 1.3.2
