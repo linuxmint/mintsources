@@ -22,6 +22,7 @@ X-GNOME-Settings-Panel=software-properties
 MimeType=text/x-apt-sources-list;
 X-KDE-SubstituteUID=true
 X-Ubuntu-Gettext-Domain=software-properties
+NotShowIn=KDE;
 """
 
 additionalfiles.generate(DOMAIN, PATH, "usr/share/applications/mintsources.desktop", prefix, _("Software Sources"), _("Configure the sources for installable software and updates"), suffix)
