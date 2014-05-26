@@ -30,6 +30,7 @@ prefix = "[Desktop Entry]\n"
 
 suffix= """Exec=software-sources
 Icon=/usr/share/icons/hicolor/scalable/apps/software-sources.svg
+NoDisplay=true
 Terminal=false
 Type=Application
 Encoding=UTF-8
