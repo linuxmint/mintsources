@@ -26,9 +26,12 @@ except ImportError:
 from optparse import OptionParser
 
 
-def add_repository_via_cli(line, codename, forceYes):   
+def add_repository_via_cli(line, codename, forceYes, use_ppas):   
 
     if line.startswith("ppa:"):
+        if use_ppas != "true":
+            print(_("Adding PPAs is not supported"))
+            sys.exit(1)
         user, sep, ppa_name = line.split(":")[1].partition("/")
         ppa_name = ppa_name or "ppa"
         try:
@@ -1253,6 +1256,7 @@ if __name__ == "__main__":
             config_parser = ConfigParser.RawConfigParser()
             config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
             codename = config_parser.get("general", "base_codename")
-            add_repository_via_cli(ppa_line, codename, options.forceYes)
+            use_ppas = config_parser.get("general", "use_ppas")
+            add_repository_via_cli(ppa_line, codename, options.forceYes, use_ppas)
         else:
             Application().run()
