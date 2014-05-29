@@ -647,7 +647,7 @@ class Application(object):
                         selected = False
                     if line.startswith("deb"):
                         repository = Repository(self, line.replace('#', '').strip(), source_file, selected)                    
-                        if "ppa.launchpad" in line:
+                        if "ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
                             self.ppas.append(repository)                                                
                         else:                        
                             self.repositories.append(repository)
