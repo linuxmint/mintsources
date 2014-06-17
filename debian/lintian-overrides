@@ -1,0 +1,5 @@
+mintsources: dir-in-usr-local usr/local/bin/
+mintsources: file-in-usr-local usr/local/bin/add-apt-repository
+mintsources: file-in-unusual-dir usr/local/bin/add-apt-repository
+mintsources: file-in-usr-local usr/local/bin/apt-add-repository
+mintsources: file-in-unusual-dir usr/local/bin/apt-add-repository
