@@ -395,7 +395,7 @@ class MirrorSelectionDialog(object):
         col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))
         
         self._speed_test_lock = thread.allocate_lock()
-        self._current_speed_test_index = -1
+        #self._current_speed_test_index = -1
         self._best_speed = -1
         
         self._speed_pixbufs = {}
@@ -415,34 +415,41 @@ class MirrorSelectionDialog(object):
                 None,
                 mirror.country_code.lower()
             ))
-        self._next_speed_test()
+#        self._next_speed_test()
+        self._all_speed_tests()
     
-    def _next_speed_test(self):
-        test_mirror = None
+    def _all_speed_tests(self):
+        self._best_speed = -1
         for i in range(len(self._mirrors_model)):
             url = self._mirrors_model[i][MirrorSelectionDialog.MIRROR_URL_COLUMN]
-            speed = self._mirrors_model[i][MirrorSelectionDialog.MIRROR_SPEED_COLUMN]
-            if speed == -1:
-                test_mirror = url
-                self._current_speed_test_index = i
-                break
-        if test_mirror:
-            self._speed_test_result = None
-            gobject.timeout_add(100, self._check_speed_test_done)
-            thread.start_new_thread(self._speed_test, (test_mirror,))
+            thread.start_new_thread(self._speed_test, (url,i,))
     
-    def _check_speed_test_done(self):
-        self._speed_test_lock.acquire()
-        speed_test_result = self._speed_test_result
-        self._speed_test_lock.release()
-        if speed_test_result != None and len(self._mirrors_model) > 0:
-            self._mirrors_model[self._current_speed_test_index][MirrorSelectionDialog.MIRROR_SPEED_COLUMN] = speed_test_result
-            self._best_speed = max(self._best_speed, speed_test_result)
-            self._update_relative_speeds()
-            self._next_speed_test()
-            return False
-        else:
-            return True
+#    def _next_speed_test(self):
+#        test_mirror = None
+#        for i in range(len(self._mirrors_model)):
+#            url = self._mirrors_model[i][MirrorSelectionDialog.MIRROR_URL_COLUMN]
+#            speed = self._mirrors_model[i][MirrorSelectionDialog.MIRROR_SPEED_COLUMN]
+#            if speed == -1:
+#                test_mirror = url
+#                self._current_speed_test_index = i
+#                break
+#        if test_mirror:
+#            self._speed_test_result = None
+#            gobject.timeout_add(100, self._check_speed_test_done)
+#            thread.start_new_thread(self._speed_test, (test_mirror,))
+    
+#    def _check_speed_test_done(self):
+#        self._speed_test_lock.acquire()
+#        speed_test_result = self._speed_test_result
+#        self._speed_test_lock.release()
+#        if speed_test_result != None and len(self._mirrors_model) > 0:
+#            self._mirrors_model[self._current_speed_test_index][MirrorSelectionDialog.MIRROR_SPEED_COLUMN] = speed_test_result
+#            self._best_speed = max(self._best_speed, speed_test_result)
+#            self._update_relative_speeds()
+#            self._next_speed_test()
+#            return False
+#        else:
+#            return True
     
     def _update_relative_speeds(self):
         if self._best_speed > 0:
@@ -476,22 +483,24 @@ class MirrorSelectionDialog(object):
             pix = None
         return pix
     
-    def _speed_test(self, url):
+    def _speed_test(self, url, index):
         try:
             c = pycurl.Curl()
             buff = cStringIO.StringIO()
             c.setopt(pycurl.URL, url)
-            c.setopt(pycurl.CONNECTTIMEOUT, 10)
-            c.setopt(pycurl.TIMEOUT, 10)
+            c.setopt(pycurl.CONNECTTIMEOUT, 3) #it was 10 seconds !?!
+            c.setopt(pycurl.TIMEOUT, 3) #it was 10 seconds !?!
             c.setopt(pycurl.FOLLOWLOCATION, 1)
             c.setopt(pycurl.WRITEFUNCTION, buff.write)
-            c.setopt(pycurl.NOSIGNAL, 1)
+            #c.setopt(pycurl.NOSIGNAL, 1)
             c.perform()
-            download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD)
+            download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD) # bytes/sec
         except:
             download_speed = -2
         self._speed_test_lock.acquire()
-        self._speed_test_result = download_speed
+        self._mirrors_model[index][MirrorSelectionDialog.MIRROR_SPEED_COLUMN] = download_speed
+        self._best_speed = max(self._best_speed, download_speed)
+        self._update_relative_speeds()
         self._speed_test_lock.release()
     
     def run(self, mirrors):
