@@ -254,17 +254,31 @@ class Repository():
         return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
 
     def get_repository_name(self):
-        elements = self.line.split(" ")
-        name = elements[1].replace("deb-src ", "")
-        name = name.replace("deb ", "")
-        if name.startswith("http://") or name.startswith("ftp://"):                    
-            name = name.replace("http://", "")
-            name = name.replace("ftp://", "")
-            parts = name.split("/")
-            if len(parts) > 0:
-                name = parts[0]    
-        if self.line.startswith("deb-src"):
-            name = "%s (%s)" % (name, _("Sources")) 
+        line = self.line.strip()
+        if line.startswith("deb cdrom:"):
+            name = _("CD-ROM (Installation Disc)")
+        else:
+            elements = self.line.split(" ")
+            name = elements[1].replace("deb-src ", "")
+            name = name.replace("deb ", "")
+            if name.startswith("http://") or name.startswith("ftp://"):                    
+                name = name.replace("http://", "")
+                name = name.replace("ftp://", "")
+                try:
+                    parts = name.split("/")
+                    if len(parts) > 0:
+                        name = parts[0]
+                        subparts = name.split(".")
+                        if len(subparts) > 2:
+                            if subparts[-2] != "co":
+                                name = subparts[-2].capitalize()
+                            else:
+                                name = subparts[-3].capitalize()
+                            name = name.replace("Linuxmint", "Linux Mint")
+                except:
+                    pass
+            if self.line.startswith("deb-src"):
+                name = "%s (%s)" % (name, _("Sources")) 
         return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
 
 class ComponentToggleCheckBox(gtk.CheckButton):
@@ -662,7 +676,7 @@ class Application(object):
         self._ppa_treeview.set_model(self._ppa_model)
         self._ppa_treeview.set_headers_clickable(True)
         
-        self._ppa_model.set_sort_column_id(2, gtk.SORT_DESCENDING)
+        self._ppa_model.set_sort_column_id(2, gtk.SORT_ASCENDING)
 
         r = gtk.CellRendererToggle()
         r.connect("toggled", self.ppa_toggled)        
@@ -686,7 +700,7 @@ class Application(object):
         self._repository_treeview.set_model(self._repository_model)
         self._repository_treeview.set_headers_clickable(True)
         
-        self._repository_model.set_sort_column_id(2, gtk.SORT_DESCENDING)
+        self._repository_model.set_sort_column_id(2, gtk.SORT_ASCENDING)
 
         r = gtk.CellRendererToggle()
         r.connect("toggled", self.repository_toggled)        
@@ -709,7 +723,7 @@ class Application(object):
         self._keys_treeview.set_model(self._keys_model)
         self._keys_treeview.set_headers_clickable(True)
         
-        self._keys_model.set_sort_column_id(1, gtk.SORT_DESCENDING)        
+        self._keys_model.set_sort_column_id(1, gtk.SORT_ASCENDING)        
         
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Key"), r, markup = 1)
