@@ -371,7 +371,7 @@ class MirrorSelectionDialog(object):
     MIRROR_URL_COLUMN = 1
     MIRROR_COUNTRY_COLUMN = 2
     MIRROR_SPEED_COLUMN = 3
-    MIRROR_SPEED_BAR_COLUMN = 4
+    MIRROR_SPEED_LABEL_COLUMN = 4
     MIRROR_COUNTRY_CODE_COLUMN = 5 # invisible
     
     def __init__(self, application, ui_builder):
@@ -382,10 +382,10 @@ class MirrorSelectionDialog(object):
         self._dialog.set_transient_for(application._main_window)
         
         self._dialog.set_title(_("Select a mirror"))
-        
+
         self._mirrors = None
-        self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, gtk.gdk.Pixbuf, str)
-        # mirror, name, flag, speed, speed chart, country code (used to sort by flag)
+        self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, str, str)
+        # mirror, name, flag, speed, speed label, country code (used to sort by flag)
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
@@ -402,18 +402,11 @@ class MirrorSelectionDialog(object):
         self._treeview.append_column(col)
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_URL_COLUMN)            
         
-        r = gtk.CellRendererPixbuf()
-        col = gtk.TreeViewColumn(_("Speed"), r, pixbuf = MirrorSelectionDialog.MIRROR_SPEED_BAR_COLUMN)
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("Speed"), r, text = MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN)
         self._treeview.append_column(col)
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN)
-        col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))
-        
-        #DEBUG BEGIN
-        #r = gtk.CellRendererText()  
-        #col = gtk.TreeViewColumn(_("RealSpeed"), r, text = MirrorSelectionDialog.MIRROR_SPEED_COLUMN)
-        #self._treeview.append_column(col)
-        #col.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN)
-        #DEBUG END
+        col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))       
         
         self._speed_test_lock = thread.allocate_lock()
         self._meaningful_speed_threads = Set()
@@ -430,86 +423,44 @@ class MirrorSelectionDialog(object):
                 mirror,
                 mirror.url,
                 gtk.gdk.pixbuf_new_from_file(flag),
-                -1,
+                0,
                 None,
                 mirror.country_code.lower()
             ))
-#        self._next_speed_test()
         self._all_speed_tests()
         
     def _all_speed_tests(self):
-        self._best_speed = -1
         self._meaningful_speed_threads.clear()
-        for i in range(len(self._mirrors_model)):
-            url = self._mirrors_model[i][MirrorSelectionDialog.MIRROR_URL_COLUMN]
-            thread_id = thread.start_new_thread(self._speed_test, (url,self._mirrors_model[i]))
+        iter = self._mirrors_model.get_iter_first()
+        while iter is not None:
+            thread_id = thread.start_new_thread(self._speed_test, (self._mirrors_model, iter))
             self._meaningful_speed_threads.add(thread_id)
-
-#    def _next_speed_test(self):
-#        test_mirror = None
-#        for i in range(len(self._mirrors_model)):
-#            url = self._mirrors_model[i][MirrorSelectionDialog.MIRROR_URL_COLUMN]
-#            speed = self._mirrors_model[i][MirrorSelectionDialog.MIRROR_SPEED_COLUMN]
-#            if speed == -1:
-#                test_mirror = url
-#                self._current_speed_test_index = i
-#                break
-#        if test_mirror:
-#            self._speed_test_result = None
-#            gobject.timeout_add(100, self._check_speed_test_done)
-#            thread.start_new_thread(self._speed_test, (test_mirror,))
-    
-#    def _check_speed_test_done(self):
-#        self._speed_test_lock.acquire()
-#        speed_test_result = self._speed_test_result
-#        self._speed_test_lock.release()
-#        if speed_test_result != None and len(self._mirrors_model) > 0:
-#            self._mirrors_model[self._current_speed_test_index][MirrorSelectionDialog.MIRROR_SPEED_COLUMN] = speed_test_result
-#            self._best_speed = max(self._best_speed, speed_test_result)
-#            self._update_relative_speeds()
-#            self._next_speed_test()
-#            return False
-#        else:
-#            return True
-    
-    def _update_relative_speeds(self):
-        if self._best_speed > 0:
-            for i in range(len(self._mirrors_model)):
-                self._mirrors_model[i][MirrorSelectionDialog.MIRROR_SPEED_BAR_COLUMN] = self._get_speed_pixbuf(int(100 * self._mirrors_model[i][MirrorSelectionDialog.MIRROR_SPEED_COLUMN] / self._best_speed))
-    
-    def _get_speed_pixbuf(self, speed):
-        """
-        speed should be int in range 0..100
-        returns an image containing a bar, coloured according speed
-        """
-        represented_speed = 10 * (speed / 10)   #int round to 10
+            iter = self._mirrors_model.iter_next(iter)        
+        
+    def _get_speed_label(self, speed):                
         if speed > 0:
-            if not speed in self._speed_pixbufs:
-                color_pix = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, SPEED_PIX_WIDTH * speed / 100, SPEED_PIX_HEIGHT)
-                red = 0xff000000
-                green = 0x00ff0000
-                if represented_speed > 50:
-                    red_level = (100 - represented_speed) / 50.
-                    green_level = 1
-                else:
-                    red_level = 1
-                    green_level = (represented_speed / 50.)
-                red_level = int(255 * red_level) * 0x01000000
-                green_level = int(255 * green_level) * 0x00010000
-                color = red_level + green_level
-                color_pix.fill(color)
-                final_pix = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, SPEED_PIX_WIDTH, SPEED_PIX_HEIGHT)
-                final_pix.fill(0xffffffff)
-                color_pix.copy_area(0, 0, SPEED_PIX_WIDTH * speed / 100, SPEED_PIX_HEIGHT, final_pix, 0, 0)
-                del color_pix
-                self._speed_pixbufs[speed] = final_pix
-            pix = self._speed_pixbufs[speed]
+            represented_speed = (speed / 1000)   # translate it to kB/S
+            unit = _("kB/s")
+            if represented_speed > 1000:
+                represented_speed = (speed / 1000)   # translate it to MB/S
+                unit = _("MB/s")
+            if represented_speed > 1000:
+                represented_speed = (speed / 1000)   # translate it to GB/S
+                unit = _("GB/s")
+            represented_speed = "%d %s" % (represented_speed, unit)            
         else:
-            pix = None
-        return pix
+            represented_speed = ("0 %s") % _("kB/s")
+        return represented_speed
     
-    def _speed_test(self, url, row):
-        #passing row index is useless, it changes over time
+    def _speed_test(self, model, iter, depth=0):    
+        self._speed_test_lock.acquire()
+        try:
+            url = model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
+        except:
+            self._speed_test_lock.release()
+            return
+        self._speed_test_lock.release()
+
         try:
             c = pycurl.Curl()
             buff = cStringIO.StringIO()
@@ -521,19 +472,35 @@ class MirrorSelectionDialog(object):
             c.setopt(pycurl.NOSIGNAL, 1)
             c.perform()
             download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD) # bytes/sec
-        except:
-            download_speed = -2
+        except pycurl.error, error:
+            errno, errstr = error            
+            if errno == 28:
+                # TIMEOUT - but since we're not launching all tests in one go, it doesn't necessarilly mean the server is timeout, maybe we're out of sockets on the client side, so let's retry
+                if (depth < 5):                    
+                    self._speed_test(model, iter, depth+1)
+                else:
+                    # Too many timeouts, removing the mirror..
+                    self._speed_test_lock.acquire()
+                    model.remove(iter)
+                    self._speed_test_lock.release()
+                return
+            else:
+                print "Error '%s' on url %s" % (errstr, url)
+                download_speed = 0
+                # Dodgy mirror, removing it...
+                try:
+                    self._speed_test_lock.acquire()
+                    model.remove(iter)
+                    self._speed_test_lock.release()
+                except Exception, detail:
+                    print detail                
+
         if thread.get_ident() in self._meaningful_speed_threads:  #otherwise, thread is "expired"
-            self._speed_test_lock.acquire()
-            row[MirrorSelectionDialog.MIRROR_SPEED_COLUMN] = download_speed
-            self._best_speed = max(self._best_speed, download_speed)
-            self._update_relative_speeds()
-            self._speed_test_lock.release()
-        
+            model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
+            model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
     
-    def run(self, mirrors):
+    def run(self, mirrors):        
         self._mirrors = mirrors
-        self._best_speed = -1
         self._update_list()
         self._dialog.show_all()
         retval = self._dialog.run()
