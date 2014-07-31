@@ -14,6 +14,8 @@ usage = "usage: %prog [options] repository"
 parser = OptionParser(usage=usage)
 parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
     help="force yes on all confirmation questions", default=False)
+parser.add_option("-r", "--remove", dest="remove", action="store_true",
+    help="Remove the specified repository", default=False)
 
 (options, args) = parser.parse_args()
 
@@ -21,7 +23,9 @@ if (len(args) == 0):
     print(_("Error: need a repository as argument"))
     sys.exit(1)
 
+option_string=""
 if options.forceYes:
-	os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository -y \"%s\"" % args[0])
-else:
-	os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository \"%s\"" % args[0])
+  option_string+=" -y "
+if options.remove:
+  option_string+=" --remove "
+os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository %s \"%s\"" % (option_string, args[0]))
