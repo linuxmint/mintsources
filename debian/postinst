@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set +e
+
+mkdir -p /usr/local/bin
+
+set -e
+
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-remove" ] ; then
+    update-alternatives --install /usr/local/bin/apt-add-repository \
+        apt-add-repository /usr/bin/apt-add-repository-mint 40
+
+    update-alternatives --install /usr/local/bin/add-apt-repository \
+        add-apt-repository /usr/bin/add-apt-repository-mint 40
+
+    update-alternatives --install /usr/local/bin/software-properties-gtk \
+        software-properties-gtk /usr/bin/software-sources 40
+
+    update-alternatives --install /usr/local/bin/software-properties-kde \
+        software-properties-kde /usr/bin/software-sources 40
+fi
+
+#DEBHELPER#

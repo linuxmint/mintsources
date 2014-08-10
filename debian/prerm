@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-remove" ] ; then
+    update-alternatives --remove apt-add-repository /usr/bin/apt-add-repository-mint
+    update-alternatives --remove add-apt-repository /usr/bin/add-apt-repository-mint
+    update-alternatives --remove software-properties-gtk /usr/bin/software-sources
+    update-alternatives --remove software-properties-kde /usr/bin/software-sources
+fi
+
+set +e
+
+# delete directory if it's empty
+rmdir /usr/local/bin &> /dev/null
+
+set -e
+
+#DEBHELPER#
