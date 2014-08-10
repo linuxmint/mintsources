@@ -416,9 +416,9 @@ class MirrorSelectionDialog(object):
     def _update_list(self):
         self._mirrors_model.clear()
         for mirror in self._mirrors:
-            flag = "/usr/lib/linuxmint/mintSources/flags/generic.png"
-            if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
-                flag = "/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()            
+            flag = "/usr/share/linuxmint/mintSources/flags/generic.png"
+            if os.path.exists("/usr/share/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
+                flag = "/usr/share/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()            
             self._mirrors_model.append((
                 mirror,
                 mirror.url,
@@ -796,13 +796,13 @@ class Application(object):
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
         image = gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/maintenance.png")
+        image.set_from_file("/usr/share/linuxmint/mintSources/maintenance.png")
         self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)        
 
     def fix_mergelist(self, widget):
         os.system("rm /var/lib/apt/lists/* -vf")
         image = gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/maintenance.png")
+        image.set_from_file("/usr/share/linuxmint/mintSources/maintenance.png")
         self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
         self.enable_reload_button()
 
@@ -844,7 +844,7 @@ class Application(object):
 
     def fetch_key(self, widget):
         image = gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
+        image.set_from_file("/usr/share/linuxmint/mintSources/keyring.png")
         line = self.show_entry_dialog(self._main_window, _("Please enter the 8 characters of the public key you want to download from keyserver.ubuntu.com:"), "", image)
         if line is not None:
             res = os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % line)            
@@ -857,14 +857,14 @@ class Application(object):
         if (iter != None):            
             key = model.get(iter, 0)[0]
             image = gtk.Image()
-            image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
+            image.set_from_file("/usr/share/linuxmint/mintSources/keyring.png")
             if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image, yes_no=True)):                
                 key.delete()
                 self.load_keys()                
 
     def add_ppa(self, widget):
         image = gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
+        image.set_from_file("/usr/share/linuxmint/mintSources/ppa.png")
 
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the PPA you want to add:"), "ppa:username/ppa", image)
         if line is not None:
@@ -877,7 +877,7 @@ class Application(object):
                 return
         
             image = gtk.Image()
-            image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
+            image.set_from_file("/usr/share/linuxmint/mintSources/ppa.png")
             description = ""
             if ppa_info["description"] is not None:
                 description = ppa_info["description"].encode("utf-8")
@@ -934,7 +934,7 @@ class Application(object):
 
     def add_repository(self, widget):
         image = gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/3rd.png")
+        image.set_from_file("/usr/share/linuxmint/mintSources/3rd.png")
 
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the repository you want to add:"), "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"], image)
         if line is not None:                                
@@ -1216,8 +1216,8 @@ class Application(object):
         self.update_flags()
     
     def update_flags(self):
-        self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png") 
-        self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png") 
+        self.builder.get_object("image_mirror").set_from_file("/usr/share/linuxmint/mintSources/flags/generic.png") 
+        self.builder.get_object("image_base_mirror").set_from_file("/usr/share/linuxmint/mintSources/flags/generic.png") 
 
         selected_mirror = self.selected_mirror
         if selected_mirror[-1] == "/":
@@ -1233,8 +1233,8 @@ class Application(object):
             else:
                 url = mirror.url
             if url in selected_mirror:
-                if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
-                    self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()) 
+                if os.path.exists("/usr/share/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
+                    self.builder.get_object("image_mirror").set_from_file("/usr/share/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()) 
 
         for mirror in self.base_mirrors:
             if mirror.url[-1] == "/":
@@ -1242,8 +1242,8 @@ class Application(object):
             else:
                 url = mirror.url
             if url in selected_base_mirror:
-                if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
-                    self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()) 
+                if os.path.exists("/usr/share/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
+                    self.builder.get_object("image_base_mirror").set_from_file("/usr/share/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()) 
 
 if __name__ == "__main__":
     if os.getuid() != 0:
