@@ -2,6 +2,3 @@
 
 %:
 	dh ${@} --with python2
-
-override_dh_usrlocal:
-
