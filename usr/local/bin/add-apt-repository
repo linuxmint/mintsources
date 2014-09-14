@@ -21,7 +21,10 @@ if (len(args) == 0):
     print(_("Error: need a repository as argument"))
     sys.exit(1)
 
+# Call mintSources script with exec instead of system so that the exit status
+# is returned to the caller
+mintsources = "/usr/lib/linuxmint/mintSources/mintSources.py"
 if options.forceYes:
-	os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository -y \"%s\"" % args[0])
+	os.execl(mintsources, mintsources, "add-apt-repository", "-y", args[0])
 else:
-	os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository \"%s\"" % args[0])
+	os.execl(mintsources, mintsources, "add-apt-repository", args[0])
