@@ -201,7 +201,7 @@ class Repository():
     def __init__(self, application, line, file, selected):
         self.application = application
         self.line = line
-        self.file = file        
+        self.file = file
         self.selected = selected
 
     def switch(self):
@@ -237,7 +237,7 @@ class Repository():
         content = readfile.read()
         readfile.close()
         content = content.replace(self.line, "")
-        with open(self.file, "w") as writefile:
+        with open(self.file, "w") as writefile:            
             writefile.write(content)
 
         # If the file no longer contains any "deb" instances, delete it as well
@@ -659,9 +659,9 @@ class Application(object):
                         line = line.replace('#', '').strip()
                         selected = False
                     if line.startswith("deb"):
-                        repository = Repository(self, line.replace('#', '').strip(), source_file, selected)                    
+                        repository = Repository(self, line, source_file, selected)                    
                         if "ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
-                            self.ppas.append(repository)                                                
+                            self.ppas.append(repository)
                         else:                        
                             self.repositories.append(repository)
             file.close() 
