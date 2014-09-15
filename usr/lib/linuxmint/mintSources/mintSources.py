@@ -53,19 +53,23 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             if not(forceYes):
                 print(_("Press [ENTER] to continue or ctrl-c to cancel adding it"))
                 sys.stdin.readline()
+        else:
+            if not(forceYes):
+                print(_("Unable to prompt for response.  Please run with -y"))
+                sys.exit(1)
         
-            (deb_line, file) = expand_ppa_line(line.strip(), codename)
-            deb_line = expand_http_line(deb_line, codename)
-            debsrc_line = 'deb-src' + deb_line[3:]
-            
-            # Add the key
-            short_key = ppa_info["signing_key_fingerprint"][-8:]
-            os.system("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys %s" % short_key)
+        (deb_line, file) = expand_ppa_line(line.strip(), codename)
+        deb_line = expand_http_line(deb_line, codename)
+        debsrc_line = 'deb-src' + deb_line[3:]
 
-            # Add the PPA in sources.list.d
-            with open(file, "w") as text_file:
-                text_file.write("%s\n" % deb_line)
-                text_file.write("%s\n" % debsrc_line)
+        # Add the key
+        short_key = ppa_info["signing_key_fingerprint"][-8:]
+        os.system("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys %s" % short_key)
+
+        # Add the PPA in sources.list.d
+        with open(file, "w") as text_file:
+            text_file.write("%s\n" % deb_line)
+            text_file.write("%s\n" % debsrc_line)
     elif line.startswith("deb "):
         with open("/etc/apt/sources.list.d/additional-repositories.list", "a") as text_file:
             text_file.write("%s\n" % expand_http_line(line, codename))
