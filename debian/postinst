@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set +e
+
+mkdir -p /usr/local/bin
+
+set -e
+
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-remove" ] ; then
+  if [ ! -e /usr/local/bin/add-apt-repository ] ; then
+    ln -s /usr/bin/add-apt-repository-mint /usr/local/bin/add-apt-repository
+  else
+    echo "couldn't create symbolic link '/usr/local/bin/add-apt-repository'"
+  fi
+fi
+
+#DEBHELPER#

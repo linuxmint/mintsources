@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-remove" ] ; then
+  if [ -L /usr/local/bin/add-apt-repository ] ; then
+    rm /usr/local/bin/add-apt-repository
+  fi
+fi
+
+set +e
+
+# delete directory if it's empty
+rmdir /usr/local/bin &> /dev/null
+
+set -e
+
+#DEBHELPER#
