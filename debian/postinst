@@ -12,6 +12,11 @@ if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-remov
   else
     echo "couldn't create symbolic link '/usr/local/bin/add-apt-repository'"
   fi
+  if [ ! -e /usr/local/bin/apt-add-repository ] ; then
+    ln -s /usr/bin/add-apt-repository-mint /usr/local/bin/apt-add-repository
+  else
+    echo "couldn't create symbolic link '/usr/local/bin/apt-add-repository'"
+  fi
 fi
 
 #DEBHELPER#
