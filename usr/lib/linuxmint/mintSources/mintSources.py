@@ -575,6 +575,7 @@ class Application(object):
         self.builder.get_object("label_title_ppa").set_markup("%s" % _("PPAs"))     
         self.builder.get_object("label_title_3rd").set_markup("%s" % _("Additional repositories"))     
         self.builder.get_object("label_title_keys").set_markup("%s" % _("Authentication keys"))     
+        self.builder.get_object("label_title_maintenance").set_markup("%s" % _("Maintenance"))
 
         self.builder.get_object("label_mirrors").set_markup("<b>%s</b>" % _("Mirrors"))    
         self.builder.get_object("label_mirror_description").set_markup("%s (%s)" % (_("Main"), self.config["general"]["codename"]) )

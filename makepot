@@ -1,3 +1,3 @@
 #!/bin/bash
 
-xgettext --language=Python --keyword=_ --output=mintsources.pot usr/lib/linuxmint/mintSources/mintSources.py usr/bin/software-sources usr/local/bin/add-apt-repository generate_desktop_files
+xgettext --language=Python --keyword=_ --output=mintsources.pot usr/lib/linuxmint/mintSources/mintSources.py usr/bin/software-sources usr/bin/add-apt-repository generate_desktop_files
