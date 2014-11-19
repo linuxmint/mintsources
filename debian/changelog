@@ -1,3 +1,9 @@
+mintsources (1.3.7) rebecca; urgency=medium
+
+  * Set the window to non-resizable (In GTK2 text-wrapping only works by redefining the label allocation dynamically, this is a limitation of the toolkit. It works but the side-effect is that it never shrinks back when the window is resized.)
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 19 Nov 2014 12:05:03 +0100
+
 mintsources (1.3.6) rebecca; urgency=medium
 
   * l10n'd Maintenance button label
