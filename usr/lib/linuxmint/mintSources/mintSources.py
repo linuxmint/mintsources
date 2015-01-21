@@ -431,15 +431,22 @@ class MirrorSelectionDialog(object):
                 None,
                 mirror.country_code.lower()
             ))
-        self._all_speed_tests()
+        thread.start_new_thread(self._all_speed_tests, ())
+
         
     def _all_speed_tests(self):
         self._meaningful_speed_threads.clear()
         iter = self._mirrors_model.get_iter_first()
+        self.num_threads = 0
+        self.max_threads = 80
         while iter is not None:
+            while self.num_threads > self.max_threads:
+                # too many threads open, let's wait... (if we open too many we can crash the app)
+                pass
             thread_id = thread.start_new_thread(self._speed_test, (self._mirrors_model, iter))
+            self.num_threads += 1
             self._meaningful_speed_threads.add(thread_id)
-            iter = self._mirrors_model.iter_next(iter)        
+            iter = self._mirrors_model.iter_next(iter)
         
     def _get_speed_label(self, speed):                
         if speed > 0:
@@ -459,7 +466,8 @@ class MirrorSelectionDialog(object):
     def _speed_test(self, model, iter, depth=0):    
         self._speed_test_lock.acquire()
         try:
-            url = model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
+            if iter is not None:
+                url = model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
         except:
             self._speed_test_lock.release()
             return
@@ -494,7 +502,8 @@ class MirrorSelectionDialog(object):
                 # Dodgy mirror, removing it...
                 try:
                     self._speed_test_lock.acquire()
-                    model.remove(iter)
+                    if iter is not None:
+                        model.remove(iter)
                     self._speed_test_lock.release()
                 except Exception, detail:
                     print detail                
@@ -502,6 +511,8 @@ class MirrorSelectionDialog(object):
         if thread.get_ident() in self._meaningful_speed_threads:  #otherwise, thread is "expired"
             model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
             model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
+
+        self.num_threads -= 1
     
     def run(self, mirrors):        
         self._mirrors = mirrors
