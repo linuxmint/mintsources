@@ -1028,14 +1028,16 @@ class Application(object):
         t.set_wrap_mode(gtk.WRAP_WORD)
         s = gtk.ScrolledWindow()
         s.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        s.set_shadow_type(gtk.SHADOW_OUT)
         default_button = gtk.RESPONSE_ACCEPT
         confirmation_button = gtk.RESPONSE_ACCEPT
         d = gtk.Dialog(None, parent,
                        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                        (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
                       gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
-        d.set_size_request(500, 250)
+        d.set_size_request(550, 400)
         d.vbox.pack_start(s, True, True, 0)
+        d.set_title("")
         s.show()
         s.add(t)
         t.show()
