@@ -898,7 +898,7 @@ class Application(object):
             if ppa_info["description"] is not None:
                 description = ppa_info["description"].encode("utf-8")
                 description = description.replace("<", "&lt;").replace(">", "&gt;")
-            if self.show_confirmation_dialog(self._main_window, "<b>%s</b>\n\n%s\n\n<i>%s</i>" % (line, description, str(ppa_info["web_link"])), image):                                
+            if self.show_confirm_ppa_dialog(self._main_window, "%s\n\n%s\n\n%s" % (line, description, str(ppa_info["web_link"]))):                                
                 (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
@@ -1013,6 +1013,32 @@ class Application(object):
             image.show()
             d.set_image(image)
         
+        d.set_default_response(default_button)
+        r = d.run()        
+        d.destroy()
+        if r == confirmation_button:
+            return True
+        else:
+            return False
+            
+    def show_confirm_ppa_dialog(self, parent, message):
+        b = gtk.TextBuffer()
+        b.set_text(message)
+        t =  gtk.TextView(b)
+        t.set_wrap_mode(gtk.WRAP_WORD)
+        s = gtk.ScrolledWindow()
+        s.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        default_button = gtk.RESPONSE_ACCEPT
+        confirmation_button = gtk.RESPONSE_ACCEPT
+        d = gtk.Dialog(None, parent,
+                       gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                       (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                      gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+        d.set_size_request(500, 250)
+        d.vbox.pack_start(s, True, True, 0)
+        s.show()
+        s.add(t)
+        t.show()
         d.set_default_response(default_button)
         r = d.run()        
         d.destroy()
