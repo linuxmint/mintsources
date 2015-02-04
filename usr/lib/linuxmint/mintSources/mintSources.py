@@ -953,7 +953,7 @@ class Application(object):
         image.set_from_file("/usr/lib/linuxmint/mintSources/3rd.png")
 
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the repository you want to add:"), "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"], image)
-        if line is not None:                                
+        if line is not None and line.strip().startswith("deb"):
             # Add the repository in sources.list.d
             with open("/etc/apt/sources.list.d/additional-repositories.list", "a") as text_file:
                 text_file.write("%s\n" % line)
