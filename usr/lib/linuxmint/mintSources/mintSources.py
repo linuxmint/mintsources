@@ -463,7 +463,7 @@ class MirrorSelectionDialog(object):
             represented_speed = ("0 %s") % _("kB/s")
         return represented_speed
     
-    def _speed_test(self, model, iter, depth=0):    
+    def _speed_test(self, model, iter, depth=0): 
         self._speed_test_lock.acquire()
         try:
             if iter is not None:
@@ -485,28 +485,30 @@ class MirrorSelectionDialog(object):
             c.perform()
             download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD) # bytes/sec
         except pycurl.error, error:
-            errno, errstr = error            
+            errno, errstr = error  
+            print "Error '%s' on url %s" % (errstr, url)
+            download_speed = 0
             if errno == 28:
                 # TIMEOUT - but since we're not launching all tests in one go, it doesn't necessarilly mean the server is timeout, maybe we're out of sockets on the client side, so let's retry
-                if (depth < 5):                    
+                if (depth < 3):                    
                     self._speed_test(model, iter, depth+1)
-                else:
-                    # Too many timeouts, removing the mirror..
-                    self._speed_test_lock.acquire()
-                    model.remove(iter)
-                    self._speed_test_lock.release()
-                return
-            else:
-                print "Error '%s' on url %s" % (errstr, url)
-                download_speed = 0
-                # Dodgy mirror, removing it...
-                try:
-                    self._speed_test_lock.acquire()
-                    if iter is not None:
-                        model.remove(iter)
-                    self._speed_test_lock.release()
-                except Exception, detail:
-                    print detail                
+                    return
+                # else:
+                #     # Too many timeouts, removing the mirror..
+                #     self._speed_test_lock.acquire()
+                #     if iter is not None:
+                #         model.remove(iter)
+                #     self._speed_test_lock.release()
+                # return
+            # else:                
+            #     # Dodgy mirror, removing it...
+            #     try:
+            #         self._speed_test_lock.acquire()
+            #         # if iter is not None:
+            #         #     model.remove(iter)
+            #         self._speed_test_lock.release()
+            #     except Exception, detail:
+            #         print detail                
 
         if thread.get_ident() in self._meaningful_speed_threads:  #otherwise, thread is "expired"
             model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
