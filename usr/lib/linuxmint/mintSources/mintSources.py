@@ -26,7 +26,7 @@ except ImportError:
 from optparse import OptionParser
 from sets import Set
 
-def remove_repository_via_cli(line, codename, forceYes, remove):   
+def remove_repository_via_cli(line, codename, forceYes):   
     if line.startswith("ppa:"):
         user, sep, ppa_name = line.split(":")[1].partition("/")
         ppa_name = ppa_name or "ppa"
