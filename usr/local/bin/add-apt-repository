@@ -25,7 +25,7 @@ if (len(args) == 0):
 
 option_string=""
 if options.forceYes:
-  option_string+=" -y "
+    option_string+=" -y "
 if options.remove:
-  option_string+=" --remove "
+    option_string+=" --remove "
 os.system("/usr/lib/linuxmint/mintSources/mintSources.py add-apt-repository %s \"%s\"" % (option_string, args[0]))
