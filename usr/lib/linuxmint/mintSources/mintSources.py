@@ -41,6 +41,11 @@ def remove_repository_via_cli(line, codename, forceYes):
                 if not(forceYes):
                     print(_("Press [ENTER] to continue or ctrl-c to cancel removing it"))
                     sys.stdin.readline()
+            else:
+                if not(forceYes):
+                        print(_("Unable to prompt for response.  Please run with -y"))
+                        sys.exit(1)
+                        
         except KeyboardInterrupt, detail:
             print _("Cancelling...")
             sys.exit(1)
@@ -1310,6 +1315,8 @@ if __name__ == "__main__":
     else:        
         usage = "usage: %prog [options] [repository]"
         parser = OptionParser(usage=usage)
+        #add a dummy option which can be easily ignored
+        parser.add_option("-?", dest="ignore", action="store_true", default=False)
         parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
             help="force yes on all confirmation questions", default=False)
         parser.add_option("-r", "--remove", dest="remove", action="store_true",
