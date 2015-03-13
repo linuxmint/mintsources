@@ -26,9 +26,13 @@ if (len(args) == 0):
 # Call mintSources script with exec instead of system so that the exit status
 # is returned to the caller
 mintsources = "/usr/lib/linuxmint/mintSources/mintSources.py"
-option_string=""
+
+yes_arg="-?"
 if options.forceYes:
-    option_string+=" -y "
+    yes_arg="-y"
+
+remove_arg="-?"
 if options.remove:
-    option_string+=" --remove "
-os.execl(mintsources, mintsources, "add-apt-repository", option_string, args[0])
+    remove_arg="-r"
+
+os.execl(mintsources, mintsources, "add-apt-repository", yes_arg, remove_arg, args[0])
