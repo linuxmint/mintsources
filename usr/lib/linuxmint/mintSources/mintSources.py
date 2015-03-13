@@ -1325,7 +1325,7 @@ if __name__ == "__main__":
             codename = config_parser.get("general", "base_codename")
             use_ppas = config_parser.get("general", "use_ppas")
             if options.remove:
-                remove_repository_via_cli(ppa_line, codename, options.forceYes, options.remove)
+                remove_repository_via_cli(ppa_line, codename, options.forceYes)
             else:
                 add_repository_via_cli(ppa_line, codename, options.forceYes, use_ppas)
         else:
