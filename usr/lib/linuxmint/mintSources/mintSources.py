@@ -883,8 +883,14 @@ class Application(object):
     def add_ppa(self, widget):
         image = gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
+        start_line = ""
+        clipboard_text = self.get_clipboard_text("ppa")
+        if clipboard_text != None:
+            start_line = clipboard_text
+        else:
+            start_line = "ppa:username/ppa"
 
-        line = self.show_entry_dialog(self._main_window, _("Please enter the name of the PPA you want to add:"), "ppa:username/ppa", image)
+        line = self.show_entry_dialog(self._main_window, _("Please enter the name of the PPA you want to add:"), start_line, image)
         if line is not None:
             user, sep, ppa_name = line.split(":")[1].partition("/")
             ppa_name = ppa_name or "ppa"
@@ -953,8 +959,14 @@ class Application(object):
     def add_repository(self, widget):
         image = gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/3rd.png")
+        start_line = ""
+        clipboard_text = self.get_clipboard_text("deb")
+        if clipboard_text != None:
+            start_line = clipboard_text
+        else:
+            start_line = "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"]
 
-        line = self.show_entry_dialog(self._main_window, _("Please enter the name of the repository you want to add:"), "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"], image)
+        line = self.show_entry_dialog(self._main_window, _("Please enter the name of the repository you want to add:"), start_line, image)
         if line is not None and line.strip().startswith("deb"):
             # Add the repository in sources.list.d
             with open("/etc/apt/sources.list.d/additional-repositories.list", "a") as text_file:
@@ -1290,6 +1302,14 @@ class Application(object):
             if url in selected_base_mirror:
                 if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
                     self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()) 
+                  
+    def get_clipboard_text(self, source_type):
+        clipboard = gtk.Clipboard(display=gtk.gdk.display_get_default(), selection="CLIPBOARD")
+        text = clipboard.wait_for_text()
+        if text is not None and text.strip().startswith(source_type):
+            return text
+        else:
+            return None
 
 if __name__ == "__main__":
     if os.getuid() != 0:
