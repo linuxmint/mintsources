@@ -259,28 +259,28 @@ class Repository():
 
     def get_repository_name(self):
         line = self.line.strip()
+        name = line
         if line.startswith("deb cdrom:"):
             name = _("CD-ROM (Installation Disc)")
         else:
-            elements = self.line.split(" ")
-            name = elements[1].replace("deb-src ", "")
-            name = name.replace("deb ", "")
-            if name.startswith("http://") or name.startswith("ftp://"):                    
-                name = name.replace("http://", "")
-                name = name.replace("ftp://", "")
-                try:
-                    parts = name.split("/")
-                    if len(parts) > 0:
-                        name = parts[0]
-                        subparts = name.split(".")
-                        if len(subparts) > 2:
-                            if subparts[-2] != "co":
-                                name = subparts[-2].capitalize()
-                            else:
-                                name = subparts[-3].capitalize()
-                            name = name.replace("Linuxmint", "Linux Mint")
-                except:
-                    pass
+            try:
+                elements = self.line.split(" ")
+                for element in elements:
+                   for protocol in ['http://', 'ftp://', 'https://']:
+                        if element.startswith(protocol):
+                            name = element.replace(protocol, "").split("/")[0]
+                            subparts = name.split(".")
+                            if len(subparts) > 2:
+                                if subparts[-2] != "co":
+                                    name = subparts[-2].capitalize()
+                                else:
+                                    name = subparts[-3].capitalize()
+                            break
+                name = name.replace("Linuxmint", "Linux Mint")
+                name = name.replace("01", "Intel")
+                name = name.replace("Steampowered", "Steam")
+            except:
+                pass
             if self.line.startswith("deb-src"):
                 name = "%s (%s)" % (name, _("Sources")) 
         return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
