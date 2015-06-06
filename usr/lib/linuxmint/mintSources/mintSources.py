@@ -584,45 +584,47 @@ class Application(object):
 
         self.builder.get_object("reload_button_label").set_markup("%s" % _("No action required"))
 
-        self.builder.get_object("label_title_official").set_markup("%s" % _("Official repositories"))     
-        self.builder.get_object("label_title_ppa").set_markup("%s" % _("PPAs"))     
-        self.builder.get_object("label_title_3rd").set_markup("%s" % _("Additional repositories"))     
-        self.builder.get_object("label_title_keys").set_markup("%s" % _("Authentication keys"))     
+        self.builder.get_object("label_title_official").set_markup("%s" % _("Official repositories"))
+        self.builder.get_object("label_title_ppa").set_markup("%s" % _("PPAs"))
+        self.builder.get_object("label_title_3rd").set_markup("%s" % _("Additional repositories"))
+        self.builder.get_object("label_title_keys").set_markup("%s" % _("Authentication keys"))
         self.builder.get_object("label_title_maintenance").set_markup("%s" % _("Maintenance"))
 
-        self.builder.get_object("label_mirrors").set_markup("<b>%s</b>" % _("Mirrors"))    
+        self.builder.get_object("label_mirrors").set_markup("<b>%s</b>" % _("Mirrors"))
         self.builder.get_object("label_mirror_description").set_markup("%s (%s)" % (_("Main"), self.config["general"]["codename"]) )
         self.builder.get_object("label_base_mirror_description").set_markup("%s (%s)" % (_("Base"), self.config["general"]["base_codename"]) )
         self.builder.get_object("button_mirror").set_tooltip_text(_("Select a faster server..."))
         self.builder.get_object("button_base_mirror").set_tooltip_text(_("Select a faster server..."))
 
-        self.builder.get_object("label_optional_components").set_markup("<b>%s</b>" % _("Optional components"))                    
+        self.builder.get_object("label_optional_components").set_markup("<b>%s</b>" % _("Optional components"))
         self.builder.get_object("label_source_code").set_markup("<b>%s</b>" % _("Source code"))
 
         self.builder.get_object("label_ppa_add").set_markup("%s" % _("Add a new PPA..."))
         self.builder.get_object("label_ppa_edit").set_markup("%s" % _("Edit URL..."))
-        self.builder.get_object("label_ppa_remove").set_markup("%s" % _("Remove permanently"))
+        self.builder.get_object("label_ppa_remove").set_markup("%s" % _("Remove"))
+        self.builder.get_object("label_ppa_examine").set_markup("%s" % _("Open PPA"))
+        self.builder.get_object("label_ppa_examine").set_tooltip_text(_("Look inside the PPA and install packages it provides"))
 
         self.builder.get_object("label_repository_add").set_markup("%s" % _("Add a new repository..."))
         self.builder.get_object("label_repository_edit").set_markup("%s" % _("Edit URL..."))
-        self.builder.get_object("label_repository_remove").set_markup("%s" % _("Remove permanently"))
+        self.builder.get_object("label_repository_remove").set_markup("%s" % _("Remove"))
 
         self.builder.get_object("label_keys_add").set_markup("%s" % _("Import key file..."))
         self.builder.get_object("label_keys_fetch").set_markup("%s" % _("Download a key..."))
-        self.builder.get_object("label_keys_remove").set_markup("%s" % _("Remove permanently"))
+        self.builder.get_object("label_keys_remove").set_markup("%s" % _("Remove"))
 
         self.builder.get_object("button_mergelist_label").set_markup("%s" % _("Fix MergeList problems"))
         self.builder.get_object("button_mergelist").set_tooltip_text("%s" % _("If you experience MergeList problems, click this button to solve the problem."))
         self.builder.get_object("button_purge_label").set_markup("%s" % _("Purge residual configuration"))
         self.builder.get_object("button_purge").set_tooltip_text("%s" % _("Packages sometimes leave configuration files on the system even after they are removed."))
-        
+
         self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
         self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
 
         self.builder.get_object("source_code_cb").set_label(_("Enable source code repositories"))
 
         self.builder.get_object("source_code_cb").connect("toggled", self.apply_official_sources)
-               
+
         self.selected_components = []
         if (len(self.optional_components) > 0):
             if os.path.exists("/etc/linuxmint/info"):
@@ -685,6 +687,9 @@ class Application(object):
         self._ppa_treeview = self.builder.get_object("treeview_ppa")
         self._ppa_treeview.set_model(self._ppa_model)
         self._ppa_treeview.set_headers_clickable(True)
+        self._ppa_treeview.connect("row-activated", self.on_ppa_treeview_doubleclick)
+        selection = self._ppa_treeview.get_selection()
+        selection.connect("changed", self.ppa_selected)
         
         self._ppa_model.set_sort_column_id(2, gtk.SORT_ASCENDING)
 
@@ -775,6 +780,8 @@ class Application(object):
         self.builder.get_object("button_ppa_add").connect("clicked", self.add_ppa)
         self.builder.get_object("button_ppa_edit").connect("clicked", self.edit_ppa)
         self.builder.get_object("button_ppa_remove").connect("clicked", self.remove_ppa)
+        self.builder.get_object("button_ppa_examine").connect("clicked", self.examine_ppa)
+        self.builder.get_object("button_ppa_examine").set_sensitive(False)
 
         self.builder.get_object("button_repository_add").connect("clicked", self.add_repository)
         self.builder.get_object("button_repository_edit").connect("clicked", self.edit_repository)
@@ -956,6 +963,44 @@ class Application(object):
                 repository.delete()
                 self.ppas.remove(repository)
 
+    def ppa_selected(self, selection):
+        try:
+            self.builder.get_object("button_ppa_examine").set_sensitive(False)
+            (model, iter) = selection.get_selected()
+            if (iter != None):
+                repository = model.get_value(iter, 0)
+                ppa_name = model.get_value(iter, 2)
+                if repository.line.startswith("deb http://ppa.launchpad.net"):
+                    self.builder.get_object("button_ppa_examine").set_sensitive(True)
+        except Exception, detail:
+            print detail
+
+    def on_ppa_treeview_doubleclick(self, treeview, path, column):
+        self.examine_ppa(None)
+
+    def examine_ppa(self, widget):
+        try:
+            selection = self._ppa_treeview.get_selection()
+            (model, iter) = selection.get_selected()
+            if (iter != None):
+                repository = model.get_value(iter, 0)
+                ppa_name = model.get_value(iter, 2)
+                if repository.line.startswith("deb http://ppa.launchpad.net"):
+                    line = repository.line.split()[1].replace("http://ppa.launchpad.net/", "")
+                    if line.endswith("/ubuntu"):
+                        line = line[:-7]
+                        ppa_owner, ppa_name = line.split("/")
+                        architecture = commands.getoutput("dpkg --print-architecture")
+                        codename = commands.getoutput("lsb_release -u -c -s")
+                        ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, codename, architecture)
+                        if os.path.exists(ppa_file):
+                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s" % (ppa_owner, ppa_name))
+                        else:
+                            print "%s not found!" % ppa_file
+                            self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
+        except Exception, detail:
+            print detail
+
     def add_repository(self, widget):
         image = gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/3rd.png")
@@ -1067,7 +1112,7 @@ class Application(object):
         d = gtk.MessageDialog(parent,
                               gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                               gtk.MESSAGE_ERROR,
-                              gtk.BUTTONS_OK_CANCEL,
+                              gtk.BUTTONS_OK,
                               message)
 
         d.set_markup(message)
