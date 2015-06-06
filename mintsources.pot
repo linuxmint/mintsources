@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-06-06 11:29+0200\n"
+"POT-Creation-Date: 2015-06-06 15:22+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,7 +22,7 @@ msgid "Adding PPAs is not supported"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintSources.py:40
-#: usr/lib/linuxmint/mintSources/mintSources.py:907
+#: usr/lib/linuxmint/mintSources/mintSources.py:913
 #, python-format
 msgid "Cannot add PPA: '%s'."
 msgstr ""
@@ -123,7 +123,7 @@ msgid "Unstable packages"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintSources.py:585
-#: usr/lib/linuxmint/mintSources/mintSources.py:1227
+#: usr/lib/linuxmint/mintSources/mintSources.py:1233
 msgid "No action required"
 msgstr ""
 
@@ -226,104 +226,114 @@ msgid ""
 "are removed."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:624
+#: usr/lib/linuxmint/mintSources/mintSources.py:620
+msgid "Downgrade foreign packages"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:621
+msgid ""
+"Packages which do not come from known repositories are listed here and can "
+"be downgraded."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:626
 msgid "Enable source code repositories"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:634
+#: usr/lib/linuxmint/mintSources/mintSources.py:636
 msgid ""
 "Warning: Backports and unstable packages can introduce regressions and "
 "negatively impact your system. Please do not enable these options in Linux "
 "Mint unless it was suggested by the development team."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:698
-#: usr/lib/linuxmint/mintSources/mintSources.py:722
+#: usr/lib/linuxmint/mintSources/mintSources.py:700
+#: usr/lib/linuxmint/mintSources/mintSources.py:724
 msgid "Enabled"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:704
+#: usr/lib/linuxmint/mintSources/mintSources.py:706
 #: usr/lib/linuxmint/mintSources/ppa_browser.py:38
 msgid "PPA"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:728
+#: usr/lib/linuxmint/mintSources/mintSources.py:730
 msgid "Repository"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:744
+#: usr/lib/linuxmint/mintSources/mintSources.py:746
 msgid "Key"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:757
+#: usr/lib/linuxmint/mintSources/mintSources.py:759
 msgid "Restore the default settings"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:758
+#: usr/lib/linuxmint/mintSources/mintSources.py:760
 msgid "Restore the official repositories to their default settings"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:825
+#: usr/lib/linuxmint/mintSources/mintSources.py:831
 msgid "There is no more residual configuration on the system."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:831
+#: usr/lib/linuxmint/mintSources/mintSources.py:837
 msgid "The problem was fixed. Please reload the cache."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:857
+#: usr/lib/linuxmint/mintSources/mintSources.py:863
 msgid "Open.."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:873
+#: usr/lib/linuxmint/mintSources/mintSources.py:879
 msgid ""
 "Please enter the 8 characters of the public key you want to download from "
 "keyserver.ubuntu.com:"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:886
+#: usr/lib/linuxmint/mintSources/mintSources.py:892
 msgid "Are you sure you want to permanently remove this key?"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:900
+#: usr/lib/linuxmint/mintSources/mintSources.py:906
 msgid "Please enter the name of the PPA you want to add:"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:951
+#: usr/lib/linuxmint/mintSources/mintSources.py:957
 msgid "Edit the URL of the PPA"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:961
+#: usr/lib/linuxmint/mintSources/mintSources.py:967
 msgid "Are you sure you want to permanently remove this PPA?"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1000
+#: usr/lib/linuxmint/mintSources/mintSources.py:1006
 msgid ""
 "The content of this PPA is not available. Please refresh the cache and try "
 "again."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1014
+#: usr/lib/linuxmint/mintSources/mintSources.py:1020
 msgid "Please enter the name of the repository you want to add:"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1033
+#: usr/lib/linuxmint/mintSources/mintSources.py:1039
 msgid "Edit the URL of the repository"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1043
+#: usr/lib/linuxmint/mintSources/mintSources.py:1049
 msgid "Are you sure you want to permanently remove this repository?"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1221
+#: usr/lib/linuxmint/mintSources/mintSources.py:1227
 msgid "Update the cache"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1222
+#: usr/lib/linuxmint/mintSources/mintSources.py:1228
 msgid "Click here to update your APT cache with your new sources"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1228
+#: usr/lib/linuxmint/mintSources/mintSources.py:1234
 msgid "Your APT cache is up to date"
 msgstr ""
 
@@ -332,6 +342,7 @@ msgid "Install"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/ppa_browser.py:47
+#: usr/lib/linuxmint/mintSources/foreign_packages.py:37
 msgid "Cancel"
 msgstr ""
 
@@ -352,6 +363,41 @@ msgstr ""
 
 #: usr/lib/linuxmint/mintSources/ppa_browser.py:113
 msgid "The packages were installed."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/foreign_packages.py:29
+msgid "Foreign packages"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/foreign_packages.py:35
+msgid "Downgrade"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/foreign_packages.py:38
+msgid ""
+"The version of the following packages doesn't match the one from the "
+"repositories:"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/foreign_packages.py:39
+msgid "WARNING"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/foreign_packages.py:40
+msgid ""
+"Review the information below very carefully before validating the command:"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/foreign_packages.py:55
+msgid "Package"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/foreign_packages.py:60
+msgid "Installed version"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/foreign_packages.py:65
+msgid "Repository version"
 msgstr ""
 
 #: usr/bin/software-sources:9

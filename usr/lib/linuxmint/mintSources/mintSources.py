@@ -617,6 +617,8 @@ class Application(object):
         self.builder.get_object("button_mergelist").set_tooltip_text("%s" % _("If you experience MergeList problems, click this button to solve the problem."))
         self.builder.get_object("button_purge_label").set_markup("%s" % _("Purge residual configuration"))
         self.builder.get_object("button_purge").set_tooltip_text("%s" % _("Packages sometimes leave configuration files on the system even after they are removed."))
+        self.builder.get_object("button_foreign_label").set_markup("%s" % _("Downgrade foreign packages"))
+        self.builder.get_object("button_foreign").set_tooltip_text("%s" % _("Packages which do not come from known repositories are listed here and can be downgraded."))
 
         self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
         self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
@@ -793,6 +795,7 @@ class Application(object):
 
         self.builder.get_object("button_mergelist").connect("clicked", self.fix_mergelist)
         self.builder.get_object("button_purge").connect("clicked", self.fix_purge)
+        self.builder.get_object("button_foreign").connect("clicked", self.fix_foreign)
         
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
@@ -818,11 +821,14 @@ class Application(object):
                             mirror_list.append(mirror)
         return mirror_list
 
+    def fix_foreign(self, widget):
+        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py")
+
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
         image = gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/maintenance.png")
-        self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)        
+        self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)
 
     def fix_mergelist(self, widget):
         os.system("rm /var/lib/apt/lists/* -vf")
