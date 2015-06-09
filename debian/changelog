@@ -1,3 +1,11 @@
+mintsources (1.4.4) rafaela; urgency=medium
+
+  * Added the ability to install packages from a PPA
+  * Updated desktop files
+  * Added the ability to review and downgrade foreign packages
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 09 Jun 2015 12:14:03 +0200
+
 mintsources (1.4.3) rafaela; urgency=medium
 
   [ darealshinji ]
