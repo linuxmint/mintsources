@@ -44,7 +44,7 @@
                       <object class="GtkImage" id="image_ppa_logo1">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="pixbuf">orphans.png</property>
+                        <property name="pixbuf">foreign.png</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
