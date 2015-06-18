@@ -822,7 +822,7 @@ class Application(object):
         return mirror_list
 
     def fix_foreign(self, widget):
-        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py")
+        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py %s" % self._main_window.window.xid)
 
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
@@ -1000,7 +1000,7 @@ class Application(object):
                         codename = commands.getoutput("lsb_release -u -c -s")
                         ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, codename, architecture)
                         if os.path.exists(ppa_file):
-                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s" % (ppa_owner, ppa_name))
+                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s" % (ppa_owner, ppa_name, self._main_window.window.xid))
                         else:
                             print "%s not found!" % ppa_file
                             self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))

@@ -15,6 +15,7 @@ gettext.install("mintsources", "/usr/share/linuxmint/locale")
 class Foreign_Browser():
 
     def __init__(self):
+
         architecture = commands.getoutput("dpkg --print-architecture")
         codename = commands.getoutput("lsb_release -u -c -s")
 
@@ -98,6 +99,14 @@ class Foreign_Browser():
 
         treeview.show()
         self.window.show_all()
+
+        parent_window_xid = int(sys.argv[1])
+        try:
+            parent = gtk.gdk.window_foreign_new(parent_window_xid)
+            self.window.realize()
+            self.window.window.set_transient_for(parent)
+        except:
+            pass
 
     def datafunction_checkbox(self, column, cell, model, iter):
         cell.set_property("activatable", True)

@@ -84,6 +84,14 @@ class PPA_Browser():
         treeview.show()
         self.window.show_all()
 
+        try:
+            parent_window_xid = int(sys.argv[3])
+            parent = gtk.gdk.window_foreign_new(parent_window_xid)
+            self.window.realize()
+            self.window.window.set_transient_for(parent)
+        except:
+            pass
+
     def datafunction_checkbox(self, column, cell, model, iter):
         cell.set_property("activatable", True)
         if (model.get_value(iter, 0).name in self.packages_to_install):
