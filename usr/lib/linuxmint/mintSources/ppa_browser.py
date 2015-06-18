@@ -74,9 +74,10 @@ class PPA_Browser():
                 if candidate is not None and candidate.downloadable:
                     for origin in candidate.origins:
                         if origin.origin == ppa_origin or origin.origin == ppa_origin_simple:
-                            if pkg.is_installed and pkg.installed.version != candidate.version:
-                                already_installed_str = _("version %s already installed") % pkg.installed.version
-                                self.model.append((pkg, False, "<b>%s</b> <small>%s (%s)</small>" % (pkg.name, candidate.version, already_installed_str)))
+                            if pkg.is_installed:
+                                if pkg.installed.version != candidate.version:
+                                    already_installed_str = _("version %s already installed") % pkg.installed.version
+                                    self.model.append((pkg, False, "<b>%s</b> <small>%s (%s)</small>" % (pkg.name, candidate.version, already_installed_str)))
                             else:
                                 self.model.append((pkg, False, "<b>%s</b> <small>%s</small>" % (pkg.name, candidate.version)))
 
