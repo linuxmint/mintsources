@@ -19,7 +19,9 @@ class Foreign_Browser():
         architecture = commands.getoutput("dpkg --print-architecture")
         codename = commands.getoutput("lsb_release -u -c -s")
 
-        self.packages_to_downgrade = []
+        self.downgrade_mode = (sys.argv[1] == "downgrade") # whether to downgrade or remove packages
+
+        self.foreign_packages = []
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
@@ -31,12 +33,16 @@ class Foreign_Browser():
         self.window.set_icon_from_file("/usr/share/icons/hicolor/scalable/apps/software-sources.svg")
         self.window.connect("destroy", gtk.main_quit)
         self.builder.get_object("button_foreign_cancel").connect("clicked", gtk.main_quit)
-        self.downgrade_button = self.builder.get_object("button_foreign_downgrade")
-        self.downgrade_button.connect("clicked", self.install)
-        self.downgrade_button.set_label(_("Downgrade"))
-        self.downgrade_button.set_sensitive(False)
+        self.action_button = self.builder.get_object("button_foreign_action")
+        self.action_button.connect("clicked", self.install)
+        if self.downgrade_mode:
+            self.action_button.set_label(_("Downgrade"))
+            self.builder.get_object("label_foreign_explanation").set_markup("<i>%s</i>" % _("The version of the following packages doesn't match the one from the repositories:"))
+        else:
+            self.action_button.set_label(_("Remove"))
+            self.builder.get_object("label_foreign_explanation").set_markup("<i>%s</i>" % _("The packages below are installed on your computer but not present in the repositories:"))
+        self.action_button.set_sensitive(False)
         self.builder.get_object("button_foreign_cancel").set_label(_("Cancel"))
-        self.builder.get_object("label_foreign_explanation").set_markup("<i>%s</i>" % _("The version of the following packages doesn't match the one from the repositories:"))
         self.builder.get_object("label_foreign_warning").set_markup("<b>%s</b>" % _("WARNING"))
         self.builder.get_object("label_foreign_review").set_markup("<i>%s</i>" % _("Review the information below very carefully before validating the command:"))
 
@@ -62,10 +68,11 @@ class Foreign_Browser():
         treeview.append_column(col)
         col.set_sort_column_id(3)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Repository version"), r, markup = 4)
-        treeview.append_column(col)
-        col.set_sort_column_id(4)
+        if self.downgrade_mode:
+            r = gtk.CellRendererText()
+            col = gtk.TreeViewColumn(_("Repository version"), r, markup = 4)
+            treeview.append_column(col)
+            col.set_sort_column_id(4)
 
         cache = apt.Cache()
         for key in cache.keys():
@@ -90,17 +97,19 @@ class Foreign_Browser():
                                     if commands.getoutput("dpkg --compare-versions %s gt %s && echo 'OK'" % (version.version, best_version.version)) == "OK":
                                         best_version = version
 
-                    if best_version is not None:
-                        for origin in best_version.origins:
-                            self.model.append(("%s=%s" % (pkg.name, best_version.version), False, "<b>%s</b>" % pkg.name, installed_version, "%s (%s)" % (best_version.version, origin.archive), "%s %s" % (best_version.source_name, pkg.name)))
-                            break
-
-
+                    if self.downgrade_mode:
+                        if best_version is not None:
+                            for origin in best_version.origins:
+                                self.model.append(("%s=%s" % (pkg.name, best_version.version), False, "<b>%s</b>" % pkg.name, installed_version, "%s (%s)" % (best_version.version, origin.archive), "%s %s" % (best_version.source_name, pkg.name)))
+                                break
+                    else:
+                        if best_version is None:
+                            self.model.append(("%s" % (pkg.name), False, "<b>%s</b>" % pkg.name, installed_version, "", "%s" % (pkg.name)))
 
         treeview.show()
         self.window.show_all()
 
-        parent_window_xid = int(sys.argv[1])
+        parent_window_xid = int(sys.argv[2])
         try:
             parent = gtk.gdk.window_foreign_new(parent_window_xid)
             self.window.realize()
@@ -110,7 +119,7 @@ class Foreign_Browser():
 
     def datafunction_checkbox(self, column, cell, model, iter):
         cell.set_property("activatable", True)
-        if (model.get_value(iter, 0) in self.packages_to_downgrade):
+        if (model.get_value(iter, 0) in self.foreign_packages):
             cell.set_property("active", True)
         else:
             cell.set_property("active", False)
@@ -119,19 +128,22 @@ class Foreign_Browser():
         iter = self.model.get_iter(path)
         if (iter != None):
             pkg = self.model.get_value(iter, 0)
-            if pkg in self.packages_to_downgrade:
-                self.packages_to_downgrade.remove(pkg)
+            if pkg in self.foreign_packages:
+                self.foreign_packages.remove(pkg)
             else:
-                self.packages_to_downgrade.append(pkg)
+                self.foreign_packages.append(pkg)
 
-        self.downgrade_button.set_sensitive(len(self.packages_to_downgrade) > 0)
+        self.action_button.set_sensitive(len(self.foreign_packages) > 0)
 
     def install (self, button):
         self.builder.get_object("notebook1").set_current_page(1)
         term = vte.Terminal()
         pid = term.fork_command('dash')
         term.set_emulation('xterm')
-        term.feed_child("apt-get install %s\n" % " ".join(self.packages_to_downgrade))
+        if self.downgrade_mode:
+            term.feed_child("apt-get install %s\n" % " ".join(self.foreign_packages))
+        else:
+            term.feed_child("apt-get remove --purge %s\n" % " ".join(self.foreign_packages))
         term.show()
         self.builder.get_object("vbox_vte").add(term)
         self.builder.get_object("vbox_vte").show_all()

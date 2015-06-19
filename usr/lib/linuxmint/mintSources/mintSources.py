@@ -617,8 +617,10 @@ class Application(object):
         self.builder.get_object("button_mergelist").set_tooltip_text("%s" % _("If you experience MergeList problems, click this button to solve the problem."))
         self.builder.get_object("button_purge_label").set_markup("%s" % _("Purge residual configuration"))
         self.builder.get_object("button_purge").set_tooltip_text("%s" % _("Packages sometimes leave configuration files on the system even after they are removed."))
-        self.builder.get_object("button_foreign_label").set_markup("%s" % _("Downgrade foreign packages"))
-        self.builder.get_object("button_foreign").set_tooltip_text("%s" % _("Packages which do not come from known repositories are listed here and can be downgraded."))
+        self.builder.get_object("button_remove_foreign_label").set_markup("%s" % _("Remove foreign packages"))
+        self.builder.get_object("button_remove_foreign").set_tooltip_text("%s" % _("Packages which do not come from known repositories are listed here and can be removed."))
+        self.builder.get_object("button_downgrade_foreign_label").set_markup("%s" % _("Downgrade foreign packages"))
+        self.builder.get_object("button_downgrade_foreign").set_tooltip_text("%s" % _("Packages which version does not come from known repositories are listed here and can be downgraded."))
 
         self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
         self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
@@ -795,7 +797,8 @@ class Application(object):
 
         self.builder.get_object("button_mergelist").connect("clicked", self.fix_mergelist)
         self.builder.get_object("button_purge").connect("clicked", self.fix_purge)
-        self.builder.get_object("button_foreign").connect("clicked", self.fix_foreign)
+        self.builder.get_object("button_remove_foreign").connect("clicked", self.remove_foreign)
+        self.builder.get_object("button_downgrade_foreign").connect("clicked", self.downgrade_foreign)
         
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
@@ -821,8 +824,11 @@ class Application(object):
                             mirror_list.append(mirror)
         return mirror_list
 
-    def fix_foreign(self, widget):
-        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py %s" % self._main_window.window.xid)
+    def remove_foreign(self, widget):
+        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py remove %s" % self._main_window.window.xid)
+
+    def downgrade_foreign(self, widget):
+        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py downgrade %s" % self._main_window.window.xid)
 
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
