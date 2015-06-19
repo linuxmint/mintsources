@@ -1,3 +1,11 @@
+mintsources (1.4.5) rafaela; urgency=medium
+
+  * Make foreign packages window and ppa window modal
+  * PPA browser: Don't list packages already installed from the PPA
+  * Foreign packages: Allow the removal of packages which are absent from the repositories
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 19 Jun 2015 10:57:51 +0200
+
 mintsources (1.4.4) rafaela; urgency=medium
 
   * Added the ability to install packages from a PPA
