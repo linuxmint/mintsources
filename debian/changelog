@@ -1,3 +1,9 @@
+mintsources (1.4.7) rafaela; urgency=medium
+
+  * Removed X-Ubuntu-Gettext-Domain in menu item
+
+ -- Clement Lefebvre <root@linuxmint.com>  Thu, 09 Jul 2015 13:07:54 +0200
+
 mintsources (1.4.6) rafaela; urgency=medium
 
   * Added desktop item to Xfce settings
