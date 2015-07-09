@@ -13,11 +13,11 @@ gettext.install(DOMAIN, PATH)
 prefix = "[Desktop Entry]\n"
 
 suffix = """Exec=software-sources
-Icon=/usr/share/icons/hicolor/scalable/apps/software-sources.svg
+Icon=mintsources
 Terminal=false
 X-MultipleArgs=false
 Type=Application
-Categories=GNOME;GTK;System;Settings;X-GNOME-SystemSettings;X-GNOME-Settings-Panel;
+Categories=GNOME;GTK;System;Settings;X-GNOME-SystemSettings;X-GNOME-Settings-Panel;XFCE;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;
 X-GNOME-Settings-Panel=software-properties
 MimeType=text/x-apt-sources-list;
 X-KDE-SubstituteUID=true
