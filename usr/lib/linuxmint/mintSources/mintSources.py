@@ -376,7 +376,7 @@ class MirrorSelectionDialog(object):
     MIRROR_COUNTRY_COLUMN = 2
     MIRROR_SPEED_COLUMN = 3
     MIRROR_SPEED_LABEL_COLUMN = 4
-    MIRROR_COUNTRY_CODE_COLUMN = 5 # invisible
+    MIRROR_COUNTRY_NAME_COLUMN = 5
     
     def __init__(self, application, ui_builder):
         self._application = application
@@ -399,41 +399,43 @@ class MirrorSelectionDialog(object):
         r = gtk.CellRendererPixbuf()
         col = gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
         self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_COUNTRY_CODE_COLUMN)
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_COUNTRY_NAME_COLUMN)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_URL_COLUMN)
         self._treeview.append_column(col)
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_URL_COLUMN)            
-        
+
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Speed"), r, text = MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN)
         self._treeview.append_column(col)
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN)
-        col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))       
-        
+        col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))
+
+        self._treeview.set_tooltip_column(MirrorSelectionDialog.MIRROR_COUNTRY_NAME_COLUMN)
+
         self._speed_test_lock = thread.allocate_lock()
         self._meaningful_speed_threads = Set()
         self._speed_pixbufs = {}
         self.country_info = CountryInformation()
-    
+
     def _update_list(self):
         self._mirrors_model.clear()
         for mirror in self._mirrors:
             flag = "/usr/lib/linuxmint/mintSources/flags/generic.png"
             if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
-                flag = "/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()            
+                flag = "/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()
+            name = self.country_info.get_country_name(mirror.country_code)
             self._mirrors_model.append((
                 mirror,
                 mirror.url,
                 gtk.gdk.pixbuf_new_from_file(flag),
                 0,
                 None,
-                mirror.country_code.lower()
+                name
             ))
         thread.start_new_thread(self._all_speed_tests, ())
 
-        
     def _all_speed_tests(self):
         self._meaningful_speed_threads.clear()
         iter = self._mirrors_model.get_iter_first()
