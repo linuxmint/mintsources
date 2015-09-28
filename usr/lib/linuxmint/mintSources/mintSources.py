@@ -193,9 +193,10 @@ class Key():
         return "<b>%s</b>\n<small><i>%s</i></small>" % (gobject.markup_escape_text(self.uid), gobject.markup_escape_text(self.pub))
 
 class Mirror():
-    def __init__(self, url, country_code):
+    def __init__(self, country_code, url, name):
+        self.country_code = country_code
         self.url = url
-        self.country_code = country_code        
+        self.name = name
 
 class Repository():
     def __init__(self, application, line, file, selected):
@@ -377,6 +378,7 @@ class MirrorSelectionDialog(object):
     MIRROR_SPEED_COLUMN = 3
     MIRROR_SPEED_LABEL_COLUMN = 4
     MIRROR_COUNTRY_NAME_COLUMN = 5
+    MIRROR_NAME = 6
     
     def __init__(self, application, ui_builder):
         self._application = application
@@ -388,8 +390,8 @@ class MirrorSelectionDialog(object):
         self._dialog.set_title(_("Select a mirror"))
 
         self._mirrors = None
-        self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, str, str)
-        # mirror, name, flag, speed, speed label, country code (used to sort by flag)
+        self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, str, str, str)
+        # mirror, name, flag, speed, speed label, country code (used to sort by flag), mirror name
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
@@ -402,9 +404,9 @@ class MirrorSelectionDialog(object):
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_COUNTRY_NAME_COLUMN)
 
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_URL_COLUMN)
+        col = gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_NAME)
         self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_URL_COLUMN)            
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_NAME)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Speed"), r, text = MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN)
@@ -425,14 +427,18 @@ class MirrorSelectionDialog(object):
             flag = "/usr/lib/linuxmint/mintSources/flags/generic.png"
             if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
                 flag = "/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()
-            name = self.country_info.get_country_name(mirror.country_code)
+            country_name = self.country_info.get_country_name(mirror.country_code)
+            tooltip = country_name
+            if mirror.name != mirror.url:
+                tooltip = "%s: %s" % (country_name, mirror.name)
             self._mirrors_model.append((
                 mirror,
                 mirror.url,
                 gtk.gdk.pixbuf_new_from_file(flag),
                 0,
                 None,
-                name
+                tooltip,
+                mirror.name
             ))
         thread.start_new_thread(self._all_speed_tests, ())
 
@@ -654,7 +660,7 @@ class Application(object):
 
         self.mirrors = self.read_mirror_list(self.config["mirrors"]["mirrors"])
         self.base_mirrors = self.read_mirror_list(self.config["mirrors"]["base_mirrors"])
-        
+
         self.repositories = []
         self.ppas = []
 
@@ -820,9 +826,15 @@ class Application(object):
                 else:
                     if country_code is not None:
                         if ("ubuntu-ports" not in line):
-                            if line[-1] == "/":
-                                line = line[:-1]
-                            mirror = Mirror(line, country_code)
+                            elements = line.split(" ")
+                            url = elements[0]
+                            if len(elements) > 1:
+                                name = " ".join(elements[1:])
+                            else:
+                                name = url
+                            if url[-1] == "/":
+                                url = url[:-1]
+                            mirror = Mirror(country_code, url, name)
                             mirror_list.append(mirror)
         return mirror_list
 
