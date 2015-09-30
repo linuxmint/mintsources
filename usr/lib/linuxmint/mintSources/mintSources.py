@@ -17,6 +17,7 @@ from CountryInformation import CountryInformation
 import commands
 import re
 import json
+import datetime
 try:
     import urllib.request
     from urllib.error import URLError
@@ -320,93 +321,41 @@ class ComponentToggleCheckBox(gtk.CheckButton):
             self.component.selected = widget.get_active()
             self.application.apply_official_sources()
 
-class ServerSelectionComboBox(gtk.ComboBox):
-    def __init__(self, application, repo):
-        gtk.ComboBox.__init__(self)
-        
-        self._repo = repo
-        self._application = application
-        
-        self._model = gtk.ListStore(str, str, bool, bool)
-        self.set_model(self._model)
-        
-        cell = gtk.CellRendererText()
-        self.pack_start(cell, True)
-        self.add_attribute(cell, 'text', 0)
-        
-        self.set_row_separator_func(lambda m,i: m.get(i, 3)[0])
-        
-        self.refresh()
-        
-        self._block_on_changed = False
-        self.connect("changed", self._on_changed)
-    
-    def _on_changed(self, widget):
-        if self._block_on_changed:
-            return
-        url = self._model[widget.get_active()][1]
-        if url == None:
-            url = self._application.mirror_selection_dialog.run(self._repo)
-        print url
-        if url != None:
-            self._repo["distro"].main_server = url
-            self._repo["distro"].change_server(url)
-            self._application.save_sourceslist()
-            self._repo["distro"].get_sources(self._application.sourceslist)
-        self.refresh()
-    
-    def refresh(self):
-        self._block_on_changed = True
-        self._model.clear()
-        selected_iter = None
-        for name, url, active in self._repo["distro"].get_server_list():
-            tree_iter = self._model.append((name, url, active, False))
-            if active:
-                selected_iter = tree_iter
-        self._model.append((None, None, None, True))
-        self._model.append((_("Other..."), None, None, False))
-        
-        if selected_iter is not None:
-            self.set_active_iter(selected_iter)
-        
-        self._block_on_changed = False
-
 class MirrorSelectionDialog(object):
     MIRROR_COLUMN = 0
     MIRROR_URL_COLUMN = 1
-    MIRROR_COUNTRY_COLUMN = 2
+    MIRROR_COUNTRY_FLAG_COLUMN = 2
     MIRROR_SPEED_COLUMN = 3
     MIRROR_SPEED_LABEL_COLUMN = 4
-    MIRROR_COUNTRY_NAME_COLUMN = 5
-    MIRROR_NAME = 6
-    
+    MIRROR_TOOLTIP_COLUMN = 5
+    MIRROR_NAME_COLUMN = 6
+
     def __init__(self, application, ui_builder):
         self._application = application
         self._ui_builder = ui_builder
-        
+
         self._dialog = ui_builder.get_object("mirror_selection_dialog")
         self._dialog.set_transient_for(application._main_window)
-        
+
         self._dialog.set_title(_("Select a mirror"))
 
-        self._mirrors = None
         self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, str, str, str)
         # mirror, name, flag, speed, speed label, country code (used to sort by flag), mirror name
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
-        
+
         self._mirrors_model.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN, gtk.SORT_DESCENDING)
-        
+
         r = gtk.CellRendererPixbuf()
-        col = gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_COLUMN)
+        col = gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_FLAG_COLUMN)
         self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_COUNTRY_NAME_COLUMN)
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_TOOLTIP_COLUMN)
 
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_NAME)
+        col = gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_NAME_COLUMN)
         self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_NAME)
+        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_NAME_COLUMN)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Speed"), r, text = MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN)
@@ -414,16 +363,22 @@ class MirrorSelectionDialog(object):
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN)
         col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))
 
-        self._treeview.set_tooltip_column(MirrorSelectionDialog.MIRROR_COUNTRY_NAME_COLUMN)
+        self._treeview.set_tooltip_column(MirrorSelectionDialog.MIRROR_TOOLTIP_COLUMN)
 
-        self._speed_test_lock = thread.allocate_lock()
-        self._meaningful_speed_threads = Set()
-        self._speed_pixbufs = {}
         self.country_info = CountryInformation()
+
+        with open('/usr/lib/linuxmint/mintSources/countries.json') as data_file:
+            self.countries = json.load(data_file)
+
+    def get_country(self, country_code):
+        for country in self.countries:
+            if country["cca2"] == country_code:
+                return country
+        return None
 
     def _update_list(self):
         self._mirrors_model.clear()
-        for mirror in self._mirrors:
+        for mirror in self.visible_mirrors:
             flag = "/usr/lib/linuxmint/mintSources/flags/generic.png"
             if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
                 flag = "/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()
@@ -440,23 +395,58 @@ class MirrorSelectionDialog(object):
                 tooltip,
                 mirror.name
             ))
+
         thread.start_new_thread(self._all_speed_tests, ())
 
+    def get_url_last_modified(self, url):
+        try:
+            c = pycurl.Curl()
+            c.setopt(pycurl.URL, url)
+            c.setopt(pycurl.CONNECTTIMEOUT, 5)
+            c.setopt(pycurl.TIMEOUT, 30)
+            c.setopt(pycurl.FOLLOWLOCATION, 1)
+            c.setopt(pycurl.NOBODY, 1)
+            c.setopt(pycurl.OPT_FILETIME, 1)
+            c.perform()
+            filetime = c.getinfo(pycurl.INFO_FILETIME)
+            if filetime < 0:
+                return None
+            else:
+                return filetime
+        except:
+            return None
+
+    def check_mirror_up_to_date(self, url):
+        if (self.default_mirror_age is None or self.default_mirror_age < 2):
+            # If the default server was updated recently, the age is irrelevant (it would measure the time between now and the last update)
+            #print "OK - default mirror age is not conclusive %s" % url
+            return True
+        mirror_timestamp = self.get_url_last_modified("%s/db/version" % url)
+        if mirror_timestamp is None:
+            print "Error: Can't find the age of %s !!" % url
+            return False
+        mirror_date = datetime.datetime.fromtimestamp(mirror_timestamp)
+        mirror_age = (self.default_mirror_date - mirror_date).days
+        if (mirror_age > 2):
+            print "Error: %s is out of date by %d days!" % (url, mirror_age)
+            return False
+        else:
+            # Age is fine :)
+            return True
+
     def _all_speed_tests(self):
-        self._meaningful_speed_threads.clear()
+        model_iters = [] # Don't iterate through iters directly.. we're modifying their orders..
         iter = self._mirrors_model.get_iter_first()
-        self.num_threads = 0
-        self.max_threads = 80
         while iter is not None:
-            while self.num_threads > self.max_threads:
-                # too many threads open, let's wait... (if we open too many we can crash the app)
-                pass
-            thread_id = thread.start_new_thread(self._speed_test, (self._mirrors_model, iter))
-            self.num_threads += 1
-            self._meaningful_speed_threads.add(thread_id)
+            model_iters.append(iter)
             iter = self._mirrors_model.iter_next(iter)
-        
-    def _get_speed_label(self, speed):                
+
+        for iter in model_iters:
+            mirror = self._mirrors_model.get_value(iter, MirrorSelectionDialog.MIRROR_COLUMN)
+            if mirror in self.visible_mirrors:
+                self._speed_test (self._mirrors_model, iter)
+
+    def _get_speed_label(self, speed):
         if speed > 0:
             represented_speed = (speed / 1000)   # translate it to kB/S
             unit = _("kB/s")
@@ -466,70 +456,126 @@ class MirrorSelectionDialog(object):
             if represented_speed > 1000:
                 represented_speed = (speed / 1000)   # translate it to GB/S
                 unit = _("GB/s")
-            represented_speed = "%d %s" % (represented_speed, unit)            
+            represented_speed = "%d %s" % (represented_speed, unit)
         else:
             represented_speed = ("0 %s") % _("kB/s")
         return represented_speed
-    
-    def _speed_test(self, model, iter, depth=0): 
-        self._speed_test_lock.acquire()
-        try:
-            if iter is not None:
-                url = model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
-        except:
-            self._speed_test_lock.release()
-            return
-        self._speed_test_lock.release()
 
-        try:
-            c = pycurl.Curl()
-            buff = cStringIO.StringIO()
-            c.setopt(pycurl.URL, url)
-            c.setopt(pycurl.CONNECTTIMEOUT, 5)
-            c.setopt(pycurl.TIMEOUT, 5)
-            c.setopt(pycurl.FOLLOWLOCATION, 1)
-            c.setopt(pycurl.WRITEFUNCTION, buff.write)
-            c.setopt(pycurl.NOSIGNAL, 1)
-            c.perform()
-            download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD) # bytes/sec
-        except pycurl.error, error:
-            errno, errstr = error  
-            print "Error '%s' on url %s" % (errstr, url)
+    def _speed_test(self, model, iter):
+        if iter is not None:
+            url = model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
             download_speed = 0
-            if errno == 28:
-                # TIMEOUT - but since we're not launching all tests in one go, it doesn't necessarilly mean the server is timeout, maybe we're out of sockets on the client side, so let's retry
-                if (depth < 3):                    
-                    self._speed_test(model, iter, depth+1)
-                    return
-                # else:
-                #     # Too many timeouts, removing the mirror..
-                #     self._speed_test_lock.acquire()
-                #     if iter is not None:
-                #         model.remove(iter)
-                #     self._speed_test_lock.release()
-                # return
-            # else:                
-            #     # Dodgy mirror, removing it...
-            #     try:
-            #         self._speed_test_lock.acquire()
-            #         # if iter is not None:
-            #         #     model.remove(iter)
-            #         self._speed_test_lock.release()
-            #     except Exception, detail:
-            #         print detail                
+            try:
+                if self.is_base:
+                    url = "%s/dists/%s/main/binary-amd64/Packages.gz" % (url, self.codename)
+                else:
+                    url = "%s/dists/%s/main/Contents-amd64.gz" % (url, self.codename)
+                if (self.check_mirror_up_to_date(url)):
+                    c = pycurl.Curl()
+                    buff = cStringIO.StringIO()
+                    c.setopt(pycurl.URL, url)
+                    c.setopt(pycurl.CONNECTTIMEOUT, 5)
+                    c.setopt(pycurl.TIMEOUT, 20)
+                    c.setopt(pycurl.FOLLOWLOCATION, 1)
+                    c.setopt(pycurl.WRITEFUNCTION, buff.write)
+                    c.setopt(pycurl.NOSIGNAL, 1)
+                    c.perform()
+                    download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD) # bytes/sec
+                else:
+                    # the mirror is not up to date
+                    download_speed = 0
+            except Exception, error:
+                print "Error '%s' on url %s" % (error, url)
+                download_speed = 0
 
-        if thread.get_ident() in self._meaningful_speed_threads:  #otherwise, thread is "expired"
-            model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
-            model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
+            if (iter is not None): # recheck as it can get null
+                if download_speed == 0:
+                    model.remove(iter)
+                else:
+                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
+                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
 
-        self.num_threads -= 1
-    
-    def run(self, mirrors):        
-        self._mirrors = mirrors
+    def run(self, mirrors, config, is_base):
+
+        self.config = config
+        self.is_base = is_base
+        if self.is_base:
+            self.codename = self.config["general"]["base_codename"]
+            self.default_mirror = self.config["mirrors"]["base_default"]
+        else:
+            self.codename = self.config["general"]["codename"]
+            self.default_mirror = self.config["mirrors"]["default"]
+
+        # Try to find out where we're located...
+        try:
+            from urllib import urlopen
+        except ImportError:  # py3
+            from urllib.request import urlopen
+        try:
+            lookup = str(urlopen('http://geoip.ubuntu.com/lookup').read())
+            cur_country_code = re.search('<CountryCode>(.*)</CountryCode>', lookup).group(1)
+            if cur_country_code == 'None': cur_country_code = None
+        except Exception, detail:
+            cur_country_code = None  # no internet connection
+
+        self.local_country_code = cur_country_code or os.environ.get('LANG', 'US').split('.')[0].split('_')[-1]  # fallback to LANG location or 'US'
+
+        self.bordering_countries = []
+        self.subregion = []
+        self.region = []
+        self.local_country = self.get_country(self.local_country_code)
+        if self.local_country is not None:
+            for country in self.countries:
+                country_code = country["cca2"]
+                if country["region"] == self.local_country["region"]:
+                    if country["subregion"] == self.local_country["subregion"]:
+                        self.subregion.append(country_code)
+                    else:
+                        self.region.append(country_code)
+                if country["cca3"] in self.local_country["borders"]:
+                    self.bordering_countries.append(country_code)
+
+        self.local_mirrors = []
+        self.bordering_mirrors = []
+        self.subregional_mirrors = []
+        self.regional_mirrors = []
+        self.other_mirrors = []
+
+        for mirror in mirrors:
+            if mirror.country_code == self.local_country_code:
+                self.local_mirrors.append(mirror)
+            elif mirror.country_code in self.bordering_countries:
+                self.bordering_mirrors.append(mirror)
+            elif mirror.country_code in self.subregion:
+                self.subregional_mirrors.append(mirror)
+            elif mirror.country_code in self.region:
+                self.regional_mirrors.append(mirror)
+            elif mirror.url == self.default_mirror:
+                self.other_mirrors.append(mirror)
+
+        self.bordering_mirrors = sorted(self.bordering_mirrors, key=lambda x: x.country_code)
+        self.subregional_mirrors = sorted(self.subregional_mirrors, key=lambda x: x.country_code)
+        self.regional_mirrors = sorted(self.regional_mirrors, key=lambda x: x.country_code)
+
+        self.visible_mirrors = self.local_mirrors + self.bordering_mirrors + self.subregional_mirrors + self.regional_mirrors + self.other_mirrors
+
+        if len(self.visible_mirrors) < 2:
+            # We failed to identify the continent/country, let's show all mirrors
+            self.visible_mirrors = mirrors
+
+        # Try to find the age of the Mint archive
+        self.default_mirror_age = None
+        self.default_mirror_date = None
+        mirror_timestamp = self.get_url_last_modified("%s/db/version" % self.default_mirror)
+        if mirror_timestamp is not None:
+            self.default_mirror_date = datetime.datetime.fromtimestamp(mirror_timestamp)
+            now = datetime.datetime.now()
+            self.default_mirror_age = (now - self.default_mirror_date).days
+            #print "Default mirror (%s/db/version) age: %d days" % (self.default_mirror, self.default_mirror_age)
+
         self._update_list()
         self._dialog.show_all()
         retval = self._dialog.run()
-        self._meaningful_speed_threads.clear()
         if retval == gtk.RESPONSE_APPLY:
             try:
                 model, path = self._treeview.get_selection().get_selected_rows()
@@ -541,8 +587,7 @@ class MirrorSelectionDialog(object):
             res = None
         self._dialog.hide()
         self._mirrors_model.clear()
-        self._mirrors = None
-        return res        
+        return res
 
 class Application(object):
     def __init__(self):
@@ -1201,14 +1246,14 @@ class Application(object):
             repository.switch()
 
     def select_new_mirror(self, widget):
-        url = self.mirror_selection_dialog.run(self.mirrors)
+        url = self.mirror_selection_dialog.run(self.mirrors, self.config, False)
         if url is not None:
             self.selected_mirror = url
             self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)       
         self.apply_official_sources()
 
     def select_new_base_mirror(self, widget):
-        url = self.mirror_selection_dialog.run(self.base_mirrors)
+        url = self.mirror_selection_dialog.run(self.base_mirrors, self.config, True)
         if url is not None:
             self.selected_base_mirror = url
             self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)        
