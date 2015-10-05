@@ -421,7 +421,7 @@ class MirrorSelectionDialog(object):
             # If the default server was updated recently, the age is irrelevant (it would measure the time between now and the last update)
             #print "OK - default mirror age is not conclusive %s" % url
             return True
-        mirror_timestamp = self.get_url_last_modified("%s/db/version" % url)
+        mirror_timestamp = self.get_url_last_modified(url)
         if mirror_timestamp is None:
             print "Error: Can't find the age of %s !!" % url
             return False
