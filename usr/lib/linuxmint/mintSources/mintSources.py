@@ -448,13 +448,13 @@ class MirrorSelectionDialog(object):
 
     def _get_speed_label(self, speed):
         if speed > 0:
-            represented_speed = (speed / 1000)   # translate it to kB/S
+            represented_speed = (speed / 1024)   # translate it to kB/S
             unit = _("kB/s")
-            if represented_speed > 1000:
-                represented_speed = (speed / 1000)   # translate it to MB/S
+            if represented_speed > 1024:
+                represented_speed = (represented_speed / 1024)   # translate it to MB/S
                 unit = _("MB/s")
-            if represented_speed > 1000:
-                represented_speed = (speed / 1000)   # translate it to GB/S
+            if represented_speed > 1024:
+                represented_speed = (represented_speed / 1024)   # translate it to GB/S
                 unit = _("GB/s")
             represented_speed = "%d %s" % (represented_speed, unit)
         else:
