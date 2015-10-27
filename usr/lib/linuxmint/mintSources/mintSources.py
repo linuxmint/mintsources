@@ -995,11 +995,8 @@ class Application(object):
 
             image = gtk.Image()
             image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
-            description = ""
-            if ppa_info["description"] is not None:
-                description = ppa_info["description"].encode("utf-8")
-                description = description.replace("<", "&lt;").replace(">", "&gt;")
-            if self.show_confirm_ppa_dialog(self._main_window, "%s\n\n%s\n\n%s" % (line, description, str(ppa_info["web_link"]))):
+            info_text = "%s\n\n%s\n\n%s\n\n%s" % (line, self.format_string(ppa_info["displayname"]), self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
+            if self.show_confirm_ppa_dialog(self._main_window, info_text):
                 (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
@@ -1027,7 +1024,12 @@ class Application(object):
                 self.enable_reload_button()
 
 
-
+    def format_string(self, text):
+        if text is None:
+            text = ""
+        text = text.encode("utf-8")
+        text = text.replace("<", "&lt;").replace(">", "&gt;")
+        return text
 
     def edit_ppa(self, widget):
         selection = self._ppa_treeview.get_selection()
