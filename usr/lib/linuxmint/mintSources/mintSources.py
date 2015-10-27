@@ -29,7 +29,7 @@ from sets import Set
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
-def add_repository_via_cli(line, codename, forceYes, use_ppas):   
+def add_repository_via_cli(line, codename, forceYes, use_ppas):
 
     if line.startswith("ppa:"):
         if use_ppas != "true":
@@ -46,9 +46,9 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         if "private" in ppa_info and ppa_info["private"]:
             print(_("Adding private PPAs is not supported currently"))
             sys.exit(1)
-        
-        print(_("You are about to add the following PPA to your system:")) 
-        if ppa_info["description"] is not None:            
+
+        print(_("You are about to add the following PPA to your system:"))
+        if ppa_info["description"] is not None:
             print(" %s" % (ppa_info["description"].encode("utf-8") or ""))
         print(_(" More info: %s") % str(ppa_info["web_link"]))
 
@@ -60,7 +60,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             if not(forceYes):
                 print(_("Unable to prompt for response.  Please run with -y"))
                 sys.exit(1)
-        
+
         (deb_line, file) = expand_ppa_line(line.strip(), codename)
         deb_line = expand_http_line(deb_line, codename)
         debsrc_line = 'deb-src' + deb_line[3:]
@@ -117,7 +117,7 @@ def get_ppa_info_from_lp(owner_name, ppa_name):
 def encode(s):
     return re.sub("[^a-zA-Z0-9_-]", "_", s)
 
-def expand_ppa_line(abrev, distro_codename):        
+def expand_ppa_line(abrev, distro_codename):
     # leave non-ppa: lines unchanged
     if not abrev.startswith("ppa:"):
         return (abrev, None)
@@ -192,7 +192,7 @@ class Key():
     def delete(self):
         os.system("apt-key del %s" % self.pub)
 
-    def get_name(self):            
+    def get_name(self):
         return "<b>%s</b>\n<small><i>%s</i></small>" % (gobject.markup_escape_text(self.uid), gobject.markup_escape_text(self.pub))
 
 class Mirror():
@@ -210,19 +210,19 @@ class Repository():
 
     def switch(self):
         self.selected = (not self.selected)
-        
+
         readfile = open(self.file, "r")
         content = readfile.read()
         readfile.close()
 
         if self.selected:
             content = content.replace("#%s" % self.line, self.line)
-            content = content.replace("# %s" % self.line, self.line)            
+            content = content.replace("# %s" % self.line, self.line)
         else:
             content = content.replace(self.line, "# %s" % self.line)
 
         with open(self.file, "w") as writefile:
-            writefile.write(content)        
+            writefile.write(content)
 
         self.application.enable_reload_button()
 
@@ -241,7 +241,7 @@ class Repository():
         content = readfile.read()
         readfile.close()
         content = content.replace(self.line, "")
-        with open(self.file, "w") as writefile:            
+        with open(self.file, "w") as writefile:
             writefile.write(content)
 
         # If the file no longer contains any "deb" instances, delete it as well
@@ -286,18 +286,18 @@ class Repository():
             except:
                 pass
             if self.line.startswith("deb-src"):
-                name = "%s (%s)" % (name, _("Sources")) 
+                name = "%s (%s)" % (name, _("Sources"))
         return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
 
 class ComponentToggleCheckBox(gtk.CheckButton):
     def __init__(self, application, component, window):
         self.application = application
-        self.component = component        
+        self.component = component
         self.window_object = window
         gtk.CheckButton.__init__(self, self.component.description)
-        self.set_active(component.selected)                    
+        self.set_active(component.selected)
         self.connect("toggled", self._on_toggled)
-    
+
     def _on_toggled(self, widget):
         # As long as the interface isn't fully loaded, don't do anything
         if not self.application._interface_loaded:
@@ -318,7 +318,7 @@ class ComponentToggleCheckBox(gtk.CheckButton):
                     widget.set_active(not widget.get_active())
             else:
                 self.component.selected = widget.get_active()
-                self.application.apply_official_sources()        
+                self.application.apply_official_sources()
         else:
             self.component.selected = widget.get_active()
             self.application.apply_official_sources()
@@ -599,14 +599,14 @@ class MirrorSelectionDialog(object):
 
 class Application(object):
     def __init__(self):
-        
+
         # Prevent settings from being saved until the interface is fully loaded
         self._interface_loaded = False
 
-        self.lsb_codename = commands.getoutput("lsb_release -sc")        
+        self.lsb_codename = commands.getoutput("lsb_release -sc")
 
-        glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"        
-            
+        glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
+
         self.builder = gtk.Builder()
         self.builder.add_from_file(glade_file)
         self._main_window = self.builder.get_object("main_window")
@@ -616,8 +616,8 @@ class Application(object):
         self._main_window.set_icon_from_file("/usr/share/icons/hicolor/scalable/apps/software-sources.svg")
 
         self._notebook = self.builder.get_object("notebook")
-        self._official_repositories_box = self.builder.get_object("official_repositories_box")        
-            
+        self._official_repositories_box = self.builder.get_object("official_repositories_box")
+
         config_parser = ConfigParser.RawConfigParser()
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % self.lsb_codename)
         self.config = {}
@@ -636,9 +636,9 @@ class Application(object):
             elif section.startswith("key"):
                 self.system_keys.append(config_parser.get(section, "pub"))
             else:
-                self.config[section] = {}                        
-                for param in config_parser.options(section):                
-                    self.config[section][param] = config_parser.get(section, param)   
+                self.config[section] = {}
+                for param in config_parser.options(section):
+                    self.config[section][param] = config_parser.get(section, param)
 
         if self.config["general"]["use_ppas"] == "false":
             self.builder.get_object("vbuttonbox1").remove(self.builder.get_object("toggle_ppas"))
@@ -696,7 +696,7 @@ class Application(object):
                 # This is Mint, we want to warn people about Romeo/Backport
                 warning_label = gtk.Label()
                 warning_label.set_alignment(0, 0.5)
-                warning_label.set_markup("<span font_style='oblique' font_stretch='ultracondensed' foreground='#3c3c3c'>%s</span>" % _("Warning: Backports and unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))                
+                warning_label.set_markup("<span font_style='oblique' font_stretch='ultracondensed' foreground='#3c3c3c'>%s</span>" % _("Warning: Backports and unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))
                 warning_label.set_line_wrap(True)
                 warning_label.connect("size-allocate", self.label_size_allocate)
                 self.builder.get_object("vbox_optional_components").pack_start(warning_label, True, True, 6)
@@ -705,7 +705,7 @@ class Application(object):
             self.builder.get_object("vbox_optional_components").show_all()
             nb_components = 0
             for i in range(len(self.optional_components)):
-                component = self.optional_components[i]                
+                component = self.optional_components[i]
                 cb = ComponentToggleCheckBox(self, component, self._main_window)
                 component.set_widget(cb)
                 components_table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
@@ -719,11 +719,11 @@ class Application(object):
 
         source_files = []
         if os.path.exists("/etc/apt/sources.list"):
-            source_files.append("/etc/apt/sources.list")        
+            source_files.append("/etc/apt/sources.list")
         for file in os.listdir("/etc/apt/sources.list.d"):
             if file.endswith(".list"):
                 source_files.append("/etc/apt/sources.list.d/%s" % file)
-        
+
         if "/etc/apt/sources.list.d/official-package-repositories.list" in source_files:
             source_files.remove("/etc/apt/sources.list.d/official-package-repositories.list")
 
@@ -734,18 +734,18 @@ class Application(object):
             file = open(source_file, "r")
             for line in file.readlines():
                 line = line.strip()
-                if line != "":   
-                    selected = True                                    
+                if line != "":
+                    selected = True
                     if line.startswith("#"):
                         line = line.replace('#', '').strip()
                         selected = False
                     if line.startswith("deb"):
-                        repository = Repository(self, line, source_file, selected)                    
+                        repository = Repository(self, line, source_file, selected)
                         if "ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
                             self.ppas.append(repository)
-                        else:                        
+                        else:
                             self.repositories.append(repository)
-            file.close() 
+            file.close()
 
         # Add PPAs
         self._ppa_model = gtk.ListStore(object, bool, str)
@@ -755,23 +755,23 @@ class Application(object):
         self._ppa_treeview.connect("row-activated", self.on_ppa_treeview_doubleclick)
         selection = self._ppa_treeview.get_selection()
         selection.connect("changed", self.ppa_selected)
-        
+
         self._ppa_model.set_sort_column_id(2, gtk.SORT_ASCENDING)
 
         r = gtk.CellRendererToggle()
-        r.connect("toggled", self.ppa_toggled)        
+        r.connect("toggled", self.ppa_toggled)
         col = gtk.TreeViewColumn(_("Enabled"), r)
         col.set_cell_data_func(r, self.datafunction_checkbox)
         self._ppa_treeview.append_column(col)
         col.set_sort_column_id(1)
-        
+
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("PPA"), r, markup = 2)
         self._ppa_treeview.append_column(col)
-        col.set_sort_column_id(2)        
+        col.set_sort_column_id(2)
 
-        if (len(self.ppas) > 0):                                                                                    
-            for repository in self.ppas:                                  
+        if (len(self.ppas) > 0):
+            for repository in self.ppas:
                 tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
 
         # Add repositories
@@ -779,49 +779,49 @@ class Application(object):
         self._repository_treeview = self.builder.get_object("treeview_repository")
         self._repository_treeview.set_model(self._repository_model)
         self._repository_treeview.set_headers_clickable(True)
-        
+
         self._repository_model.set_sort_column_id(2, gtk.SORT_ASCENDING)
 
         r = gtk.CellRendererToggle()
-        r.connect("toggled", self.repository_toggled)        
+        r.connect("toggled", self.repository_toggled)
         col = gtk.TreeViewColumn(_("Enabled"), r)
         col.set_cell_data_func(r, self.datafunction_checkbox)
         self._repository_treeview.append_column(col)
         col.set_sort_column_id(1)
-        
+
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Repository"), r, markup = 2)
         self._repository_treeview.append_column(col)
-        col.set_sort_column_id(2)     
+        col.set_sort_column_id(2)
 
-        if (len(self.repositories) > 0):                                                                                    
-            for repository in self.repositories:                                                
+        if (len(self.repositories) > 0):
+            for repository in self.repositories:
                 tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
 
         self._keys_model = gtk.ListStore(object, str)
         self._keys_treeview = self.builder.get_object("treeview_keys")
         self._keys_treeview.set_model(self._keys_model)
         self._keys_treeview.set_headers_clickable(True)
-        
-        self._keys_model.set_sort_column_id(1, gtk.SORT_ASCENDING)        
-        
+
+        self._keys_model.set_sort_column_id(1, gtk.SORT_ASCENDING)
+
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Key"), r, markup = 1)
         self._keys_treeview.append_column(col)
-        col.set_sort_column_id(1)        
+        col.set_sort_column_id(1)
 
         self.load_keys()
-       
+
         if not os.path.exists("/etc/apt/sources.list.d/official-package-repositories.list"):
             print "Sources missing, generating default sources list!"
             self.generate_missing_sources()
 
-        self.detect_official_sources()     
+        self.detect_official_sources()
 
-        self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)            
+        self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)
         self.builder.get_object("label_revert").set_markup(_("Restore the default settings"))
         self.builder.get_object("revert_button").set_tooltip_text(_("Restore the official repositories to their default settings"))
-        
+
         self._tab_buttons = [
             self.builder.get_object("toggle_official_repos"),
             self.builder.get_object("toggle_ppas"),
@@ -829,13 +829,13 @@ class Application(object):
             self.builder.get_object("toggle_authentication_keys"),
             self.builder.get_object("toggle_maintenance")
         ]
-        
+
         self._main_window.connect("delete_event", lambda w,e: gtk.main_quit())
         for i in range(len(self._tab_buttons)):
             self._tab_buttons[i].connect("clicked", self._on_tab_button_clicked, i)
             self._tab_buttons[i].set_active(False)
-                
-               
+
+
         self.mirror_selection_dialog = MirrorSelectionDialog(self, self.builder)
 
         self.builder.get_object("button_mirror").connect("clicked", self.select_new_mirror)
@@ -860,7 +860,7 @@ class Application(object):
         self.builder.get_object("button_purge").connect("clicked", self.fix_purge)
         self.builder.get_object("button_remove_foreign").connect("clicked", self.remove_foreign)
         self.builder.get_object("button_downgrade_foreign").connect("clicked", self.downgrade_foreign)
-        
+
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
 
@@ -918,13 +918,13 @@ class Application(object):
         self.enable_reload_button()
 
     def load_keys(self):
-        self.keys = []        
+        self.keys = []
         key = None
         output = commands.getoutput("apt-key list")
         for line in output.split("\n"):
-            line = line.strip()            
-            if line.startswith("pub"):                
-                pub = line[3:].strip()  
+            line = line.strip()
+            if line.startswith("pub"):
+                pub = line[3:].strip()
                 pub = pub[6:]
                 pub = pub.split(" ")[0]
                 key = Key(pub)
@@ -934,13 +934,13 @@ class Application(object):
                 key.uid = line[3:].strip()
             elif line.startswith("sub") and key is not None:
                 key.sub = line[3:].strip()
-    
+
         self._keys_model.clear()
         for key in self.keys:
             tree_iter = self._keys_model.append((key, key.get_name()))
 
     def add_key(self, widget):
-        dialog = gtk.FileChooserDialog(_("Open.."), 
+        dialog = gtk.FileChooserDialog(_("Open.."),
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
                                (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
@@ -951,27 +951,27 @@ class Application(object):
             os.system("apt-key add %s" % dialog.get_filename())
             self.load_keys()
             self.enable_reload_button()
-        dialog.destroy()        
+        dialog.destroy()
 
     def fetch_key(self, widget):
         image = gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
         line = self.show_entry_dialog(self._main_window, _("Please enter the 8 characters of the public key you want to download from keyserver.ubuntu.com:"), "", image)
         if line is not None:
-            res = os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % line)            
+            res = os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % line)
             self.load_keys()
             self.enable_reload_button()
 
     def remove_key(self, widget):
         selection = self._keys_treeview.get_selection()
         (model, iter) = selection.get_selected()
-        if (iter != None):            
+        if (iter != None):
             key = model.get(iter, 0)[0]
             image = gtk.Image()
             image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
-            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image, yes_no=True)):                
+            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image, yes_no=True)):
                 key.delete()
-                self.load_keys()                
+                self.load_keys()
 
     def add_ppa(self, widget):
         image = gtk.Image()
@@ -988,22 +988,22 @@ class Application(object):
             user, sep, ppa_name = line.split(":")[1].partition("/")
             ppa_name = ppa_name or "ppa"
             try:
-                ppa_info = get_ppa_info_from_lp(user, ppa_name)                
+                ppa_info = get_ppa_info_from_lp(user, ppa_name)
             except Exception, detail:
                 self.show_error_dialog(self._main_window, _("Cannot add PPA: '%s'.") % detail)
                 return
-        
+
             image = gtk.Image()
             image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
             description = ""
             if ppa_info["description"] is not None:
                 description = ppa_info["description"].encode("utf-8")
                 description = description.replace("<", "&lt;").replace(">", "&gt;")
-            if self.show_confirm_ppa_dialog(self._main_window, "%s\n\n%s\n\n%s" % (line, description, str(ppa_info["web_link"]))):                                
+            if self.show_confirm_ppa_dialog(self._main_window, "%s\n\n%s\n\n%s" % (line, description, str(ppa_info["web_link"]))):
                 (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
-                
+
                 # Add the key
                 short_key = ppa_info["signing_key_fingerprint"][-8:]
                 os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % short_key)
@@ -1013,39 +1013,39 @@ class Application(object):
                 with open(file, "w") as text_file:
                     text_file.write("%s\n" % deb_line)
                     text_file.write("%s\n" % debsrc_line)
-                
-                # Add the package line in the UI                
+
+                # Add the package line in the UI
                 repository = Repository(self, deb_line, file, True)
-                self.ppas.append(repository)                                  
+                self.ppas.append(repository)
                 tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
 
-                # Add the source line in the UI                
+                # Add the source line in the UI
                 repository = Repository(self, debsrc_line, file, True)
-                self.ppas.append(repository)                         
-                tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))                        
+                self.ppas.append(repository)
+                tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
 
                 self.enable_reload_button()
 
-                                          
-                
 
-    def edit_ppa(self, widget):        
+
+
+    def edit_ppa(self, widget):
         selection = self._ppa_treeview.get_selection()
         (model, iter) = selection.get_selected()
-        if (iter != None):            
+        if (iter != None):
             repository = model.get(iter, 0)[0]
             url = self.show_entry_dialog(self._main_window, _("Edit the URL of the PPA"), repository.line)
             if url is not None:
                 repository.edit(url)
                 model.set_value(iter, 2, repository.get_ppa_name())
 
-    def remove_ppa(self, widget):        
+    def remove_ppa(self, widget):
         selection = self._ppa_treeview.get_selection()
         (model, iter) = selection.get_selected()
-        if (iter != None):            
+        if (iter != None):
             repository = model.get(iter, 0)[0]
             if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this PPA?"), yes_no=True)):
-                model.remove(iter)                
+                model.remove(iter)
                 repository.delete()
                 self.ppas.remove(repository)
 
@@ -1102,35 +1102,35 @@ class Application(object):
             # Add the repository in sources.list.d
             with open("/etc/apt/sources.list.d/additional-repositories.list", "a") as text_file:
                 text_file.write("%s\n" % line)
-                
-            # Add the line in the UI                
+
+            # Add the line in the UI
             repository = Repository(self, line, "/etc/apt/sources.list.d/additional-repositories.list", True)
-            self.repositories.append(repository)                                  
+            self.repositories.append(repository)
             tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
 
             self.enable_reload_button()
-                
 
-    def edit_repository(self, widget):        
+
+    def edit_repository(self, widget):
         selection = self._repository_treeview.get_selection()
         (model, iter) = selection.get_selected()
-        if (iter != None):            
+        if (iter != None):
             repository = model.get(iter, 0)[0]
             url = self.show_entry_dialog(self._main_window, _("Edit the URL of the repository"), repository.line)
             if url is not None:
                 repository.edit(url)
                 model.set_value(iter, 2, repository.get_repository_name())
 
-    def remove_repository(self, widget):        
+    def remove_repository(self, widget):
         selection = self._repository_treeview.get_selection()
         (model, iter) = selection.get_selected()
-        if (iter != None):            
+        if (iter != None):
             repository = model.get(iter, 0)[0]
             if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this repository?"), yes_no=True)):
-                model.remove(iter)                
+                model.remove(iter)
                 repository.delete()
                 self.repositories.remove(repository)
-            
+
 
     def show_confirmation_dialog(self, parent, message, image=None, affirmation=None, yes_no=False):
         buttons = gtk.BUTTONS_OK_CANCEL
@@ -1157,15 +1157,15 @@ class Application(object):
         if image is not None:
             image.show()
             d.set_image(image)
-        
+
         d.set_default_response(default_button)
-        r = d.run()        
+        r = d.run()
         d.destroy()
         if r == confirmation_button:
             return True
         else:
             return False
-            
+
     def show_confirm_ppa_dialog(self, parent, message):
         b = gtk.TextBuffer()
         b.set_text(message)
@@ -1187,14 +1187,14 @@ class Application(object):
         s.add(t)
         t.show()
         d.set_default_response(default_button)
-        r = d.run()        
+        r = d.run()
         d.destroy()
         if r == confirmation_button:
             return True
         else:
             return False
 
-    def show_error_dialog(self, parent, message, image=None):        
+    def show_error_dialog(self, parent, message, image=None):
         d = gtk.MessageDialog(parent,
                               gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                               gtk.MESSAGE_ERROR,
@@ -1205,16 +1205,16 @@ class Application(object):
         if image is not None:
             image.show()
             d.set_image(image)
-        
+
         d.set_default_response(gtk.RESPONSE_OK)
-        r = d.run()        
+        r = d.run()
         d.destroy()
         if r == gtk.RESPONSE_OK:
             return True
         else:
             return False
-        
-    def show_entry_dialog(self, parent, message, default='', image=None):        
+
+    def show_entry_dialog(self, parent, message, default='', image=None):
         d = gtk.MessageDialog(parent,
                               gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                               gtk.MESSAGE_QUESTION,
@@ -1239,39 +1239,39 @@ class Application(object):
         if r == gtk.RESPONSE_OK:
             return text
         else:
-            return None    
+            return None
 
     def datafunction_checkbox(self, column, cell, model, iter):
-        cell.set_property("activatable", True)        
+        cell.set_property("activatable", True)
         if (model.get_value(iter, 0).selected):
             cell.set_property("active", True)
         else:
             cell.set_property("active", False)
 
-    def ppa_toggled(self, renderer, path):        
+    def ppa_toggled(self, renderer, path):
         iter = self._ppa_model.get_iter(path)
         if (iter != None):
-            repository = self._ppa_model.get_value(iter, 0)            
-            repository.switch()     
+            repository = self._ppa_model.get_value(iter, 0)
+            repository.switch()
 
-    def repository_toggled(self, renderer, path):        
+    def repository_toggled(self, renderer, path):
         iter = self._repository_model.get_iter(path)
         if (iter != None):
-            repository = self._repository_model.get_value(iter, 0)            
+            repository = self._repository_model.get_value(iter, 0)
             repository.switch()
 
     def select_new_mirror(self, widget):
         url = self.mirror_selection_dialog.run(self.mirrors, self.config, False)
         if url is not None:
             self.selected_mirror = url
-            self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)       
+            self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
         self.apply_official_sources()
 
     def select_new_base_mirror(self, widget):
         url = self.mirror_selection_dialog.run(self.base_mirrors, self.config, True)
         if url is not None:
             self.selected_base_mirror = url
-            self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)        
+            self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
         self.apply_official_sources()
 
     def _on_tab_button_clicked(self, button, page_index):
@@ -1283,7 +1283,7 @@ class Application(object):
         for i in self._tab_buttons:
             i.set_active(False)
         button.set_active(True)
-    
+
     def run(self):
         gobject.threads_init()
         self._main_window.show_all()
@@ -1314,12 +1314,12 @@ class Application(object):
         self.builder.get_object("reload_button").set_tooltip_text(_("Your APT cache is up to date"))
         self.builder.get_object("reload_button_image").set_from_stock(gtk.STOCK_OK, gtk.ICON_SIZE_BUTTON)
 
-    def update_apt_cache(self, widget=None):        
-        self.disable_reload_button()                
+    def update_apt_cache(self, widget=None):
+        self.disable_reload_button()
         from subprocess import Popen, PIPE
-        cmd = ["sudo", "/usr/sbin/synaptic", "--hide-main-window", "--update-at-startup", "--non-interactive"]        
+        cmd = ["sudo", "/usr/sbin/synaptic", "--hide-main-window", "--update-at-startup", "--non-interactive"]
         comnd = Popen(' '.join(cmd), shell=True)
-        #returnCode = comnd.wait()             
+        #returnCode = comnd.wait()
 
     def apply_official_sources(self, widget=None):
         # As long as the interface isn't fully loaded, don't save anything
@@ -1329,17 +1329,17 @@ class Application(object):
         self.update_flags()
 
         # Check which components are selected
-        selected_components = []        
+        selected_components = []
         for component in self.optional_components:
             if component.selected:
                 selected_components.append(component.name)
 
         # Update official packages repositories
-        os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")                
+        os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")
         template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r').read()
         template = template.replace("$codename", self.config["general"]["codename"])
         template = template.replace("$basecodename", self.config["general"]["base_codename"])
-        template = template.replace("$optionalcomponents", ' '.join(selected_components))  
+        template = template.replace("$optionalcomponents", ' '.join(selected_components))
         template = template.replace("$mirror", self.selected_mirror)
         template = template.replace("$basemirror", self.selected_base_mirror)
 
@@ -1356,18 +1356,18 @@ class Application(object):
             template = template.replace("$mirror", self.selected_mirror)
             template = template.replace("$basemirror", self.selected_base_mirror)
             with open("/etc/apt/sources.list.d/official-source-repositories.list", "w") as text_file:
-                text_file.write(template)   
+                text_file.write(template)
 
         self.enable_reload_button()
 
     def generate_missing_sources(self):
-        os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")                
+        os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")
         os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
-        
+
         template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r').read()
         template = template.replace("$codename", self.config["general"]["codename"])
         template = template.replace("$basecodename", self.config["general"]["base_codename"])
-        template = template.replace("$optionalcomponents", '')  
+        template = template.replace("$optionalcomponents", '')
         template = template.replace("$mirror", self.config["mirrors"]["default"])
         template = template.replace("$basemirror", self.config["mirrors"]["base_default"])
 
@@ -1388,25 +1388,25 @@ class Application(object):
                     if component.name in line:
                         component.widget.set_active(True)
                 elements = line.split(" ")
-                if elements[0] == "deb":                    
-                    mirror = elements[1]                    
+                if elements[0] == "deb":
+                    mirror = elements[1]
                     if "$" not in mirror:
                         self.selected_mirror = mirror.rstrip('/')
             if (self.config["detection"]["base_identifier"] in line):
                 elements = line.split(" ")
-                if elements[0] == "deb":                    
+                if elements[0] == "deb":
                     mirror = elements[1]
                     if "$" not in mirror:
                         self.selected_base_mirror = mirror.rstrip('/')
 
         self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
-        self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror) 
+        self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
 
         self.update_flags()
-    
+
     def update_flags(self):
-        self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png") 
-        self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png") 
+        self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png")
+        self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png")
 
         selected_mirror = self.selected_mirror
         if selected_mirror[-1] == "/":
@@ -1423,7 +1423,7 @@ class Application(object):
                 url = mirror.url
             if url in selected_mirror:
                 if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
-                    self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()) 
+                    self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower())
 
         for mirror in self.base_mirrors:
             if mirror.url[-1] == "/":
@@ -1432,8 +1432,8 @@ class Application(object):
                 url = mirror.url
             if url in selected_base_mirror:
                 if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
-                    self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()) 
-                  
+                    self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower())
+
     def get_clipboard_text(self, source_type):
         clipboard = gtk.Clipboard(display=gtk.gdk.display_get_default(), selection="CLIPBOARD")
         text = clipboard.wait_for_text()
@@ -1445,7 +1445,7 @@ class Application(object):
 if __name__ == "__main__":
     if os.getuid() != 0:
         os.execvp("gksu", ("", " ".join(sys.argv)))
-    else:        
+    else:
         usage = "usage: %prog [options] [repository]"
         parser = OptionParser(usage=usage)
         parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
