@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 import os
 import sys
@@ -18,12 +18,9 @@ import commands
 import re
 import json
 import datetime
-try:
-    import urllib.request
-    from urllib.error import URLError
-    import urllib.parse
-except ImportError:
-    import pycurl
+
+import urllib
+import pycurl
 from optparse import OptionParser
 from sets import Set
 
@@ -38,7 +35,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         user, sep, ppa_name = line.split(":")[1].partition("/")
         ppa_name = ppa_name or "ppa"
         try:
-            ppa_info = get_ppa_info_from_lp(user, ppa_name)
+            ppa_info = get_ppa_info_from_lp(user, ppa_name, codename)
         except Exception, detail:
             print _("Cannot add PPA: '%s'.") % detail
             sys.exit(1)
@@ -77,7 +74,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         with open("/etc/apt/sources.list.d/additional-repositories.list", "a") as text_file:
             text_file.write("%s\n" % expand_http_line(line, codename))
 
-def get_ppa_info_from_lp(owner_name, ppa_name):
+def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
     DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
     # maintained until 2015
     LAUNCHPAD_PPA_API = 'https://launchpad.net/api/1.0/~%s/+archive/%s'
@@ -87,31 +84,30 @@ def get_ppa_info_from_lp(owner_name, ppa_name):
 
     lp_url = LAUNCHPAD_PPA_API % (owner_name, ppa_name)
     try:
-        try:
-            request = urllib.request.Request(str(lp_url), headers={"Accept":" application/json"})
-            lp_page = urllib.request.urlopen(request, cafile=LAUNCHPAD_PPA_CERT)
-            json_data = lp_page.read().decode("utf-8", "strict")
-        except URLError as e:
-            raise PPAException("Error reading %s: %s" % (lp_url, e.reason), e)
-    except PPAException:
-        raise
-    except:
-        import pycurl
-        try:
-            callback = CurlCallback()
-            curl = pycurl.Curl()
-            curl.setopt(pycurl.SSL_VERIFYPEER, 1)
-            curl.setopt(pycurl.SSL_VERIFYHOST, 2)
-            curl.setopt(pycurl.WRITEFUNCTION, callback.body_callback)
-            if LAUNCHPAD_PPA_CERT:
-                curl.setopt(pycurl.CAINFO, LAUNCHPAD_PPA_CERT)
-            curl.setopt(pycurl.URL, str(lp_url))
-            curl.setopt(pycurl.HTTPHEADER, ["Accept: application/json"])
-            curl.perform()
-            curl.close()
-            json_data = callback.contents
-        except pycurl.error as e:
-            raise PPAException("Error reading %s: %s" % (lp_url, e), e)
+        callback = CurlCallback()
+        curl = pycurl.Curl()
+        curl.setopt(pycurl.SSL_VERIFYPEER, 1)
+        curl.setopt(pycurl.SSL_VERIFYHOST, 2)
+        curl.setopt(pycurl.WRITEFUNCTION, callback.body_callback)
+        if LAUNCHPAD_PPA_CERT:
+            curl.setopt(pycurl.CAINFO, LAUNCHPAD_PPA_CERT)
+        curl.setopt(pycurl.URL, str(lp_url))
+        curl.setopt(pycurl.HTTPHEADER, ["Accept: application/json"])
+        curl.perform()
+        curl.close()
+        json_data = callback.contents
+    except pycurl.error as e:
+        raise PPAException("Error reading %s: %s" % (lp_url, e), e)
+
+    # Make sure the PPA supports our base release
+    repo_url = "http://ppa.launchpad.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename)
+    try:
+        if (urllib.urlopen(repo_url).getcode() == 404):
+            raise PPAException(_("This PPA does not support %s") % base_codename)
+    except Exception as e:
+        print e
+        raise PPAException(_("This PPA does not support %s") % base_codename)
+
     return json.loads(json_data)
 
 def encode(s):
@@ -516,11 +512,7 @@ class MirrorSelectionDialog(object):
 
         # Try to find out where we're located...
         try:
-            from urllib import urlopen
-        except ImportError:  # py3
-            from urllib.request import urlopen
-        try:
-            lookup = str(urlopen('http://geoip.ubuntu.com/lookup').read())
+            lookup = str(urllib.urlopen('http://geoip.ubuntu.com/lookup').read())
             cur_country_code = re.search('<CountryCode>(.*)</CountryCode>', lookup).group(1)
             if cur_country_code == 'None': cur_country_code = None
         except Exception, detail:
@@ -988,7 +980,7 @@ class Application(object):
             user, sep, ppa_name = line.split(":")[1].partition("/")
             ppa_name = ppa_name or "ppa"
             try:
-                ppa_info = get_ppa_info_from_lp(user, ppa_name)
+                ppa_info = get_ppa_info_from_lp(user, ppa_name, self.config["general"]["base_codename"])
             except Exception, detail:
                 self.show_error_dialog(self._main_window, _("Cannot add PPA: '%s'.") % detail)
                 return
