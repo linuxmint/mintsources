@@ -27,6 +27,8 @@ except ImportError:
 from optparse import OptionParser
 from sets import Set
 
+BUTTON_LABEL_MAX_LENGTH = 30
+
 def add_repository_via_cli(line, codename, forceYes, use_ppas):   
 
     if line.startswith("ppa:"):
@@ -658,19 +660,19 @@ class Application(object):
         self.builder.get_object("label_optional_components").set_markup("<b>%s</b>" % _("Optional components"))
         self.builder.get_object("label_source_code").set_markup("<b>%s</b>" % _("Source code"))
 
-        self.builder.get_object("label_ppa_add").set_markup("%s" % _("Add a new PPA..."))
-        self.builder.get_object("label_ppa_edit").set_markup("%s" % _("Edit URL..."))
-        self.builder.get_object("label_ppa_remove").set_markup("%s" % _("Remove"))
-        self.builder.get_object("label_ppa_examine").set_markup("%s" % _("Open PPA"))
+        self.set_button_text(self.builder.get_object("label_ppa_add"), _("Add a new PPA..."))
+        self.set_button_text(self.builder.get_object("label_ppa_edit"), _("Edit URL..."))
+        self.set_button_text(self.builder.get_object("label_ppa_remove"), _("Remove"))
+        self.set_button_text(self.builder.get_object("label_ppa_examine"), _("Open PPA"))
         self.builder.get_object("label_ppa_examine").set_tooltip_text(_("Look inside the PPA and install packages it provides"))
 
-        self.builder.get_object("label_repository_add").set_markup("%s" % _("Add a new repository..."))
-        self.builder.get_object("label_repository_edit").set_markup("%s" % _("Edit URL..."))
-        self.builder.get_object("label_repository_remove").set_markup("%s" % _("Remove"))
+        self.set_button_text(self.builder.get_object("label_repository_add"), _("Add a new repository..."))
+        self.set_button_text(self.builder.get_object("label_repository_edit"), _("Edit URL..."))
+        self.set_button_text(self.builder.get_object("label_repository_remove"), _("Remove"))
 
-        self.builder.get_object("label_keys_add").set_markup("%s" % _("Import key file..."))
-        self.builder.get_object("label_keys_fetch").set_markup("%s" % _("Download a key..."))
-        self.builder.get_object("label_keys_remove").set_markup("%s" % _("Remove"))
+        self.set_button_text(self.builder.get_object("label_keys_add"), _("Import key file..."))
+        self.set_button_text(self.builder.get_object("label_keys_fetch"), _("Download a key..."))
+        self.set_button_text(self.builder.get_object("label_keys_remove"), _("Remove"))
 
         self.builder.get_object("button_mergelist_label").set_markup("%s" % _("Fix MergeList problems"))
         self.builder.get_object("button_mergelist").set_tooltip_text("%s" % _("If you experience MergeList problems, click this button to solve the problem."))
@@ -861,6 +863,13 @@ class Application(object):
         
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
+
+    def set_button_text(self, button, text):
+        if len(text) > BUTTON_LABEL_MAX_LENGTH:
+            button.set_tooltip_text(text)
+            encoded = text.encode('utf-8')[:BUTTON_LABEL_MAX_LENGTH] + ".."
+            text = encoded.decode('utf-8', 'ignore')
+        button.set_text(text)
 
     def label_size_allocate(self, widget, rect):
         widget.set_size_request(rect.width, -1)
