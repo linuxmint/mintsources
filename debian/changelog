@@ -1,3 +1,22 @@
+mintsources (1.4.8) rosa; urgency=medium
+
+  * Mirror selection: Add country name in tooltip
+  * Mirror selection: Show mirror names
+  * Test mirrors one by one, multiple bug fixes, remove dodgy mirrors from the list again, test up-to-date-ness of mirrors, list mirrors according to proximity (country, bordering countries, subregion, region)
+  * Added support for Linux Mint 17.3 "Rosa"
+  * Fixed up-to-date check not checking the correct URL
+  * Fixed speeds not being converted properly
+  * Improve speed precision with %.1f when number of int digits is less than 3
+  * Fixed rafaela's mintsources.conf being changed by mistake
+  * Ellipsize button labels in button boxes to prevent the window from getting too big (was tested in Russian)
+  * Removed trailing spaces
+  * Add PPA: Show PPA display name
+  * Add PPA: Ensure the PPA supports the base release
+  * Updated pot file and specified python version in generate_desktop_files
+  * Updated desktop files
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 06 Nov 2015 16:22:24 +0000
+
 mintsources (1.4.7) rafaela; urgency=medium
 
   * Removed X-Ubuntu-Gettext-Domain in menu item
