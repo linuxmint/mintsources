@@ -1,3 +1,9 @@
+mintsources (1.5.0) rosa; urgency=medium
+
+  * mint-switch-to-local-mirror: Add support for live installation mode
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 11 Nov 2015 15:51:07 +0000
+
 mintsources (1.4.9) rosa; urgency=medium
 
   * Added usr/bin/mint-switch-to-local-mirror script
