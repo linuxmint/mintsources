@@ -1,3 +1,9 @@
+mintsources (1.4.9) rosa; urgency=medium
+
+  * Added usr/bin/mint-switch-to-local-mirror script
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 11 Nov 2015 14:29:04 +0000
+
 mintsources (1.4.8) rosa; urgency=medium
 
   * Mirror selection: Add country name in tooltip
