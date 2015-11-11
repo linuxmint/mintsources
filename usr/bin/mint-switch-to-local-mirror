@@ -138,10 +138,11 @@ class MirrorManager():
         for line in fileinput.input(SOURCES_LIST, inplace=1):
             if self.mirror in line:
                 line = line.replace(self.mirror, selected_mirror.url)
-                line = line.rstrip()
+            line = line.rstrip()
             print (line) # prints in the file
         fileinput.close()
-        print ("Updated %s. You can now update your APT cache with 'apt update'." % SOURCES_LIST)
+        print ("Updated %s." % SOURCES_LIST)
+        print ("Type 'apt update' to update your APT cache.")
 
     def exit_if(self, condition, error=None):
         if (condition):
