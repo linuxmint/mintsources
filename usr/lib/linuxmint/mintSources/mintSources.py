@@ -471,13 +471,13 @@ class MirrorSelectionDialog(object):
             download_speed = 0
             try:
                 if self.is_base:
-                    url = "%s/dists/%s/main/binary-amd64/Packages.gz" % (url, self.codename)
+                    test_url = "%s/dists/%s/main/binary-amd64/Packages.gz" % (url, self.codename)
                 else:
-                    url = "%s/dists/%s/main/Contents-amd64.gz" % (url, self.codename)
-                if (self.check_mirror_up_to_date(url)):
+                    test_url = "%s/dists/%s/main/Contents-amd64.gz" % (url, self.codename)
+                if (self.is_base or self.check_mirror_up_to_date("%s/db/version" % url)):
                     c = pycurl.Curl()
                     buff = cStringIO.StringIO()
-                    c.setopt(pycurl.URL, url)
+                    c.setopt(pycurl.URL, test_url)
                     c.setopt(pycurl.CONNECTTIMEOUT, 5)
                     c.setopt(pycurl.TIMEOUT, 20)
                     c.setopt(pycurl.FOLLOWLOCATION, 1)
