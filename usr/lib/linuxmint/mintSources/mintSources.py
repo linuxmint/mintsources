@@ -494,7 +494,8 @@ class MirrorSelectionDialog(object):
 
             if (iter is not None): # recheck as it can get null
                 if download_speed == 0:
-                    model.remove(iter)
+                    # don't remove from model as this is not thread-safe
+                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, "offline")
                 else:
                     model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
                     model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
