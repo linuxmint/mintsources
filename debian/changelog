@@ -1,3 +1,9 @@
+mintsources (1.5.2) rosa; urgency=medium
+
+  * Fixed mint-switch-to-local-mirror (can't remotely modify a global variable, it's ambiguous)
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sat, 02 Jan 2016 14:10:44 +0000
+
 mintsources (1.5.1) rosa; urgency=medium
 
   * Fixed testing the wrong url for up-to-date tests Also, don't perform that test on base layer mirrors
