@@ -13,9 +13,13 @@ import re
 import random
 import fileinput
 
-TARGET_LIST = "/target/etc/apt/sources.list.d/official-package-repositories.list"
-SOURCES_LIST = "/etc/apt/sources.list.d/official-package-repositories.list"
 MIRROR_LIST = "/usr/share/mint-mirrors/linuxmint.list"
+SOURCES_LIST = "/etc/apt/sources.list.d/official-package-repositories.list"
+
+# In live installation mode, use the target list
+TARGET_LIST = "/target/etc/apt/sources.list.d/official-package-repositories.list"
+if os.path.exists(TARGET_LIST):
+    SOURCES_LIST = TARGET_LIST
 
 class Mirror():
 
@@ -27,10 +31,6 @@ class Mirror():
 class MirrorManager():
 
     def __init__(self, include_region=False):
-
-        # In live installation mode, use the target list
-        if os.path.exists(TARGET_LIST):
-            SOURCES_LIST = TARGET_LIST
 
         # Find local mirror
         self.exit_if(not os.path.exists(SOURCES_LIST), "No sources found at %s. Exiting." % SOURCES_LIST)
