@@ -253,9 +253,12 @@ class Repository():
         name = name.replace("http://ppa.launchpad.net/", "")
         name = name.replace("/ubuntu", "")
         name = name.replace("/ppa", "")
+        note = ""
         if self.line.startswith("deb-src"):
             name = "%s (%s)" % (name, _("Sources"))
-        return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
+        if "#" in self.line: # Check for user added note
+            note = "<span foreground='brown'> %s</span>" % self.line.split("#")[1]
+        return "<b>%s</b>%s\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, note, self.line, self.file)
 
     def get_repository_name(self):
         line = self.line.strip()
@@ -598,7 +601,6 @@ class Application(object):
         self.lsb_codename = commands.getoutput("lsb_release -sc")
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
-
         self.builder = gtk.Builder()
         self.builder.add_from_file(glade_file)
         self._main_window = self.builder.get_object("main_window")
@@ -729,7 +731,7 @@ class Application(object):
                 if line != "":
                     selected = True
                     if line.startswith("#"):
-                        line = line.replace('#', '').strip()
+                        line = line.lstrip('#').strip() # Keep comments/notes
                         selected = False
                     if line.startswith("deb"):
                         repository = Repository(self, line, source_file, selected)
@@ -739,12 +741,19 @@ class Application(object):
                             self.repositories.append(repository)
             file.close()
 
+        self.popup_menu = gtk.Menu()
+        self.add_note_item = gtk.MenuItem("Note")
+        self.popup_menu.append(self.add_note_item)
+        self.add_note_item.connect_object("activate", self.add_ppa_note, "Note")
+        self.add_note_item.show()
+
         # Add PPAs
         self._ppa_model = gtk.ListStore(object, bool, str)
         self._ppa_treeview = self.builder.get_object("treeview_ppa")
         self._ppa_treeview.set_model(self._ppa_model)
         self._ppa_treeview.set_headers_clickable(True)
         self._ppa_treeview.connect("row-activated", self.on_ppa_treeview_doubleclick)
+        self._ppa_treeview.connect('button-press-event', self.button_press_event)
         selection = self._ppa_treeview.get_selection()
         selection.connect("changed", self.ppa_selected)
 
@@ -855,6 +864,52 @@ class Application(object):
 
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
+
+    def button_press_event(self, treeview, event): # Open context menu on right-click events
+        if event.button == 3:
+            x = int(event.x)
+            y = int(event.y)
+            time = event.time
+            pthinfo = treeview.get_path_at_pos(x, y)
+            if pthinfo is not None:
+                path, col, cellx, celly = pthinfo
+                treeview.grab_focus()
+                treeview.set_cursor(path, col, 0)
+                self.popup_menu.popup(None, None, None, event.button, time)
+            return True
+
+    def add_ppa_note(self, data=None):
+        ppa_note = ""
+        selection = self._ppa_treeview.get_selection()
+        (model, iter) = selection.get_selected()
+        if (iter != None):
+            repository = model.get(iter, 0)[0]
+            ppa_name = repository.get_ppa_name().split("<b>")[1].split("</b>")[0]
+            if "#" in repository.line: # Check for existing note
+                ppa_note = repository.line.split("#")[1]
+        else:
+            return None
+        dialog = gtk.Dialog("PPA Note for %s" % ppa_name, None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                           (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        dialog.set_default_size(500, -1)
+        entry = gtk.Entry()
+        if ppa_note:
+            entry.set_text(ppa_note)
+        dialog.vbox.pack_end(entry, True, True, 0)
+        dialog.vbox.show_all()
+        response = dialog.run()
+        if (response == gtk.RESPONSE_OK and "#" not in repository.line): # Create note
+            url = "%s #%s" % ( repository.line, entry.get_text().replace('#', '').replace('&', '') ) # Strip characters that cause GTK errors
+            repository.edit(url)
+            model.set_value(iter, 2, repository.get_ppa_name()) # Update GUI
+        elif (response == gtk.RESPONSE_OK): # Note exists
+            if not entry.get_text(): # User is deleting note
+                url = "%s" % repository.line.split("#")[0].strip()
+            else: # User is modifying note
+                url = "%s#%s" % ( repository.line.split("#")[0], entry.get_text().replace('#', '').replace('&', '') )
+            repository.edit(url)
+            model.set_value(iter, 2, repository.get_ppa_name())
+        dialog.destroy()
 
     def set_button_text(self, button, text):
         if len(text) > BUTTON_LABEL_MAX_LENGTH:
