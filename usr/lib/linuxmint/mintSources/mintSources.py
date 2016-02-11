@@ -26,6 +26,70 @@ from sets import Set
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
+def remove_repository_via_cli(line, codename, forceYes):
+    if line.startswith("ppa:"):
+        user, sep, ppa_name = line.split(":")[1].partition("/")
+        ppa_name = ppa_name or "ppa"
+        try:
+            ppa_info = get_ppa_info_from_lp(user, ppa_name, codename)
+            print(_("You are about to remove the following PPA from your system:"))
+            if ppa_info["description"] is not None:
+                print(" %s" % (ppa_info["description"].encode("utf-8") or ""))
+            print(_(" More info: %s") % str(ppa_info["web_link"]))
+
+            if sys.stdin.isatty():
+                if not(forceYes):
+                    print(_("Press [ENTER] to continue or ctrl-c to cancel removing it"))
+                    sys.stdin.readline()
+            else:
+                if not(forceYes):
+                        print(_("Unable to prompt for response.  Please run with -y"))
+                        sys.exit(1)
+
+        except KeyboardInterrupt, detail:
+            print _("Cancelling...")
+            sys.exit(1)
+        except Exception, detail:
+            print _("Cannot get info about PPA: '%s'.") % detail
+
+        (deb_line, file) = expand_ppa_line(line.strip(), codename)
+        deb_line = expand_http_line(deb_line, codename)
+        debsrc_line = 'deb-src' + deb_line[3:]
+
+        # Remove the PPA from sources.list.d
+        try:
+            readfile = open(file, "r")
+            content = readfile.read()
+            readfile.close()
+            content = content.replace(deb_line, "")
+            content = content.replace(debsrc_line, "")
+            with open(file, "w") as writefile:
+                writefile.write(content)
+
+            # If file no longer contains any "deb" instances, delete it as well
+            if "deb " not in content:
+                os.unlink(file)
+        except IOError, detail:
+            print _("failed to remove PPA: '%s'") % detail
+
+    elif line.startswith("deb ") | line.startswith("http"):
+        # Remove the repository from sources.list.d
+        file="/etc/apt/sources.list.d/additional-repositories.list"
+        try:
+            readfile = open(file, "r")
+            content = readfile.read()
+            readfile.close()
+            content = content.replace(expand_http_line(line, codename), "")
+            with open(file, "w") as writefile:
+                writefile.write(content)
+
+            # If file no longer contains any "deb" instances, delete it as well
+            if "deb " not in content:
+                os.unlink(file)
+        except IOError, detail:
+            print _("failed to remove repository: '%s'") % detail
+
+
 def add_repository_via_cli(line, codename, forceYes, use_ppas):
 
     if line.startswith("ppa:"):
@@ -1453,8 +1517,12 @@ if __name__ == "__main__":
     else:
         usage = "usage: %prog [options] [repository]"
         parser = OptionParser(usage=usage)
+        #add a dummy option which can be easily ignored
+        parser.add_option("-?", dest="ignore", action="store_true", default=False)
         parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
             help="force yes on all confirmation questions", default=False)
+        parser.add_option("-r", "--remove", dest="remove", action="store_true",
+            help="Remove the specified repository", default=False)
 
         (options, args) = parser.parse_args()
 
@@ -1465,6 +1533,9 @@ if __name__ == "__main__":
             config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
             codename = config_parser.get("general", "base_codename")
             use_ppas = config_parser.get("general", "use_ppas")
-            add_repository_via_cli(ppa_line, codename, options.forceYes, use_ppas)
+            if options.remove:
+                remove_repository_via_cli(ppa_line, codename, options.forceYes)
+            else:
+                add_repository_via_cli(ppa_line, codename, options.forceYes, use_ppas)
         else:
             Application().run()

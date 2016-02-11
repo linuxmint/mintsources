@@ -14,6 +14,8 @@ usage = "usage: %prog [options] repository"
 parser = OptionParser(usage=usage)
 parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
     help="force yes on all confirmation questions", default=False)
+parser.add_option("-r", "--remove", dest="remove", action="store_true",
+    help="Remove the specified repository", default=False)
 
 (options, args) = parser.parse_args()
 
@@ -24,7 +26,13 @@ if (len(args) == 0):
 # Call mintSources script with exec instead of system so that the exit status
 # is returned to the caller
 mintsources = "/usr/lib/linuxmint/mintSources/mintSources.py"
+
+yes_arg="-?"
 if options.forceYes:
-	os.execl(mintsources, mintsources, "add-apt-repository", "-y", args[0])
-else:
-	os.execl(mintsources, mintsources, "add-apt-repository", args[0])
+    yes_arg="-y"
+
+remove_arg="-?"
+if options.remove:
+    remove_arg="-r"
+
+os.execl(mintsources, mintsources, "add-apt-repository", yes_arg, remove_arg, args[0])
