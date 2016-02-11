@@ -487,15 +487,18 @@ class MirrorSelectionDialog(object):
                     download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD) # bytes/sec
                 else:
                     # the mirror is not up to date
-                    download_speed = 0
+                    download_speed = -1
             except Exception, error:
                 print "Error '%s' on url %s" % (error, url)
                 download_speed = 0
 
             if (iter is not None): # recheck as it can get null
+                if download_speed == -1:
+                    # don't remove from model as this is not thread-safe
+                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Obsolete"))
                 if download_speed == 0:
                     # don't remove from model as this is not thread-safe
-                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, "offline")
+                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Unreachable"))
                 else:
                     model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
                     model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
