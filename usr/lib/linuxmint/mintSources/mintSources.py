@@ -31,7 +31,7 @@ def remove_repository_via_cli(line, codename, forceYes):
         user, sep, ppa_name = line.split(":")[1].partition("/")
         ppa_name = ppa_name or "ppa"
         try:
-            ppa_info = get_ppa_info_from_lp(user, ppa_name)
+            ppa_info = get_ppa_info_from_lp(user, ppa_name, codename)
             print(_("You are about to remove the following PPA from your system:"))
             if ppa_info["description"] is not None:
                 print(" %s" % (ppa_info["description"].encode("utf-8") or ""))
