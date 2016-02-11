@@ -543,6 +543,7 @@ class MirrorSelectionDialog(object):
         self.bordering_mirrors = []
         self.subregional_mirrors = []
         self.regional_mirrors = []
+        self.official_mirrors = []
         self.other_mirrors = []
 
         for mirror in mirrors:
@@ -555,13 +556,19 @@ class MirrorSelectionDialog(object):
             elif mirror.country_code in self.region:
                 self.regional_mirrors.append(mirror)
             elif mirror.url == self.default_mirror:
+                self.official_mirrors.append(mirror)
+            else:
                 self.other_mirrors.append(mirror)
 
         self.bordering_mirrors = sorted(self.bordering_mirrors, key=lambda x: x.country_code)
         self.subregional_mirrors = sorted(self.subregional_mirrors, key=lambda x: x.country_code)
         self.regional_mirrors = sorted(self.regional_mirrors, key=lambda x: x.country_code)
 
-        self.visible_mirrors = self.local_mirrors + self.bordering_mirrors + self.subregional_mirrors + self.regional_mirrors + self.other_mirrors
+        self.visible_mirrors = self.local_mirrors + self.bordering_mirrors + self.subregional_mirrors + self.regional_mirrors + self.official_mirrors
+
+        if self.local_country_code in ["IL"]:
+            # For some countries, geographical proximity doesn't equate to faster mirrors.
+            self.visible_mirrors = self.visible_mirrors + self.other_mirrors
 
         if len(self.visible_mirrors) < 2:
             # We failed to identify the continent/country, let's show all mirrors
