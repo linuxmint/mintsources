@@ -1,3 +1,22 @@
+mintsources (1.5.3) sarah; urgency=medium
+
+  [ jstnlth ]
+  * Update add-apt-repository
+  * Update mintSources.py
+  * fix spacing inconsistency
+  * remove unnecessary parameter from remove_repository_via_cli
+  * hacky workaround to support os.execl call
+  * added support for dummy parameter
+
+  [ Eduard Dopler ]
+  * Fix crash in Select Mirror on no connection
+
+  [ Clement Lefebvre ]
+  * Shebangs
+  * Mirror selection: For a selection of particular countries, show all mirrors
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 19 Feb 2016 12:10:57 +0000
+
 mintsources (1.5.2) rosa; urgency=medium
 
   * Fixed mint-switch-to-local-mirror (can't remotely modify a global variable, it's ambiguous)
