@@ -32,14 +32,14 @@ def remove_repository_via_cli(line, codename, forceYes):
         ppa_name = ppa_name or "ppa"
         try:
             ppa_info = get_ppa_info_from_lp(user, ppa_name, codename)
-            print(_("You are about to remove the following PPA from your system:"))
+            print(_("You are about to remove the following PPA:"))
             if ppa_info["description"] is not None:
                 print(" %s" % (ppa_info["description"].encode("utf-8") or ""))
             print(_(" More info: %s") % str(ppa_info["web_link"]))
 
             if sys.stdin.isatty():
                 if not(forceYes):
-                    print(_("Press [ENTER] to continue or ctrl-c to cancel removing it"))
+                    print(_("Press Enter to continue or Ctrl+C to cancel"))
                     sys.stdin.readline()
             else:
                 if not(forceYes):
@@ -108,14 +108,14 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             print(_("Adding private PPAs is not supported currently"))
             sys.exit(1)
 
-        print(_("You are about to add the following PPA to your system:"))
+        print(_("You are about to add the following PPA:"))
         if ppa_info["description"] is not None:
             print(" %s" % (ppa_info["description"].encode("utf-8") or ""))
         print(_(" More info: %s") % str(ppa_info["web_link"]))
 
         if sys.stdin.isatty():
             if not(forceYes):
-                print(_("Press [ENTER] to continue or ctrl-c to cancel adding it"))
+                print(_("Press Enter to continue or Ctrl+C to cancel"))
                 sys.stdin.readline()
         else:
             if not(forceYes):
