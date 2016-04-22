@@ -1,3 +1,13 @@
+mintsources (1.5.5) sarah; urgency=medium
+
+  [ Ryan Rafe Lee ]
+  * Fixed dependency
+
+  [ Clement Lefebvre ]
+  * Updated generated files, a few msgids and the pot file
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 22 Apr 2016 13:55:11 +0100
+
 mintsources (1.5.4) sarah; urgency=medium
 
   * Added support for Sarah
