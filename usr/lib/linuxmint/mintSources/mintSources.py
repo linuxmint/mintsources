@@ -370,12 +370,6 @@ class ComponentToggleCheckBox(gtk.CheckButton):
                     self.application.apply_official_sources()
                 else:
                     widget.set_active(not widget.get_active())
-            elif self.component.name == "backport":
-                if self.application.show_confirmation_dialog(self.application._main_window, _("Backports are packages coming from newer Linux Mint releases. When backports are made available, the development team publishes an official announcement on http://blog.linuxmint.com. This announcement might include important information about the new features, design decisions or even known issues which relate to you. It is therefore strongly recommended to not enable backports until you have read this information. Are you sure you want to enable backports?"), yes_no=True):
-                    self.component.selected = widget.get_active()
-                    self.application.apply_official_sources()
-                else:
-                    widget.set_active(not widget.get_active())
             else:
                 self.component.selected = widget.get_active()
                 self.application.apply_official_sources()
@@ -760,10 +754,10 @@ class Application(object):
         self.selected_components = []
         if (len(self.optional_components) > 0):
             if os.path.exists("/etc/linuxmint/info"):
-                # This is Mint, we want to warn people about Romeo/Backport
+                # This is Mint, we want to warn people about Romeo
                 warning_label = gtk.Label()
                 warning_label.set_alignment(0, 0.5)
-                warning_label.set_markup("<span font_style='oblique' font_stretch='ultracondensed' foreground='#3c3c3c'>%s</span>" % _("Warning: Backports and unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))
+                warning_label.set_markup("<span font_style='oblique' font_stretch='ultracondensed' foreground='#3c3c3c'>%s</span>" % _("Warning: Unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))
                 warning_label.set_line_wrap(True)
                 warning_label.connect("size-allocate", self.label_size_allocate)
                 self.builder.get_object("vbox_optional_components").pack_start(warning_label, True, True, 6)
