@@ -757,7 +757,7 @@ class Application(object):
                 # This is Mint, we want to warn people about Romeo
                 warning_label = gtk.Label()
                 warning_label.set_alignment(0, 0.5)
-                warning_label.set_markup("<span font_style='oblique' font_stretch='ultracondensed' foreground='#3c3c3c'>%s</span>" % _("Warning: Unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))
+                warning_label.set_markup("<span font_style='oblique' font_stretch='ultracondensed'>%s</span>" % _("Warning: Unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))
                 warning_label.set_line_wrap(True)
                 warning_label.connect("size-allocate", self.label_size_allocate)
                 self.builder.get_object("vbox_optional_components").pack_start(warning_label, True, True, 6)
