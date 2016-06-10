@@ -1,3 +1,9 @@
+mintsources (1.5.8) sarah; urgency=medium
+
+  * Don't use hardcoded colors
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 10 Jun 2016 14:41:17 +0100
+
 mintsources (1.5.7) sarah; urgency=medium
 
   * Removed backports from warning message
