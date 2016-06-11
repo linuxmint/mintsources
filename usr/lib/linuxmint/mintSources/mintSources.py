@@ -674,7 +674,7 @@ class Application(object):
 
         self._main_window.set_title(_("Software Sources"))
 
-        self._main_window.set_icon_from_file("/usr/share/icons/hicolor/scalable/apps/software-sources.svg")
+        self._main_window.set_icon_name("mintsources")
 
         self._notebook = self.builder.get_object("notebook")
         self._official_repositories_box = self.builder.get_object("official_repositories_box")
