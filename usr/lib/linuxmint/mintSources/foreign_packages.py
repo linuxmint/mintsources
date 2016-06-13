@@ -17,7 +17,6 @@ class Foreign_Browser():
     def __init__(self):
 
         architecture = commands.getoutput("dpkg --print-architecture")
-        codename = commands.getoutput("lsb_release -u -c -s")
 
         self.downgrade_mode = (sys.argv[1] == "downgrade") # whether to downgrade or remove packages
 

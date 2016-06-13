@@ -199,7 +199,7 @@ def expand_http_line(line, distro_codename):
     short cut - this:
       apt-add-repository http://packages.medibuntu.org free non-free
     same as
-      apt-add-repository 'deb http://packages.medibuntu.org/ '$(lsb_release -cs)' free non-free'
+      apt-add-repository 'deb http://packages.medibuntu.org/ base_codename free non-free'
     """
     if not line.startswith("http"):
       return line
@@ -1140,10 +1140,9 @@ class Application(object):
                         line = line[:-7]
                         ppa_owner, ppa_name = line.split("/")
                         architecture = commands.getoutput("dpkg --print-architecture")
-                        codename = commands.getoutput("lsb_release -u -c -s")
-                        ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, codename, architecture)
+                        ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, self.config["general"]["base_codename"], architecture)
                         if os.path.exists(ppa_file):
-                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s" % (ppa_owner, ppa_name, self._main_window.window.xid))
+                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s %s" % (self.config["general"]["base_codename"], ppa_owner, ppa_name, self._main_window.window.xid))
                         else:
                             print "%s not found!" % ppa_file
                             self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
