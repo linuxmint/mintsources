@@ -1,3 +1,9 @@
+mintsources (1.6.0) sarah; urgency=medium
+
+  * Show software sources in KDE menu
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sun, 14 Aug 2016 11:34:42 +0200
+
 mintsources (1.5.9) sarah; urgency=medium
 
   * Don't rely on "lsb_release -u"
