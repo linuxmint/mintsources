@@ -8,7 +8,7 @@ Standards-Version: 3.9.5
 Package: mintsources
 Architecture: all
 Essential: yes
-Depends: python (>= 2.4), python (<< 3), python-gtk2, python-glade2, python-pycurl, synaptic, dash, gksu|kdesudo, lsb-release
+Depends: python (>= 2.4), python (<< 3), python-gtk2, python-glade2, python-pycurl, synaptic, dash, gksu|kdesudo, lsb-release, flags-iso-4x3-svg
 Replaces: software-properties-common (<< 1), software-properties-gtk (<< 1), software-properties-kde (<< 1), python-software-properties (<< 1), python3-software-properties (<< 1)
 Description: Software Sources configuration tool
  Configure the sources for installable software and updates.

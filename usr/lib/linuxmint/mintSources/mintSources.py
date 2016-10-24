@@ -26,6 +26,9 @@ from sets import Set
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
+FLAG_PATH = "/usr/share/flags/iso-4x3-svg/%s.svgz"
+FLAG_SIZE = 24
+
 def remove_repository_via_cli(line, codename, forceYes):
     if line.startswith("ppa:"):
         user, sep, ppa_name = line.split(":")[1].partition("/")
@@ -435,20 +438,21 @@ class MirrorSelectionDialog(object):
     def _update_list(self):
         self._mirrors_model.clear()
         for mirror in self.visible_mirrors:
-            flag = "/usr/lib/linuxmint/mintSources/flags/generic.png"
-            if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
-                flag = "/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()
             if mirror.country_code == "WD":
+                flag = FLAG_PATH % '_united_nations'
                 country_name = _("Worldwide")
             else:
+                flag = FLAG_PATH % mirror.country_code.lower()
                 country_name = self.country_info.get_country_name(mirror.country_code)
+            if not os.path.exists(flag):
+                flag = FLAG_PATH % '_generic'
             tooltip = country_name
             if mirror.name != mirror.url:
                 tooltip = "%s: %s" % (country_name, mirror.name)
             self._mirrors_model.append((
                 mirror,
                 mirror.url,
-                gtk.gdk.pixbuf_new_from_file(flag),
+                gtk.gdk.pixbuf_new_from_file_at_size(flag, FLAG_SIZE, FLAG_SIZE),
                 0,
                 None,
                 tooltip,
@@ -1475,8 +1479,8 @@ class Application(object):
         self.update_flags()
 
     def update_flags(self):
-        self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png")
-        self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/generic.png")
+        mint_flag_path = FLAG_PATH % '_generic'
+        base_flag_path = FLAG_PATH % '_generic'
 
         selected_mirror = self.selected_mirror
         if selected_mirror[-1] == "/":
@@ -1492,8 +1496,9 @@ class Application(object):
             else:
                 url = mirror.url
             if url in selected_mirror:
-                if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
-                    self.builder.get_object("image_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower())
+                if os.path.exists(FLAG_PATH % mirror.country_code.lower()):
+                    mint_flag_path = FLAG_PATH % mirror.country_code.lower()
+                    break
 
         for mirror in self.base_mirrors:
             if mirror.url[-1] == "/":
@@ -1501,8 +1506,15 @@ class Application(object):
             else:
                 url = mirror.url
             if url in selected_base_mirror:
-                if os.path.exists("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower()):
-                    self.builder.get_object("image_base_mirror").set_from_file("/usr/lib/linuxmint/mintSources/flags/%s.png" % mirror.country_code.lower())
+                if os.path.exists(FLAG_PATH % mirror.country_code.lower()):
+                    base_flag_path = FLAG_PATH % mirror.country_code.lower()
+                    break
+
+        pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(mint_flag_path, FLAG_SIZE, FLAG_SIZE)
+        self.builder.get_object("image_mirror").set_from_pixbuf(pixbuf)
+
+        pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(base_flag_path, FLAG_SIZE, FLAG_SIZE)
+        self.builder.get_object("image_base_mirror").set_from_pixbuf(pixbuf)
 
     def get_clipboard_text(self, source_type):
         clipboard = gtk.Clipboard(display=gtk.gdk.display_get_default(), selection="CLIPBOARD")
