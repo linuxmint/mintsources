@@ -1,3 +1,18 @@
+mintsources (1.6.1) serena; urgency=medium
+
+  [ JosephMcc ]
+  * Set mint sources to the mintsources icon
+
+  [ xenopeek ]
+  * debian/control: add sudo frontend dependency
+
+  [ Clement Lefebvre ]
+  * Added support for anycast worldwide mirrors
+  * HiDPI: Switched to SVG flags
+  * Switch to PNG flags
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 02 Nov 2016 14:30:56 +0000
+
 mintsources (1.6.0) sarah; urgency=medium
 
   * Show software sources in KDE menu
