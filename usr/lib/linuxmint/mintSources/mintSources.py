@@ -26,8 +26,8 @@ from sets import Set
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
-FLAG_PATH = "/usr/share/flags/iso-4x3-svg/%s.svgz"
-FLAG_SIZE = 24
+FLAG_PATH = "/usr/share/iso-flag-png/%s.png"
+FLAG_SIZE = 16
 
 def remove_repository_via_cli(line, codename, forceYes):
     if line.startswith("ppa:"):
@@ -452,7 +452,7 @@ class MirrorSelectionDialog(object):
             self._mirrors_model.append((
                 mirror,
                 mirror.url,
-                gtk.gdk.pixbuf_new_from_file_at_size(flag, FLAG_SIZE, FLAG_SIZE),
+                gtk.gdk.pixbuf_new_from_file_at_size(flag, -1, FLAG_SIZE),
                 0,
                 None,
                 tooltip,
@@ -1510,10 +1510,10 @@ class Application(object):
                     base_flag_path = FLAG_PATH % mirror.country_code.lower()
                     break
 
-        pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(mint_flag_path, FLAG_SIZE, FLAG_SIZE)
+        pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(mint_flag_path, -1, FLAG_SIZE)
         self.builder.get_object("image_mirror").set_from_pixbuf(pixbuf)
 
-        pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(base_flag_path, FLAG_SIZE, FLAG_SIZE)
+        pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(base_flag_path, -1, FLAG_SIZE)
         self.builder.get_object("image_base_mirror").set_from_pixbuf(pixbuf)
 
     def get_clipboard_text(self, source_type):
