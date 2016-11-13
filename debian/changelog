@@ -1,3 +1,9 @@
+mintsources (1.6.2) serena; urgency=medium
+
+  * Add support for Linux Mint 18.1 Serena
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sun, 13 Nov 2016 17:13:46 +0000
+
 mintsources (1.6.1) serena; urgency=medium
 
   [ JosephMcc ]
