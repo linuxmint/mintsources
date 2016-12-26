@@ -27,6 +27,7 @@ class PPA_Browser():
         # print "Using release info: %s" % ppa_file
 
         self.packages_to_install = []
+        self.installed_packages = [] # To prevent installing already installed
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
@@ -74,9 +75,12 @@ class PPA_Browser():
                     for origin in candidate.origins:
                         if origin.origin == ppa_origin or origin.origin == ppa_origin_simple:
                             if pkg.is_installed:
+                                already_installed_str = _("version %s already installed") % pkg.installed.version
                                 if pkg.installed.version != candidate.version:
-                                    already_installed_str = _("version %s already installed") % pkg.installed.version
                                     self.model.append((pkg, False, "<b>%s</b> <small>%s (%s)</small>" % (pkg.name, candidate.version, already_installed_str)))
+                                else:
+                                    self.installed_packages.append(pkg.name)
+                                    self.model.append((pkg, False, "<b>%s</b> <small>(%s)</small>" % (pkg.name, already_installed_str)))
                             else:
                                 self.model.append((pkg, False, "<b>%s</b> <small>%s</small>" % (pkg.name, candidate.version)))
 
@@ -96,6 +100,8 @@ class PPA_Browser():
         cell.set_property("activatable", True)
         if (model.get_value(iter, 0).name in self.packages_to_install):
             cell.set_property("active", True)
+        if (model.get_value(iter, 0).name in self.installed_packages):
+            cell.set_property("active", True)
         else:
             cell.set_property("active", False)
 
@@ -105,7 +111,7 @@ class PPA_Browser():
             pkg = self.model.get_value(iter, 0)
             if pkg.name in self.packages_to_install:
                 self.packages_to_install.remove(pkg.name)
-            else:
+            elif pkg.name not in self.installed_packages:
                 self.packages_to_install.append(pkg.name)
 
         self.install_button.set_sensitive(len(self.packages_to_install) > 0)
