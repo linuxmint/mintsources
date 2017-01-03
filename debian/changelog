@@ -1,3 +1,9 @@
+mintsources (1.6.3) serena; urgency=medium
+
+  * Fix flag for global mirrors in main view
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 03 Jan 2017 14:55:39 +0000
+
 mintsources (1.6.2) serena; urgency=medium
 
   * Add support for Linux Mint 18.1 Serena
