@@ -1496,8 +1496,12 @@ class Application(object):
             else:
                 url = mirror.url
             if url in selected_mirror:
-                if os.path.exists(FLAG_PATH % mirror.country_code.lower()):
-                    mint_flag_path = FLAG_PATH % mirror.country_code.lower()
+                if mirror.country_code == "WD":
+                    flag = FLAG_PATH % '_united_nations'
+                else:
+                    flag = FLAG_PATH % mirror.country_code.lower()
+                if os.path.exists(flag):
+                    mint_flag_path = flag
                     break
 
         for mirror in self.base_mirrors:
