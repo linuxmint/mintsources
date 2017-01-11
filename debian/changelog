@@ -1,3 +1,13 @@
+mintsources (1.6.4) serena; urgency=medium
+
+  [ salphaon ]
+  * Add dependency python-vte
+
+  [ Clement Lefebvre ]
+  * Don't depend on gksu|kdesudo
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 11 Jan 2017 16:40:11 +0000
+
 mintsources (1.6.3) serena; urgency=medium
 
   * Fix flag for global mirrors in main view
