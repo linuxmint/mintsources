@@ -6,7 +6,7 @@ from optparse import OptionParser
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
-if os.geteuid() != 0:
+if os.geteuid() != 0 and sys.argv[1] not in ("-h", "--help"):
     print(_("Error: must run as root"))
     sys.exit(1)
 
