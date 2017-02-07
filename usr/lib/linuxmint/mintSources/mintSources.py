@@ -1543,6 +1543,18 @@ if __name__ == "__main__":
 
         (options, args) = parser.parse_args()
 
+        lsb_codename = commands.getoutput("lsb_release -sc")
+        config_dir = "/usr/share/mintsources/%s" % lsb_codename
+        if not os.path.exists(config_dir):
+            print ("LSB codename: '%s'." % lsb_codename)
+            if os.path.exists("/etc/linuxmint/info"):
+                print ("Version of base-files: '%s'." % commands.getoutput("apt version base-files"))
+                print ("Your LSB codename isn't a valid Linux Mint codename.")
+            else:
+                print ("This codename isn't currently supported.")
+            print ("Please check your LSB information with \"lsb_release -a\".")
+            sys.exit(1)
+
         if len(args) > 1 and (args[0] == "add-apt-repository"):
             ppa_line = args[1]
             lsb_codename = commands.getoutput("lsb_release -sc")
