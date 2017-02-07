@@ -1,6 +1,7 @@
 #!/usr/bin/python2
 
 import os
+import subprocess
 import sys
 import gtk
 import gobject
@@ -1021,7 +1022,7 @@ class Application(object):
         dialog.set_default_response(gtk.RESPONSE_OK)
         response = dialog.run()
         if response == gtk.RESPONSE_OK:
-            os.system("apt-key add %s" % dialog.get_filename())
+            subprocess.call(["apt-key", "add", dialog.get_filename()])
             self.load_keys()
             self.enable_reload_button()
         dialog.destroy()
@@ -1390,9 +1391,8 @@ class Application(object):
 
     def update_apt_cache(self, widget=None):
         self.disable_reload_button()
-        from subprocess import Popen, PIPE
         cmd = ["sudo", "/usr/sbin/synaptic", "--hide-main-window", "--update-at-startup", "--non-interactive"]
-        comnd = Popen(' '.join(cmd), shell=True)
+        comnd = subprocess.Popen(' '.join(cmd), shell=True)
         #returnCode = comnd.wait()
 
     def apply_official_sources(self, widget=None):
