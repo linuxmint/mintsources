@@ -2,17 +2,22 @@
 
 import os
 import gettext
+import subprocess
+
+def get_output_uni(*args):  # uni = Unicode 
+  return subprocess.check_output(*args, universal_newlines=True).rstrip()
+# We set "universal_newlines" in order to handle Unicode properly.  
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
-tool = "/usr/lib/linuxmint/mintSources/mintSources.py"
+which_launcher = "/usr/lib/linuxmint/common/mint-which-launcher.py"
 sentence = _("Please enter your password to configure the software sources")
 icon = "/usr/share/icons/hicolor/48x48/apps/software-sources.png"
+tool = "/usr/lib/linuxmint/mintSources/mintSources.py"
 
-if os.path.exists("/usr/bin/gksu"):
-    launcher = "gksu  --message \"<b>%s</b>\"" % sentence   
-elif os.path.exists("/usr/bin/kdesudo"):
-    launcher = "kdesudo -i %s -d --comment \"<b>%s</b>\"" % (icon, sentence)
+launcher_query = [which_launcher, "-p", sentence, "-i", icon]
+launcher = get_output_uni(launcher_query)
 
-command = "%s %s" % (launcher, tool)
+command = "{0} {1}".format(launcher, tool)
 os.system(command)
+
