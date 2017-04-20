@@ -138,7 +138,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         with open(file, "w") as text_file:
             text_file.write("%s\n" % deb_line)
             text_file.write("%s\n" % debsrc_line)
-    elif line.startswith("deb "):
+    elif line.startswith("deb ") | line.startswith("http"):
         with open("/etc/apt/sources.list.d/additional-repositories.list", "a") as text_file:
             text_file.write("%s\n" % expand_http_line(line, codename))
 
