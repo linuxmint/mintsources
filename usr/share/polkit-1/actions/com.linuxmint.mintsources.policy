@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC 
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN" 
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+
+  <vendor>Linux Mint</vendor>
+  <vendor_url>https://linuxmint.com/</vendor_url>
+
+  <action id="com.linuxmint.mintsources">
+    <message>Software Sources</message>
+    <message xml:lang="am">የሶፍትዌር ምንጮች</message>
+    <message xml:lang="ar">مصادر البرمجيات</message>
+    <message xml:lang="be">Крыніцы праграм</message>
+    <message xml:lang="bg">Софтуерни източници</message>
+    <message xml:lang="bn">সফটওয়্যারের উৎসসমূহ</message>
+    <message xml:lang="bs">Izvori softvera</message>
+    <message xml:lang="ca">Fonts del programari</message>
+    <message xml:lang="ca@valencia">Fonts del programari</message>
+    <message xml:lang="cs">Zdroje softwaru</message>
+    <message xml:lang="cy">Ffynonellau Meddalwedd</message>
+    <message xml:lang="da">Programkilder</message>
+    <message xml:lang="de">Anwendungspaketquellen</message>
+    <message xml:lang="el">Πηγές Λογισμικού</message>
+    <message xml:lang="eo">Programaraj fontoj</message>
+    <message xml:lang="es">Orígenes del software</message>
+    <message xml:lang="et">Tarkvaraallikad</message>
+    <message xml:lang="eu">Software-jatorriak</message>
+    <message xml:lang="fa">منابع برنامه ها</message>
+    <message xml:lang="fi">Ohjelmalähteet</message>
+    <message xml:lang="fr">Sources de logiciels</message>
+    <message xml:lang="fr_CA">Sources de logiciels</message>
+    <message xml:lang="fy">Softwareboarnen</message>
+    <message xml:lang="ga">Foinsí Bogearraí</message>
+    <message xml:lang="gd">Tùsan bathair-bhog</message>
+    <message xml:lang="gl">Orixes do software</message>
+    <message xml:lang="he">מקורות תוכנה</message>
+    <message xml:lang="hr">Softver repozitoriji</message>
+    <message xml:lang="hu">Szoftverforrások</message>
+    <message xml:lang="ia">Fontes de software</message>
+    <message xml:lang="id">Sumber Perangkat Lunak</message>
+    <message xml:lang="is">Hugbúnaðarupptök</message>
+    <message xml:lang="it">Sorgenti software</message>
+    <message xml:lang="ja">ソフトウェアソース</message>
+    <message xml:lang="kk">БҚ қайнар көздері</message>
+    <message xml:lang="km">ប្រភព​កម្មវិធី</message>
+    <message xml:lang="ko">소프트웨어소스</message>
+    <message xml:lang="ku">Çavkaniyên Bernameyan</message>
+    <message xml:lang="ky">Программа булактары</message>
+    <message xml:lang="lt">Programinės įrangos saugyklos</message>
+    <message xml:lang="lv">Programmatūras avoti</message>
+    <message xml:lang="ml">സോഫ്റ്റ്‌വെയര്‍ സ്രോതസ്സുകള്‍</message>
+    <message xml:lang="mr">सॉफ्टवेयर स्रोत</message>
+    <message xml:lang="ms">Sumber Perisian</message>
+    <message xml:lang="nb">Programvarekilder</message>
+    <message xml:lang="nds">Paketquellen</message>
+    <message xml:lang="ne">सफ्टवेयर स्रोतहरु</message>
+    <message xml:lang="nl">Pakketbronnen</message>
+    <message xml:lang="oc">Fonts de mesa a jorn</message>
+    <message xml:lang="om">Madda mosajjii</message>
+    <message xml:lang="pa">ਸਾਫਟਵੇਅਰ ਸਰੋਤ</message>
+    <message xml:lang="pl">Zasoby oprogramowania</message>
+    <message xml:lang="pt">Repositórios</message>
+    <message xml:lang="pt_BR">Fontes de Aplicativos</message>
+    <message xml:lang="pt_PT">Repositórios</message>
+    <message xml:lang="ro">Surse software</message>
+    <message xml:lang="ru">Источники приложений</message>
+    <message xml:lang="si">මෘදුකාංග මූලාශ්‍රයන්</message>
+    <message xml:lang="sk">Zdroje softvéru</message>
+    <message xml:lang="sl">Programski viri</message>
+    <message xml:lang="sq">Burimet e programeve</message>
+    <message xml:lang="sr">Извори програма</message>
+    <message xml:lang="sr@latin">Извори програма</message>
+    <message xml:lang="sv">Programkällor</message>
+    <message xml:lang="ta">மென்பொருள் மூலங்கள்</message>
+    <message xml:lang="tg">Манбаъҳои нармафзор</message>
+    <message xml:lang="th">แหล่งที่มาของซอฟต์แวร์</message>
+    <message xml:lang="tr">Yazılım Kaynakları</message>
+    <message xml:lang="uk">Джерела проґрамного забезпечення</message>
+    <message xml:lang="uz">Дастур манбалари</message>
+    <message xml:lang="vi">Nguồn Phần mềm</message>
+    <message xml:lang="zh_CN">软件源</message>
+    <message xml:lang="zh_HK">軟件來源</message>
+    <message xml:lang="zh_TW">軟體來源</message>
+    <icon_name>mintsources</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_self_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/linuxmint/mintSources/mintSources.py</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+</policyconfig>
