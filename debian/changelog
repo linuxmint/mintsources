@@ -1,3 +1,24 @@
+mintsources (1.6.5) sonya; urgency=medium
+
+  [ Timothy Sharitt ]
+  * Allow -h and --help without root
+
+  [ Clement Lefebvre ]
+  * Foreign packages: Add a button to select-all/clear selection
+  * l10n: Update POT file
+  * Fix injection in os.system call
+  * Packaging: Add dependency on python3
+  * Show an explicit error when the LSB codename is not supported
+
+  [ Michael Müller ]
+  * Allow adding http repositories with line expansion
+
+  [ Clement Lefebvre ]
+  * Add support for pkexec
+  * Add a hicolor icon "mintsources"
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 01 May 2017 19:35:58 +0100
+
 mintsources (1.6.4) serena; urgency=medium
 
   [ salphaon ]
