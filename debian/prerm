@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-remove" ] ; then
+  if [ -L /usr/local/bin/add-apt-repository ] ; then
+    rm /usr/local/bin/add-apt-repository
+    echo "symbolic link /usr/local/bin/add-apt-repository removed"
+  fi
+  if [ -L /usr/local/bin/apt-add-repository ] ; then
+    rm /usr/local/bin/apt-add-repository
+    echo "symbolic link /usr/local/bin/add-apt-repository removed"
+  fi
+fi
+
+set +e
+
+# delete directory if it's empty
+rmdir /usr/local/bin &> /dev/null
+
+set -e
+
+#DEBHELPER#
