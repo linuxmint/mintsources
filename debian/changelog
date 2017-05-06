@@ -1,3 +1,10 @@
+mintsources (1.6.6) sonya; urgency=medium
+
+  * Switch away from pkexec
+  * l10n: Generate desktop files
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sat, 06 May 2017 16:05:48 +0100
+
 mintsources (1.6.5) sonya; urgency=medium
 
   [ Timothy Sharitt ]
