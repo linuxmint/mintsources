@@ -1,3 +1,9 @@
+mintsources (1.6.7) sonya; urgency=medium
+
+  * Add support for Mint 18.2 Sonya
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 12 May 2017 10:31:48 +0100
+
 mintsources (1.6.6) sonya; urgency=medium
 
   * Switch away from pkexec
