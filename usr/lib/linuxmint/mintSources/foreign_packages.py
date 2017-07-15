@@ -20,8 +20,6 @@ class Foreign_Browser():
 
     def __init__(self):
 
-        architecture = subprocess.check_output(["dpkg", "--print-architecture"])
-
         self.downgrade_mode = (sys.argv[1] == "downgrade") # whether to downgrade or remove packages
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"

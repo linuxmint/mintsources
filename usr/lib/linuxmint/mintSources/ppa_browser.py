@@ -1,13 +1,16 @@
 #!/usr/bin/python2
-import gtk
 import os
 import sys
 import apt
 import commands
 import gettext
 import tempfile
-from subprocess import Popen, PIPE
 import subprocess
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('GdkX11', '3.0') # Needed to get xid
+from gi.repository import Gtk, GdkX11
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
@@ -30,14 +33,14 @@ class PPA_Browser():
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
-        self.builder = gtk.Builder()
+        self.builder = Gtk.Builder()
         self.builder.add_from_file(glade_file)
 
         self.window = self.builder.get_object("ppa_window")
         self.window.set_title(_("PPA"))
         self.window.set_icon_from_file("/usr/share/icons/hicolor/scalable/apps/software-sources.svg")
-        self.window.connect("destroy", gtk.main_quit)
-        self.builder.get_object("button_cancel").connect("clicked", gtk.main_quit)
+        self.window.connect("destroy", Gtk.main_quit)
+        self.builder.get_object("button_cancel").connect("clicked", Gtk.main_quit)
         self.install_button = self.builder.get_object("button_install")
         self.install_button.connect("clicked", self.install)
         self.install_button.set_label(_("Install"))
@@ -46,20 +49,20 @@ class PPA_Browser():
         self.builder.get_object("button_cancel").set_label(_("Cancel"))
         self.builder.get_object("label_explanation").set_markup("<i>%s</i>" % _("This PPA provides the following packages. Please select the ones you want to install:"))
 
-        self.model = gtk.ListStore(object, bool, str)
+        self.model = Gtk.ListStore(object, bool, str)
         treeview = self.builder.get_object("treeview_ppa_pkgs")
         treeview.set_model(self.model)
-        self.model.set_sort_column_id(2, gtk.SORT_ASCENDING)
+        self.model.set_sort_column_id(2, Gtk.SortType.ASCENDING)
 
-        r = gtk.CellRendererToggle()
+        r = Gtk.CellRendererToggle()
         r.connect("toggled", self.toggled)
-        col = gtk.TreeViewColumn("", r)
+        col = Gtk.TreeViewColumn("", r)
         col.set_cell_data_func(r, self.datafunction_checkbox)
         treeview.append_column(col)
         col.set_sort_column_id(1)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn("", r, markup = 2)
+        r = Gtk.CellRendererText()
+        col = Gtk.TreeViewColumn("", r, markup = 2)
         treeview.append_column(col)
         col.set_sort_column_id(2)
 
@@ -84,15 +87,7 @@ class PPA_Browser():
         treeview.show()
         self.window.show_all()
 
-        try:
-            parent_window_xid = int(sys.argv[3])
-            parent = gtk.gdk.window_foreign_new(parent_window_xid)
-            self.window.realize()
-            self.window.window.set_transient_for(parent)
-        except:
-            pass
-
-    def datafunction_checkbox(self, column, cell, model, iter):
+    def datafunction_checkbox(self, column, cell, model, iter, data):
         cell.set_property("activatable", True)
         if (model.get_value(iter, 0).name in self.packages_to_install):
             cell.set_property("active", True)
@@ -112,7 +107,7 @@ class PPA_Browser():
 
     def install (self, button):
         cmd = ["pkexec", "/usr/sbin/synaptic", "--hide-main-window",  \
-                "--non-interactive", "--parent-window-id", "%s" % self.window.window.xid]
+                "--non-interactive", "--parent-window-id", "%s" % self.window.get_window().get_xid()]
         cmd.append("-o")
         cmd.append("Synaptic::closeZvt=true")
         cmd.append("--progress-str")
@@ -125,7 +120,7 @@ class PPA_Browser():
         cmd.append("--set-selections-file")
         cmd.append("%s" % f.name)
         f.flush()
-        comnd = Popen(' '.join(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        comnd = subprocess.Popen(' '.join(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         returnCode = comnd.wait()
         f.close()
         if (returnCode == 0):
@@ -136,4 +131,4 @@ if __name__ == "__main__":
     ppa_owner = sys.argv[2]
     ppa_name = sys.argv[3]
     ppa_browser = PPA_Browser(base_codename, ppa_owner, ppa_name)
-    gtk.main()
+    Gtk.main()
