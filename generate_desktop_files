@@ -29,7 +29,7 @@ additionalfiles.generate(DOMAIN, PATH, "usr/share/applications/mintsources.deskt
 prefix = "[Desktop Entry]\n"
 
 suffix= """Exec=software-sources
-Icon=/usr/share/icons/hicolor/scalable/apps/software-sources.svg
+Icon=mintsources
 Terminal=false
 Type=Application
 Encoding=UTF-8
