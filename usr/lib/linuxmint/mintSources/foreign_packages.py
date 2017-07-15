@@ -1,14 +1,16 @@
-#!/usr/bin/python2
-import gtk
+#!/usr/bin/python3
 import os
 import sys
 import apt
-import commands
 import gettext
 import tempfile
-from subprocess import Popen, PIPE
 import subprocess
-import vte
+
+import gi
+
+gi.require_version('Gtk', '3.0')
+gi.require_version('Vte', '2.91')
+from gi.repository import Gtk, Vte, GLib
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
@@ -18,20 +20,20 @@ class Foreign_Browser():
 
     def __init__(self):
 
-        architecture = commands.getoutput("dpkg --print-architecture")
+        architecture = subprocess.check_output(["dpkg", "--print-architecture"])
 
         self.downgrade_mode = (sys.argv[1] == "downgrade") # whether to downgrade or remove packages
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
-        self.builder = gtk.Builder()
+        self.builder = Gtk.Builder()
         self.builder.add_from_file(glade_file)
 
         self.window = self.builder.get_object("foreign_window")
         self.window.set_title(_("Foreign packages"))
-        self.window.set_icon_from_file("/usr/share/icons/hicolor/scalable/apps/software-sources.svg")
-        self.window.connect("destroy", gtk.main_quit)
-        self.builder.get_object("button_foreign_cancel").connect("clicked", gtk.main_quit)
+        self.window.set_icon_name("software-sources")
+        self.window.connect("destroy", Gtk.main_quit)
+        self.builder.get_object("button_foreign_cancel").connect("clicked", Gtk.main_quit)
         self.action_button = self.builder.get_object("button_foreign_action")
         self.action_button.connect("clicked", self.install)
         if self.downgrade_mode:
@@ -51,33 +53,33 @@ class Foreign_Browser():
         self.builder.get_object("label_foreign_warning").set_markup("<b>%s</b>" % _("WARNING"))
         self.builder.get_object("label_foreign_review").set_markup("<i>%s</i>" % _("Review the information below very carefully before validating the command:"))
 
-        self.model = gtk.ListStore(str, bool, str, str, str, str)
+        self.model = Gtk.ListStore(str, bool, str, str, str, str)
         # PKG_ID, PKG_CHECKED, PKG_NAME, PKG_INSTALLED_VERSION, PKG_REPO_VERSION, PKG_SORT_NAME
 
         treeview = self.builder.get_object("treeview_foreign_pkgs")
         treeview.set_model(self.model)
-        self.model.set_sort_column_id(PKG_SORT_NAME, gtk.SORT_ASCENDING)
+        self.model.set_sort_column_id(PKG_SORT_NAME, Gtk.SortType.ASCENDING)
 
-        cr = gtk.CellRendererToggle()
+        cr = Gtk.CellRendererToggle()
         cr.connect("toggled", self.toggled)
-        col = gtk.TreeViewColumn("", cr)
+        col = Gtk.TreeViewColumn("", cr)
         col.set_cell_data_func(cr, self.datafunction_checkbox)
         treeview.append_column(col)
         col.set_sort_column_id(PKG_CHECKED)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Package"), r, markup = PKG_NAME)
+        r = Gtk.CellRendererText()
+        col = Gtk.TreeViewColumn(_("Package"), r, markup = PKG_NAME)
         treeview.append_column(col)
         col.set_sort_column_id(PKG_NAME)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Installed version"), r, markup = PKG_INSTALLED_VERSION)
+        r = Gtk.CellRendererText()
+        col = Gtk.TreeViewColumn(_("Installed version"), r, markup = PKG_INSTALLED_VERSION)
         treeview.append_column(col)
         col.set_sort_column_id(PKG_INSTALLED_VERSION)
 
         if self.downgrade_mode:
-            r = gtk.CellRendererText()
-            col = gtk.TreeViewColumn(_("Repository version"), r, markup = PKG_REPO_VERSION)
+            r = Gtk.CellRendererText()
+            col = Gtk.TreeViewColumn(_("Repository version"), r, markup = PKG_REPO_VERSION)
             treeview.append_column(col)
             col.set_sort_column_id(PKG_REPO_VERSION)
 
@@ -101,7 +103,8 @@ class Foreign_Browser():
                                     best_version = version
                                 elif version.policy_priority == best_version.policy_priority:
                                     # same priorities, compare version
-                                    if commands.getoutput("dpkg --compare-versions %s gt %s && echo 'OK'" % (version.version, best_version.version)) == "OK":
+                                    return_code = subprocess.call(["dpkg", "--compare-versions", version.version, "gt", best_version.version])
+                                    if return_code == 0:
                                         best_version = version
 
                     if self.downgrade_mode:
@@ -129,15 +132,7 @@ class Foreign_Browser():
         treeview.connect("row-activated", self.treeview_row_activated)
         self.window.show_all()
 
-        parent_window_xid = int(sys.argv[2])
-        try:
-            parent = gtk.gdk.window_foreign_new(parent_window_xid)
-            self.window.realize()
-            self.window.window.set_transient_for(parent)
-        except:
-            pass
-
-    def datafunction_checkbox(self, column, cell, model, iter):
+    def datafunction_checkbox(self, column, cell, model, iter, data):
         cell.set_property("activatable", True)
         checked = model.get_value(iter, PKG_CHECKED)
         if (checked):
@@ -168,9 +163,8 @@ class Foreign_Browser():
 
     def install (self, button):
         self.builder.get_object("notebook1").set_current_page(1)
-        term = vte.Terminal()
-        pid = term.fork_command('dash')
-        term.set_emulation('xterm')
+        terminal = Vte.Terminal()
+        terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], ["/bin/dash"], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
 
         foreign_packages = []
         iter = self.model.get_iter_first()
@@ -180,12 +174,12 @@ class Foreign_Browser():
             iter = self.model.iter_next(iter)
 
         if self.downgrade_mode:
-            term.feed_child("apt-get install %s\n" % " ".join(foreign_packages))
+            terminal.feed_child("apt-get install %s\n" % " ".join(foreign_packages), -1)
         else:
-            term.feed_child("apt-get remove --purge %s\n" % " ".join(foreign_packages))
+            terminal.feed_child("apt-get remove --purge %s\n" % " ".join(foreign_packages), -1)
 
-        term.show()
-        self.builder.get_object("vbox_vte").add(term)
+        terminal.show()
+        self.builder.get_object("vbox_vte").add(terminal)
         self.builder.get_object("vbox_vte").show_all()
 
     def select_all (self, button):
@@ -203,4 +197,4 @@ class Foreign_Browser():
 
 if __name__ == "__main__":
     foreign_browser = Foreign_Browser()
-    gtk.main()
+    Gtk.main()

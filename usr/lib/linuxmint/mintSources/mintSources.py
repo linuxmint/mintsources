@@ -973,10 +973,10 @@ class Application(object):
         return mirror_list
 
     def remove_foreign(self, widget):
-        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py remove %s" % self._main_window.window.xid)
+        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py remove &")
 
     def downgrade_foreign(self, widget):
-        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py downgrade %s" % self._main_window.window.xid)
+        os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py downgrade &")
 
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
