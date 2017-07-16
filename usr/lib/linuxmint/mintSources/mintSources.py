@@ -31,7 +31,7 @@ from gi.repository import Gtk, Gdk, GdkPixbuf, GdkX11, GObject, Pango
 BUTTON_LABEL_MAX_LENGTH = 30
 
 FLAG_PATH = "/usr/share/iso-flag-png/%s.png"
-FLAG_SIZE = 16
+FLAG_SIZE = 24
 
 def remove_repository_via_cli(line, codename, forceYes):
     if line.startswith("ppa:"):
@@ -761,7 +761,12 @@ class Application(object):
         self.builder.get_object("button_downgrade_foreign").set_tooltip_text("%s" % _("Packages which version does not come from known repositories are listed here and can be downgraded."))
 
         self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
-        self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
+
+        if os.path.exists("/usr/share/mintsources/%s/icon.svg" % self.lsb_codename):
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/share/mintsources/%s/icon.svg" % self.lsb_codename, -1, 32)
+            self.builder.get_object("image_icon").set_from_pixbuf(pixbuf)
+        else:
+            self.builder.get_object("image_icon").set_from_file("/usr/share/mintsources/%s/icon.png" % self.lsb_codename)
 
         self.builder.get_object("source_code_cb").set_label(_("Enable source code repositories"))
 
