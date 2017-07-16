@@ -1,6 +1,0 @@
-deb-src $mirror $codename main upstream import $optionalcomponents
-
-deb-src $basemirror $basecodename main contrib non-free
-
-deb-src $basemirror/debian $basecodename-updates main contrib non-free
-deb-src http://security.debian.org/ $basecodename/updates main contrib non-free

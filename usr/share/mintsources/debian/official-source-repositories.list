@@ -1,7 +1,0 @@
-deb-src $mirror debian main upstream import $optionalcomponents
-
-deb-src $basemirror/ testing main contrib non-free
-deb-src $basemirror/security testing/updates main contrib non-free
-deb-src $basemirror/multimedia testing main non-free
-
-deb-src http://extra.linuxmint.com debian main
