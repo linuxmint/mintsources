@@ -1599,7 +1599,8 @@
                       <object class="GtkImage" id="image_ppa_logo1">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="pixbuf">foreign.png</property>
+                        <property name="icon_name">mintsources-foreign</property>
+                        <property name="icon_size">6</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -1904,7 +1905,8 @@
                   <object class="GtkImage" id="image_ppa_logo">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="pixbuf">ppa.png</property>
+                    <property name="icon_name">mintsources-ppa</property>
+                    <property name="icon_size">6</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
