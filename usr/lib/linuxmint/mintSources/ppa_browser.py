@@ -38,7 +38,7 @@ class PPA_Browser():
 
         self.window = self.builder.get_object("ppa_window")
         self.window.set_title(_("PPA"))
-        self.window.set_icon_from_file("/usr/share/icons/hicolor/scalable/apps/software-sources.svg")
+        self.window.set_icon_name("software-sources")
         self.window.connect("destroy", Gtk.main_quit)
         self.builder.get_object("button_cancel").connect("clicked", Gtk.main_quit)
         self.install_button = self.builder.get_object("button_install")

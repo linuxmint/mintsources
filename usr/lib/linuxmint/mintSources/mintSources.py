@@ -3,8 +3,6 @@
 import os
 import subprocess
 import sys
-import gtk
-import gobject
 import urlparse
 import ConfigParser
 import aptsources.distro
@@ -24,6 +22,11 @@ import urllib
 import pycurl
 from optparse import OptionParser
 from sets import Set
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('GdkX11', '3.0') # Needed to get xid
+from gi.repository import Gtk, Gdk, GdkPixbuf, GdkX11, GObject, Pango
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
@@ -257,7 +260,7 @@ class Key():
         os.system("apt-key del %s" % self.pub)
 
     def get_name(self):
-        return "<b>%s</b>\n<small><i>%s</i></small>" % (gobject.markup_escape_text(self.uid), gobject.markup_escape_text(self.pub))
+        return "<b>%s</b>\n<small><i>%s</i></small>" % (GObject.markup_escape_text(self.uid), GObject.markup_escape_text(self.pub))
 
 class Mirror():
     def __init__(self, country_code, url, name):
@@ -353,12 +356,12 @@ class Repository():
                 name = "%s (%s)" % (name, _("Sources"))
         return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
 
-class ComponentToggleCheckBox(gtk.CheckButton):
+class ComponentToggleCheckBox(Gtk.CheckButton):
     def __init__(self, application, component, window):
         self.application = application
         self.component = component
         self.window_object = window
-        gtk.CheckButton.__init__(self, self.component.description)
+        Gtk.CheckButton.__init__(self, self.component.description)
         self.set_active(component.selected)
         self.connect("toggled", self._on_toggled)
 
@@ -399,26 +402,26 @@ class MirrorSelectionDialog(object):
 
         self._dialog.set_title(_("Select a mirror"))
 
-        self._mirrors_model = gtk.ListStore(object, str, gtk.gdk.Pixbuf, float, str, str, str)
+        self._mirrors_model = Gtk.ListStore(object, str, GdkPixbuf.Pixbuf, float, str, str, str)
         # mirror, name, flag, speed, speed label, country code (used to sort by flag), mirror name
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
 
-        self._mirrors_model.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN, gtk.SORT_DESCENDING)
+        self._mirrors_model.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN, Gtk.SortType.DESCENDING)
 
-        r = gtk.CellRendererPixbuf()
-        col = gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_FLAG_COLUMN)
+        r = Gtk.CellRendererPixbuf()
+        col = Gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_FLAG_COLUMN)
         self._treeview.append_column(col)
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_TOOLTIP_COLUMN)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_NAME_COLUMN)
+        r = Gtk.CellRendererText()
+        col = Gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_NAME_COLUMN)
         self._treeview.append_column(col)
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_NAME_COLUMN)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Speed"), r, text = MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN)
+        r = Gtk.CellRendererText()
+        col = Gtk.TreeViewColumn(_("Speed"), r, text = MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN)
         self._treeview.append_column(col)
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN)
         col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))
@@ -453,7 +456,7 @@ class MirrorSelectionDialog(object):
             self._mirrors_model.append((
                 mirror,
                 mirror.url,
-                gtk.gdk.pixbuf_new_from_file_at_size(flag, -1, FLAG_SIZE),
+                GdkPixbuf.Pixbuf.new_from_file_at_size(flag, -1, FLAG_SIZE),
                 0,
                 None,
                 tooltip,
@@ -658,7 +661,7 @@ class MirrorSelectionDialog(object):
         self._update_list()
         self._dialog.show_all()
         retval = self._dialog.run()
-        if retval == gtk.RESPONSE_APPLY:
+        if retval == Gtk.ResponseType.APPLY:
             try:
                 model, path = self._treeview.get_selection().get_selected_rows()
                 iter = model.get_iter(path[0])
@@ -681,13 +684,13 @@ class Application(object):
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
-        self.builder = gtk.Builder()
+        self.builder = Gtk.Builder()
         self.builder.add_from_file(glade_file)
         self._main_window = self.builder.get_object("main_window")
 
         self._main_window.set_title(_("Software Sources"))
 
-        self._main_window.set_icon_name("mintsources")
+        self._main_window.set_icon_name("software-sources")
 
         self._notebook = self.builder.get_object("notebook")
         self._official_repositories_box = self.builder.get_object("official_repositories_box")
@@ -768,21 +771,21 @@ class Application(object):
         if (len(self.optional_components) > 0):
             if os.path.exists("/etc/linuxmint/info"):
                 # This is Mint, we want to warn people about Romeo
-                warning_label = gtk.Label()
-                warning_label.set_alignment(0, 0.5)
+                warning_label = Gtk.Label()
+                #warning_label.set_alignment(0, 0.5)
                 warning_label.set_markup("<span font_style='oblique' font_stretch='ultracondensed'>%s</span>" % _("Warning: Unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))
                 warning_label.set_line_wrap(True)
-                warning_label.connect("size-allocate", self.label_size_allocate)
+                warning_label.set_justify(Gtk.Justification.FILL)
                 self.builder.get_object("vbox_optional_components").pack_start(warning_label, True, True, 6)
-            components_table = gtk.Table()
-            self.builder.get_object("vbox_optional_components").pack_start(components_table, True, True)
+            components_table = Gtk.Table()
+            self.builder.get_object("vbox_optional_components").pack_start(components_table, True, True, 0)
             self.builder.get_object("vbox_optional_components").show_all()
             nb_components = 0
             for i in range(len(self.optional_components)):
                 component = self.optional_components[i]
                 cb = ComponentToggleCheckBox(self, component, self._main_window)
                 component.set_widget(cb)
-                components_table.attach(cb, 0, 1, nb_components, nb_components + 1, xoptions = gtk.FILL | gtk.EXPAND, yoptions = 0)
+                components_table.attach(cb, 0, 1, nb_components, nb_components + 1)
                 nb_components += 1
 
         self.mirrors = self.read_mirror_list(self.config["mirrors"]["mirrors"])
@@ -822,7 +825,7 @@ class Application(object):
             file.close()
 
         # Add PPAs
-        self._ppa_model = gtk.ListStore(object, bool, str)
+        self._ppa_model = Gtk.ListStore(object, bool, str)
         self._ppa_treeview = self.builder.get_object("treeview_ppa")
         self._ppa_treeview.set_model(self._ppa_model)
         self._ppa_treeview.set_headers_clickable(True)
@@ -830,17 +833,17 @@ class Application(object):
         selection = self._ppa_treeview.get_selection()
         selection.connect("changed", self.ppa_selected)
 
-        self._ppa_model.set_sort_column_id(2, gtk.SORT_ASCENDING)
+        self._ppa_model.set_sort_column_id(2, Gtk.SortType.ASCENDING)
 
-        r = gtk.CellRendererToggle()
+        r = Gtk.CellRendererToggle()
         r.connect("toggled", self.ppa_toggled)
-        col = gtk.TreeViewColumn(_("Enabled"), r)
+        col = Gtk.TreeViewColumn(_("Enabled"), r)
         col.set_cell_data_func(r, self.datafunction_checkbox)
         self._ppa_treeview.append_column(col)
         col.set_sort_column_id(1)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("PPA"), r, markup = 2)
+        r = Gtk.CellRendererText()
+        col = Gtk.TreeViewColumn(_("PPA"), r, markup = 2)
         self._ppa_treeview.append_column(col)
         col.set_sort_column_id(2)
 
@@ -849,22 +852,22 @@ class Application(object):
                 tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
 
         # Add repositories
-        self._repository_model = gtk.ListStore(object, bool, str)
+        self._repository_model = Gtk.ListStore(object, bool, str)
         self._repository_treeview = self.builder.get_object("treeview_repository")
         self._repository_treeview.set_model(self._repository_model)
         self._repository_treeview.set_headers_clickable(True)
 
-        self._repository_model.set_sort_column_id(2, gtk.SORT_ASCENDING)
+        self._repository_model.set_sort_column_id(2, Gtk.SortType.ASCENDING)
 
-        r = gtk.CellRendererToggle()
+        r = Gtk.CellRendererToggle()
         r.connect("toggled", self.repository_toggled)
-        col = gtk.TreeViewColumn(_("Enabled"), r)
+        col = Gtk.TreeViewColumn(_("Enabled"), r)
         col.set_cell_data_func(r, self.datafunction_checkbox)
         self._repository_treeview.append_column(col)
         col.set_sort_column_id(1)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Repository"), r, markup = 2)
+        r = Gtk.CellRendererText()
+        col = Gtk.TreeViewColumn(_("Repository"), r, markup = 2)
         self._repository_treeview.append_column(col)
         col.set_sort_column_id(2)
 
@@ -872,15 +875,15 @@ class Application(object):
             for repository in self.repositories:
                 tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
 
-        self._keys_model = gtk.ListStore(object, str)
+        self._keys_model = Gtk.ListStore(object, str)
         self._keys_treeview = self.builder.get_object("treeview_keys")
         self._keys_treeview.set_model(self._keys_model)
         self._keys_treeview.set_headers_clickable(True)
 
-        self._keys_model.set_sort_column_id(1, gtk.SORT_ASCENDING)
+        self._keys_model.set_sort_column_id(1, Gtk.SortType.ASCENDING)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Key"), r, markup = 1)
+        r = Gtk.CellRendererText()
+        col = Gtk.TreeViewColumn(_("Key"), r, markup = 1)
         self._keys_treeview.append_column(col)
         col.set_sort_column_id(1)
 
@@ -904,7 +907,7 @@ class Application(object):
             self.builder.get_object("toggle_maintenance")
         ]
 
-        self._main_window.connect("delete_event", lambda w,e: gtk.main_quit())
+        self._main_window.connect("delete_event", lambda w,e: Gtk.main_quit())
         for i in range(len(self._tab_buttons)):
             self._tab_buttons[i].connect("clicked", self._on_tab_button_clicked, i)
             self._tab_buttons[i].set_active(False)
@@ -945,9 +948,6 @@ class Application(object):
             text = encoded.decode('utf-8', 'ignore')
         button.set_text(text)
 
-    def label_size_allocate(self, widget, rect):
-        widget.set_size_request(rect.width, -1)
-
     def read_mirror_list(self, path):
         mirror_list = []
         country_code = None
@@ -980,13 +980,13 @@ class Application(object):
 
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
-        image = gtk.Image()
+        image = Gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/maintenance.png")
         self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)
 
     def fix_mergelist(self, widget):
         os.system("rm /var/lib/apt/lists/* -vf")
-        image = gtk.Image()
+        image = Gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/maintenance.png")
         self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
         self.enable_reload_button()
@@ -1014,21 +1014,21 @@ class Application(object):
             tree_iter = self._keys_model.append((key, key.get_name()))
 
     def add_key(self, widget):
-        dialog = gtk.FileChooserDialog(_("Open.."),
+        dialog = Gtk.FileChooserDialog(_("Open.."),
                                None,
-                               gtk.FILE_CHOOSER_ACTION_OPEN,
-                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        dialog.set_default_response(gtk.RESPONSE_OK)
+                               Gtk.FileChooserAction.OPEN,
+                               (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog.set_default_response(Gtk.ResponseType.OK)
         response = dialog.run()
-        if response == gtk.RESPONSE_OK:
+        if response == Gtk.ResponseType.OK:
             subprocess.call(["apt-key", "add", dialog.get_filename()])
             self.load_keys()
             self.enable_reload_button()
         dialog.destroy()
 
     def fetch_key(self, widget):
-        image = gtk.Image()
+        image = Gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
         line = self.show_entry_dialog(self._main_window, _("Please enter the 8 characters of the public key you want to download from keyserver.ubuntu.com:"), "", image)
         if line is not None:
@@ -1041,14 +1041,14 @@ class Application(object):
         (model, iter) = selection.get_selected()
         if (iter != None):
             key = model.get(iter, 0)[0]
-            image = gtk.Image()
+            image = Gtk.Image()
             image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
             if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image, yes_no=True)):
                 key.delete()
                 self.load_keys()
 
     def add_ppa(self, widget):
-        image = gtk.Image()
+        image = Gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
         start_line = ""
         clipboard_text = self.get_clipboard_text("ppa")
@@ -1067,7 +1067,7 @@ class Application(object):
                 self.show_error_dialog(self._main_window, _("Cannot add PPA: '%s'.") % detail)
                 return
 
-            image = gtk.Image()
+            image = Gtk.Image()
             image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
             info_text = "%s\n\n%s\n\n%s\n\n%s" % (line, self.format_string(ppa_info["displayname"]), self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
             if self.show_confirm_ppa_dialog(self._main_window, info_text):
@@ -1155,7 +1155,7 @@ class Application(object):
                         architecture = commands.getoutput("dpkg --print-architecture")
                         ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, self.config["general"]["base_codename"], architecture)
                         if os.path.exists(ppa_file):
-                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s %s" % (self.config["general"]["base_codename"], ppa_owner, ppa_name, self._main_window.window.xid))
+                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s &" % (self.config["general"]["base_codename"], ppa_owner, ppa_name))
                         else:
                             print "%s not found!" % ppa_file
                             self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
@@ -1163,7 +1163,7 @@ class Application(object):
             print detail
 
     def add_repository(self, widget):
-        image = gtk.Image()
+        image = Gtk.Image()
         image.set_from_file("/usr/lib/linuxmint/mintSources/3rd.png")
         start_line = ""
         clipboard_text = self.get_clipboard_text("deb")
@@ -1208,25 +1208,25 @@ class Application(object):
 
 
     def show_confirmation_dialog(self, parent, message, image=None, affirmation=None, yes_no=False):
-        buttons = gtk.BUTTONS_OK_CANCEL
-        default_button = gtk.RESPONSE_OK
-        confirmation_button = gtk.RESPONSE_OK
+        buttons = Gtk.ButtonsType.OK_CANCEL
+        default_button = Gtk.ResponseType.OK
+        confirmation_button = Gtk.ResponseType.OK
         if yes_no:
-            buttons = gtk.BUTTONS_YES_NO
-            default_button = gtk.RESPONSE_NO
-            confirmation_button = gtk.RESPONSE_YES
+            buttons = Gtk.ButtonsType.YES_NO
+            default_button = Gtk.ResponseType.NO
+            confirmation_button = Gtk.ResponseType.YES
 
         if affirmation is None:
-            d = gtk.MessageDialog(parent,
-                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                              gtk.MESSAGE_WARNING,
+            d = Gtk.MessageDialog(parent,
+                              Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                              Gtk.MessageType.WARNING,
                               buttons,
                               message)
         else:
-            d = gtk.MessageDialog(parent,
-                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                              gtk.MESSAGE_INFO,
-                              gtk.BUTTONS_OK,
+            d = Gtk.MessageDialog(parent,
+                              Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                              Gtk.MessageType.INFO,
+                              Gtk.ButtonsType.OK,
                               message)
         d.set_markup(message)
         if image is not None:
@@ -1242,19 +1242,19 @@ class Application(object):
             return False
 
     def show_confirm_ppa_dialog(self, parent, message):
-        b = gtk.TextBuffer()
+        b = Gtk.TextBuffer()
         b.set_text(message)
-        t =  gtk.TextView(b)
-        t.set_wrap_mode(gtk.WRAP_WORD)
-        s = gtk.ScrolledWindow()
-        s.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        s.set_shadow_type(gtk.SHADOW_OUT)
-        default_button = gtk.RESPONSE_ACCEPT
-        confirmation_button = gtk.RESPONSE_ACCEPT
-        d = gtk.Dialog(None, parent,
-                       gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                       (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                      gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+        t =  Gtk.TextView(b)
+        t.set_wrap_mode(Pango.WrapMode.WORD)
+        s = Gtk.ScrolledWindow()
+        s.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        s.set_shadow_type(Gtk.ShadowType.OUT)
+        default_button = Gtk.ResponseType.ACCEPT
+        confirmation_button = Gtk.ResponseType.ACCEPT
+        d = Gtk.Dialog(None, parent,
+                       Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                       (Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT,
+                      Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT))
         d.set_size_request(550, 400)
         d.vbox.pack_start(s, True, True, 0)
         d.set_title("")
@@ -1270,10 +1270,10 @@ class Application(object):
             return False
 
     def show_error_dialog(self, parent, message, image=None):
-        d = gtk.MessageDialog(parent,
-                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                              gtk.MESSAGE_ERROR,
-                              gtk.BUTTONS_OK,
+        d = Gtk.MessageDialog(parent,
+                              Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                              Gtk.MessageType.ERROR,
+                              Gtk.ButtonsType.OK,
                               message)
 
         d.set_markup(message)
@@ -1281,19 +1281,19 @@ class Application(object):
             image.show()
             d.set_image(image)
 
-        d.set_default_response(gtk.RESPONSE_OK)
+        d.set_default_response(Gtk.ResponseType.OK)
         r = d.run()
         d.destroy()
-        if r == gtk.RESPONSE_OK:
+        if r == Gtk.ResponseType.OK:
             return True
         else:
             return False
 
     def show_entry_dialog(self, parent, message, default='', image=None):
-        d = gtk.MessageDialog(parent,
-                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                              gtk.MESSAGE_QUESTION,
-                              gtk.BUTTONS_OK_CANCEL,
+        d = Gtk.MessageDialog(parent,
+                              Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                              Gtk.MessageType.QUESTION,
+                              Gtk.ButtonsType.OK_CANCEL,
                               message)
 
         d.set_markup(message)
@@ -1301,22 +1301,22 @@ class Application(object):
             image.show()
             d.set_image(image)
 
-        entry = gtk.Entry()
+        entry = Gtk.Entry()
         entry.set_text(default)
         entry.show()
-        d.vbox.pack_end(entry)
-        entry.connect('activate', lambda _: d.response(gtk.RESPONSE_OK))
-        d.set_default_response(gtk.RESPONSE_OK)
+        d.vbox.pack_end(entry, False, False, 0)
+        entry.connect('activate', lambda _: d.response(Gtk.ResponseType.OK))
+        d.set_default_response(Gtk.ResponseType.OK)
 
         r = d.run()
         text = entry.get_text().decode('utf8')
         d.destroy()
-        if r == gtk.RESPONSE_OK:
+        if r == Gtk.ResponseType.OK:
             return text
         else:
             return None
 
-    def datafunction_checkbox(self, column, cell, model, iter):
+    def datafunction_checkbox(self, column, cell, model, iter, data):
         cell.set_property("activatable", True)
         if (model.get_value(iter, 0).selected):
             cell.set_property("active", True)
@@ -1360,9 +1360,9 @@ class Application(object):
         button.set_active(True)
 
     def run(self):
-        gobject.threads_init()
+        GObject.threads_init()
         self._main_window.show_all()
-        gtk.main()
+        Gtk.main()
 
     def revert_to_default_sources(self, widget):
         self.selected_mirror = self.config["mirrors"]["default"]
@@ -1381,17 +1381,17 @@ class Application(object):
         self.builder.get_object("reload_button").set_sensitive(True)
         self.builder.get_object("reload_button_label").set_markup("<b>%s</b>" % _("Update the cache"))
         self.builder.get_object("reload_button").set_tooltip_text(_("Click here to update your APT cache with your new sources"))
-        self.builder.get_object("reload_button_image").set_from_stock(gtk.STOCK_REFRESH, gtk.ICON_SIZE_BUTTON)
+        self.builder.get_object("reload_button_image").set_from_stock(Gtk.STOCK_REFRESH, Gtk.IconSize.BUTTON)
 
     def disable_reload_button(self):
         self.builder.get_object("reload_button").set_sensitive(False)
         self.builder.get_object("reload_button_label").set_markup("%s" % _("No action required"))
         self.builder.get_object("reload_button").set_tooltip_text(_("Your APT cache is up to date"))
-        self.builder.get_object("reload_button_image").set_from_stock(gtk.STOCK_OK, gtk.ICON_SIZE_BUTTON)
+        self.builder.get_object("reload_button_image").set_from_stock(Gtk.STOCK_OK, Gtk.IconSize.BUTTON)
 
     def update_apt_cache(self, widget=None):
         self.disable_reload_button()
-        cmd = ["sudo", "/usr/sbin/synaptic", "--hide-main-window", "--update-at-startup", "--non-interactive"]
+        cmd = ["sudo", "/usr/sbin/synaptic", "--hide-main-window", "--update-at-startup", "--non-interactive", "--parent-window-id", "%s" % self._main_window.get_window().get_xid()]
         comnd = subprocess.Popen(' '.join(cmd), shell=True)
         #returnCode = comnd.wait()
 
@@ -1514,14 +1514,14 @@ class Application(object):
                     base_flag_path = FLAG_PATH % mirror.country_code.lower()
                     break
 
-        pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(mint_flag_path, -1, FLAG_SIZE)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(mint_flag_path, -1, FLAG_SIZE)
         self.builder.get_object("image_mirror").set_from_pixbuf(pixbuf)
 
-        pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(base_flag_path, -1, FLAG_SIZE)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(base_flag_path, -1, FLAG_SIZE)
         self.builder.get_object("image_base_mirror").set_from_pixbuf(pixbuf)
 
     def get_clipboard_text(self, source_type):
-        clipboard = gtk.Clipboard(display=gtk.gdk.display_get_default(), selection="CLIPBOARD")
+        clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         text = clipboard.wait_for_text()
         if text is not None and text.strip().startswith(source_type):
             return text
