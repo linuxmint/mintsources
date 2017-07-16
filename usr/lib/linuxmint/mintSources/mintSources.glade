@@ -144,7 +144,8 @@
                           <object class="GtkImage" id="image2">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="pixbuf">official.png</property>
+                            <property name="icon_name">mintsources</property>
+                            <property name="icon_size">3</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -188,7 +189,8 @@
                           <object class="GtkImage" id="image3">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="pixbuf">ppa.png</property>
+                            <property name="icon_name">mintsources-ppa</property>
+                            <property name="icon_size">3</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -232,7 +234,8 @@
                           <object class="GtkImage" id="image4">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="pixbuf">3rd.png</property>
+                            <property name="icon_name">mintsources-additional</property>
+                            <property name="icon_size">3</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -276,7 +279,8 @@
                           <object class="GtkImage" id="image8">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="pixbuf">keyring.png</property>
+                            <property name="icon_name">mintsources-keys</property>
+                            <property name="icon_size">3</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -321,7 +325,8 @@
                           <object class="GtkImage" id="image15">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="pixbuf">maintenance.png</property>
+                            <property name="icon_name">mintsources-maintenance</property>
+                            <property name="icon_size">3</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>

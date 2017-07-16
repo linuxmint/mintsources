@@ -981,13 +981,13 @@ class Application(object):
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
         image = Gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/maintenance.png")
+        image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)
 
     def fix_mergelist(self, widget):
         os.system("rm /var/lib/apt/lists/* -vf")
         image = Gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/maintenance.png")
+        image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
         self.enable_reload_button()
 
@@ -1029,7 +1029,7 @@ class Application(object):
 
     def fetch_key(self, widget):
         image = Gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
+        image.set_from_icon_name("mintsources-keys", Gtk.IconSize.DIALOG)
         line = self.show_entry_dialog(self._main_window, _("Please enter the 8 characters of the public key you want to download from keyserver.ubuntu.com:"), "", image)
         if line is not None:
             res = os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % line)
@@ -1042,14 +1042,14 @@ class Application(object):
         if (iter != None):
             key = model.get(iter, 0)[0]
             image = Gtk.Image()
-            image.set_from_file("/usr/lib/linuxmint/mintSources/keyring.png")
+            image.set_from_icon_name("mintsources-keys", Gtk.IconSize.DIALOG)
             if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image, yes_no=True)):
                 key.delete()
                 self.load_keys()
 
     def add_ppa(self, widget):
         image = Gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
+        image.set_from_icon_name("mintsources-ppa", Gtk.IconSize.DIALOG)
         start_line = ""
         clipboard_text = self.get_clipboard_text("ppa")
         if clipboard_text != None:
@@ -1068,7 +1068,7 @@ class Application(object):
                 return
 
             image = Gtk.Image()
-            image.set_from_file("/usr/lib/linuxmint/mintSources/ppa.png")
+            image.set_from_icon_name("mintsources-ppa", Gtk.IconSize.DIALOG)
             info_text = "%s\n\n%s\n\n%s\n\n%s" % (line, self.format_string(ppa_info["displayname"]), self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
             if self.show_confirm_ppa_dialog(self._main_window, info_text):
                 (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
@@ -1164,7 +1164,7 @@ class Application(object):
 
     def add_repository(self, widget):
         image = Gtk.Image()
-        image.set_from_file("/usr/lib/linuxmint/mintSources/3rd.png")
+        image.set_from_icon_name("mintsources-additional", Gtk.IconSize.DIALOG)
         start_line = ""
         clipboard_text = self.get_clipboard_text("deb")
         if clipboard_text != None:
