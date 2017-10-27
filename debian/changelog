@@ -1,3 +1,23 @@
+mintsources (1.6.8) sylvia; urgency=medium
+
+  [ monsta ]
+  * Use icon name instead of full path in KDE desktop file too (#95)
+
+  [ Clement Lefebvre ]
+  * Port foreign_packages.py to python3/gtk3
+  * Port ppa_browser.py to GTK3
+  * Port the rest of the application to GTK3
+  * HiDPI: Use icon names and SVG icons
+  * Fix two hardcoded refs to png icons
+  * Use larger flags and svg distro icon if available
+  * Add SVG icon for sonya
+  * Load mint icon from icon theme
+  * Remove support for obsolete releases and obsolete icons
+  * Synaptic: Don't specify progress/finish strings
+  * l10n: Update POT file
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 27 Oct 2017 12:59:08 +0100
+
 mintsources (1.6.7) sonya; urgency=medium
 
   * Add support for Mint 18.2 Sonya
