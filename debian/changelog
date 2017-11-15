@@ -1,3 +1,9 @@
+mintsources (1.7.0) sylvia; urgency=medium
+
+  * Fix unicode errors
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 15 Nov 2017 00:09:13 +0000
+
 mintsources (1.6.9) sylvia; urgency=medium
 
   * Add support for Linux Mint 18.3
