@@ -17,7 +17,6 @@ import commands
 import re
 import json
 import datetime
-
 import urllib
 import pycurl
 from optparse import OptionParser
@@ -942,12 +941,12 @@ class Application(object):
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
 
-    def set_button_text(self, button, text):
+    def set_button_text(self, label, text):
+        label.set_text(text)
         if len(text) > BUTTON_LABEL_MAX_LENGTH:
-            button.set_tooltip_text(text)
-            encoded = text.encode('utf-8')[:BUTTON_LABEL_MAX_LENGTH] + ".."
-            text = encoded.decode('utf-8', 'ignore')
-        button.set_text(text)
+            label.set_tooltip_text(text)
+            label.set_max_width_chars(BUTTON_LABEL_MAX_LENGTH)
+            label.set_ellipsize(Pango.EllipsizeMode.END)
 
     def read_mirror_list(self, path):
         mirror_list = []
@@ -995,7 +994,7 @@ class Application(object):
     def load_keys(self):
         self.keys = []
         key = None
-        output = commands.getoutput("apt-key list")
+        output = commands.getoutput("apt-key list").decode("utf8", "replace")
         for line in output.split("\n"):
             line = line.strip()
             if line.startswith("pub"):
