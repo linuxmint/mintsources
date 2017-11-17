@@ -431,7 +431,7 @@ class MirrorSelectionDialog(object):
             self.countries = json.load(data_file)
 
     def activate(self, treeview, path, view_column):
-        self._dialog.response(Gtk.ResponseType.APPLY)
+        self._dialog.response(gtk.RESPONSE_APPLY)
 
     def get_country(self, country_code):
         for country in self.countries:
