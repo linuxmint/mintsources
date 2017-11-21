@@ -408,6 +408,7 @@ class MirrorSelectionDialog(object):
         self._treeview = ui_builder.get_object("mirrors_treeview")
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
+        self._treeview.connect("row-activated", self.activate)
 
         self._mirrors_model.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN, Gtk.SortType.DESCENDING)
 
@@ -433,6 +434,9 @@ class MirrorSelectionDialog(object):
 
         with open('/usr/lib/linuxmint/mintSources/countries.json') as data_file:
             self.countries = json.load(data_file)
+
+    def activate(self, treeview, path, view_column):
+        self._dialog.response(gtk.RESPONSE_APPLY)
 
     def get_country(self, country_code):
         for country in self.countries:
