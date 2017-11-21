@@ -1244,7 +1244,8 @@ class Application(object):
     def show_confirm_ppa_dialog(self, parent, message):
         b = Gtk.TextBuffer()
         b.set_text(message)
-        t =  Gtk.TextView(b)
+        t =  Gtk.TextView()
+        t.set_buffer(b)
         t.set_wrap_mode(Pango.WrapMode.WORD)
         s = Gtk.ScrolledWindow()
         s.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
