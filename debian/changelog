@@ -1,3 +1,10 @@
+mintsources (1.7.1) sylvia; urgency=medium
+
+  * Fix adding PPAs
+  * Fix unicode errors
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 21 Nov 2017 16:08:42 +0000
+
 mintsources (1.7.0) sylvia; urgency=medium
 
   * Fix unicode errors
