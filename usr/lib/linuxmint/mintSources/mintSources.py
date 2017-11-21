@@ -324,7 +324,9 @@ class Repository():
         name = name.replace("/ubuntu", "")
         name = name.replace("/ppa", "")
         if self.line.startswith("deb-src"):
-            name = "%s (%s)" % (name, _("Sources"))
+            name = name.decode("utf8", "replace")
+            suffix = _("Sources").decode("utf8", "replace")
+            name = "%s (%s)" % (name, suffix)
         return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
 
     def get_repository_name(self):
@@ -1103,6 +1105,7 @@ class Application(object):
             text = ""
         text = text.encode("utf-8")
         text = text.replace("<", "&lt;").replace(">", "&gt;")
+        text = text.decode("utf8", "replace")
         return text
 
     def edit_ppa(self, widget):
