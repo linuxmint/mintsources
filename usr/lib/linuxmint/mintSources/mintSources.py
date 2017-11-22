@@ -9,7 +9,7 @@ import aptsources.distro
 import aptsources.distinfo
 from aptsources.sourceslist import SourcesList
 import gettext
-import thread
+import threading
 import pycurl
 import cStringIO
 from CountryInformation import CountryInformation
@@ -31,6 +31,21 @@ BUTTON_LABEL_MAX_LENGTH = 30
 
 FLAG_PATH = "/usr/share/iso-flag-png/%s.png"
 FLAG_SIZE = 16
+
+# Used as a decorator to run things in the background
+def async(func):
+    def wrapper(*args, **kwargs):
+        thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+        thread.daemon = True
+        thread.start()
+        return thread
+    return wrapper
+
+# Used as a decorator to run things in the main loop, from another thread
+def idle(func):
+    def wrapper(*args):
+        GObject.idle_add(func, *args)
+    return wrapper
 
 def remove_repository_via_cli(line, codename, forceYes):
     if line.startswith("ppa:"):
@@ -464,7 +479,7 @@ class MirrorSelectionDialog(object):
                 mirror.name
             ))
 
-        thread.start_new_thread(self._all_speed_tests, ())
+        self._all_speed_tests()
 
     def get_url_last_modified(self, url):
         try:
@@ -502,6 +517,7 @@ class MirrorSelectionDialog(object):
             # Age is fine :)
             return True
 
+    @async
     def _all_speed_tests(self):
         model_iters = [] # Don't iterate through iters directly.. we're modifying their orders..
         iter = self._mirrors_model.get_iter_first()
@@ -510,9 +526,14 @@ class MirrorSelectionDialog(object):
             iter = self._mirrors_model.iter_next(iter)
 
         for iter in model_iters:
-            mirror = self._mirrors_model.get_value(iter, MirrorSelectionDialog.MIRROR_COLUMN)
-            if mirror in self.visible_mirrors:
-                self._speed_test (self._mirrors_model, iter)
+            try:
+                if iter is not None:
+                    mirror = self._mirrors_model.get_value(iter, MirrorSelectionDialog.MIRROR_COLUMN)
+                    if mirror in self.visible_mirrors:
+                        url = self._mirrors_model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
+                        self._speed_test (iter, url)
+            except Exception as e:
+                pass # null types will occur here...
 
     def _get_speed_label(self, speed):
         if speed > 0:
@@ -535,43 +556,45 @@ class MirrorSelectionDialog(object):
             represented_speed = ("0 %s") % _("kB/s")
         return represented_speed
 
-    def _speed_test(self, model, iter):
-        if iter is not None:
-            url = model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
+    def _speed_test(self, iter, url):
+        download_speed = 0
+        try:
+            if self.is_base:
+                test_url = "%s/dists/%s/main/binary-amd64/Packages.gz" % (url, self.codename)
+            else:
+                test_url = "%s/dists/%s/main/Contents-amd64.gz" % (url, self.codename)
+            if (self.is_base or self.check_mirror_up_to_date("%s/db/version" % url)):
+                c = pycurl.Curl()
+                buff = cStringIO.StringIO()
+                c.setopt(pycurl.URL, test_url)
+                c.setopt(pycurl.CONNECTTIMEOUT, 5)
+                c.setopt(pycurl.TIMEOUT, 20)
+                c.setopt(pycurl.FOLLOWLOCATION, 1)
+                c.setopt(pycurl.WRITEFUNCTION, buff.write)
+                c.setopt(pycurl.NOSIGNAL, 1)
+                c.perform()
+                download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD) # bytes/sec
+            else:
+                # the mirror is not up to date
+                download_speed = -1
+        except Exception, error:
+            print "Error '%s' on url %s" % (error, url)
             download_speed = 0
-            try:
-                if self.is_base:
-                    test_url = "%s/dists/%s/main/binary-amd64/Packages.gz" % (url, self.codename)
-                else:
-                    test_url = "%s/dists/%s/main/Contents-amd64.gz" % (url, self.codename)
-                if (self.is_base or self.check_mirror_up_to_date("%s/db/version" % url)):
-                    c = pycurl.Curl()
-                    buff = cStringIO.StringIO()
-                    c.setopt(pycurl.URL, test_url)
-                    c.setopt(pycurl.CONNECTTIMEOUT, 5)
-                    c.setopt(pycurl.TIMEOUT, 20)
-                    c.setopt(pycurl.FOLLOWLOCATION, 1)
-                    c.setopt(pycurl.WRITEFUNCTION, buff.write)
-                    c.setopt(pycurl.NOSIGNAL, 1)
-                    c.perform()
-                    download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD) # bytes/sec
-                else:
-                    # the mirror is not up to date
-                    download_speed = -1
-            except Exception, error:
-                print "Error '%s' on url %s" % (error, url)
-                download_speed = 0
 
-            if (iter is not None): # recheck as it can get null
-                if download_speed == -1:
-                    # don't remove from model as this is not thread-safe
-                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Obsolete"))
-                if download_speed == 0:
-                    # don't remove from model as this is not thread-safe
-                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Unreachable"))
-                else:
-                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
-                    model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
+        self.show_speed_test_result(iter, download_speed)
+
+    @idle
+    def show_speed_test_result(self, iter, download_speed):
+        if (iter is not None): # recheck as it can get null
+            if download_speed == -1:
+                # don't remove from model as this is not thread-safe
+                self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Obsolete"))
+            if download_speed == 0:
+                # don't remove from model as this is not thread-safe
+                self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Unreachable"))
+            else:
+                self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
+                self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
 
     def run(self, mirrors, config, is_base):
 
@@ -1364,7 +1387,6 @@ class Application(object):
         button.set_active(True)
 
     def run(self):
-        GObject.threads_init()
         self._main_window.show_all()
         Gtk.main()
 
