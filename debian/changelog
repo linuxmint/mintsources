@@ -1,3 +1,13 @@
+mintsources (1.7.2) sylvia; urgency=medium
+
+  [ Clement Lefebvre ]
+  * Simplify multi-threading code
+
+  [ tsharitt ]
+  * Double click applies mirror selection (#101)
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 22 Nov 2017 15:42:56 +0000
+
 mintsources (1.7.1) sylvia; urgency=medium
 
   * Fix adding PPAs
