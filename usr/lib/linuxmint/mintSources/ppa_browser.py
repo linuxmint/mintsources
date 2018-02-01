@@ -30,6 +30,7 @@ class PPA_Browser():
         # print "Using release info: %s" % ppa_file
 
         self.packages_to_install = []
+        self.packages_installed_from_ppa = []
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
@@ -80,6 +81,10 @@ class PPA_Browser():
                                 if pkg.installed.version != candidate.version:
                                     already_installed_str = _("version %s already installed") % pkg.installed.version
                                     self.model.append((pkg, False, "<b>%s</b> <small>%s (%s)</small>" % (pkg.name, candidate.version, already_installed_str)))
+                                else:
+                                    already_installed_str = _("already installed")
+                                    self.model.append((pkg, False, "<b>%s</b> <small>%s (%s)</small>" % (pkg.name, candidate.version, already_installed_str)))
+                                    self.packages_installed_from_ppa.append(pkg.name)
                             else:
                                 self.model.append((pkg, False, "<b>%s</b> <small>%s</small>" % (pkg.name, candidate.version)))
 
@@ -88,11 +93,15 @@ class PPA_Browser():
         self.window.show_all()
 
     def datafunction_checkbox(self, column, cell, model, iter, data):
-        cell.set_property("activatable", True)
-        if (model.get_value(iter, 0).name in self.packages_to_install):
+        if (model.get_value(iter, 0).name in self.packages_installed_from_ppa):
+            cell.set_property("activatable", False)
             cell.set_property("active", True)
         else:
-            cell.set_property("active", False)
+            cell.set_property("activatable", True)
+            if (model.get_value(iter, 0).name in self.packages_to_install):
+                cell.set_property("active", True)
+            else:
+                cell.set_property("active", False)
 
     def toggled (self, renderer, path):
         iter = self.model.get_iter(path)
