@@ -1,3 +1,9 @@
+mintsources (1.7.4) tara; urgency=medium
+
+  * Add support for LMDE 3
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 09 Feb 2018 13:21:08 +0000
+
 mintsources (1.7.3) tara; urgency=medium
 
   [ monsta ]
