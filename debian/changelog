@@ -1,3 +1,14 @@
+mintsources (1.7.3) tara; urgency=medium
+
+  [ monsta ]
+  * fix runtime dependencies (#102)
+  * add Mint 19 support and also drop unneeded Medibuntu keys (#103)
+
+  [ Vincent Vermeulen ]
+  * Also show packages already installed from a PPA (#105)
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 09 Feb 2018 13:11:44 +0000
+
 mintsources (1.7.2) sylvia; urgency=medium
 
   [ Clement Lefebvre ]
