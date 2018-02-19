@@ -1578,7 +1578,7 @@ if __name__ == "__main__":
         if not os.path.exists(config_dir):
             print ("LSB codename: '%s'." % lsb_codename)
             if os.path.exists("/etc/linuxmint/info"):
-                print ("Version of base-files: '%s'." % commands.getoutput("apt version base-files"))
+                print ("Version of base-files: '%s'." % commands.getoutput("dpkg-query -f '${Version}' -W base-files"))
                 print ("Your LSB codename isn't a valid Linux Mint codename.")
             else:
                 print ("This codename isn't currently supported.")
