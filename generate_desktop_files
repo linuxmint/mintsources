@@ -12,7 +12,7 @@ gettext.install(DOMAIN, PATH)
 
 prefix = "[Desktop Entry]\n"
 
-suffix = """Exec=software-sources
+suffix = """Exec=pkexec mintsources
 Icon=mintsources
 Terminal=false
 X-MultipleArgs=false
@@ -28,7 +28,7 @@ additionalfiles.generate(DOMAIN, PATH, "usr/share/applications/mintsources.deskt
 
 prefix = "[Desktop Entry]\n"
 
-suffix= """Exec=software-sources
+suffix= """Exec=pkexec mintsources
 Icon=mintsources
 Terminal=false
 Type=Application

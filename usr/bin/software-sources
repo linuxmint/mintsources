@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
-import xapp.os
-import gettext
+import os
+import subprocess
+import sys
 
-gettext.install("mintsources", "/usr/share/linuxmint/locale")
+if os.getuid() != 0:
+    print("mintsources needs to be run as root.")
+    sys.exit(1)
 
-icon = "/usr/share/icons/hicolor/48x48/apps/software-sources.png"
-message = _("Please enter your password to configure the software sources")
-
-xapp.os.run_with_admin_privs("/usr/lib/linuxmint/mintSources/mintSources.py", message=message, icon=icon, support_pkexec=True)
+subprocess.Popen("/usr/lib/linuxmint/mintSources/mintSources.py")
