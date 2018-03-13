@@ -5,7 +5,7 @@ import apt
 import gettext
 import tempfile
 import subprocess
-
+import mintcommon
 import gi
 
 gi.require_version('Gtk', '3.0')
@@ -80,6 +80,8 @@ class Foreign_Browser():
             col = Gtk.TreeViewColumn(_("Repository version"), r, markup = PKG_REPO_VERSION)
             treeview.append_column(col)
             col.set_sort_column_id(PKG_REPO_VERSION)
+
+        self.apt = mintcommon.APT(self.window)
 
         cache = apt.Cache()
         for key in cache.keys():
@@ -160,25 +162,26 @@ class Foreign_Browser():
             self.action_button.set_sensitive(False)
 
     def install (self, button):
-        self.builder.get_object("notebook1").set_current_page(1)
-        terminal = Vte.Terminal()
-        terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], ["/bin/dash"], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
-
         foreign_packages = []
         iter = self.model.get_iter_first()
         while (iter != None):
             if (self.model.get_value(iter, PKG_CHECKED)):
                 foreign_packages.append(self.model.get_value(iter, PKG_ID))
             iter = self.model.iter_next(iter)
-
         if self.downgrade_mode:
+            self.builder.get_object("notebook1").set_current_page(1)
+            terminal = Vte.Terminal()
+            terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], ["/bin/dash"], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
             terminal.feed_child("apt-get install %s\n" % " ".join(foreign_packages), -1)
+            terminal.show()
+            self.builder.get_object("vbox_vte").add(terminal)
+            self.builder.get_object("vbox_vte").show_all()
         else:
-            terminal.feed_child("apt-get remove --purge %s\n" % " ".join(foreign_packages), -1)
+            self.apt.set_finished_callback(self.exit)
+            self.apt.remove_packages(foreign_packages)
 
-        terminal.show()
-        self.builder.get_object("vbox_vte").add(terminal)
-        self.builder.get_object("vbox_vte").show_all()
+    def exit(self, transaction=None, exit_state=None):
+        sys.exit(0)
 
     def select_all (self, button):
         iter = self.model.get_iter_first()
