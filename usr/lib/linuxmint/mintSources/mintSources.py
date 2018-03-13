@@ -1,27 +1,25 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 import os
 import subprocess
 import sys
-import urlparse
-import ConfigParser
+import configparser
 import aptsources.distro
 import aptsources.distinfo
 from aptsources.sourceslist import SourcesList
 import gettext
 import threading
 import pycurl
-import cStringIO
+from io import BytesIO
 from CountryInformation import CountryInformation
-import commands
 import re
 import json
 import datetime
 import urllib
 import pycurl
 from optparse import OptionParser
-from sets import Set
 import locale
+import mintcommon
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -64,7 +62,7 @@ def remove_repository_via_cli(line, codename, forceYes):
             ppa_info = get_ppa_info_from_lp(user, ppa_name, codename)
             print(_("You are about to remove the following PPA:"))
             if ppa_info["description"] is not None:
-                print(" %s" % (ppa_info["description"].encode("utf-8") or ""))
+                print(" %s" % (ppa_info["description"]))
             print(_(" More info: %s") % str(ppa_info["web_link"]))
 
             if sys.stdin.isatty():
@@ -76,11 +74,11 @@ def remove_repository_via_cli(line, codename, forceYes):
                         print(_("Unable to prompt for response.  Please run with -y"))
                         sys.exit(1)
 
-        except KeyboardInterrupt, detail:
-            print _("Cancelling...")
+        except KeyboardInterrupt as detail:
+            print (_("Cancelling..."))
             sys.exit(1)
-        except Exception, detail:
-            print _("Cannot get info about PPA: '%s'.") % detail
+        except Exception as detail:
+            print (_("Cannot get info about PPA: '%s'.") % detail)
 
         (deb_line, file) = expand_ppa_line(line.strip(), codename)
         deb_line = expand_http_line(deb_line, codename)
@@ -99,8 +97,8 @@ def remove_repository_via_cli(line, codename, forceYes):
             # If file no longer contains any "deb" instances, delete it as well
             if "deb " not in content:
                 os.unlink(file)
-        except IOError, detail:
-            print _("failed to remove PPA: '%s'") % detail
+        except IOError as detail:
+            print (_("failed to remove PPA: '%s'") % detail)
 
     elif line.startswith("deb ") | line.startswith("http"):
         # Remove the repository from sources.list.d
@@ -116,8 +114,8 @@ def remove_repository_via_cli(line, codename, forceYes):
             # If file no longer contains any "deb" instances, delete it as well
             if "deb " not in content:
                 os.unlink(file)
-        except IOError, detail:
-            print _("failed to remove repository: '%s'") % detail
+        except IOError as detail:
+            print (_("failed to remove repository: '%s'") % detail)
 
 
 def add_repository_via_cli(line, codename, forceYes, use_ppas):
@@ -130,8 +128,8 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         ppa_name = ppa_name or "ppa"
         try:
             ppa_info = get_ppa_info_from_lp(user, ppa_name, codename)
-        except Exception, detail:
-            print _("Cannot add PPA: '%s'.") % detail
+        except Exception as detail:
+            print (_("Cannot add PPA: '%s'.") % detail)
             sys.exit(1)
 
         if "private" in ppa_info and ppa_info["private"]:
@@ -140,7 +138,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
 
         print(_("You are about to add the following PPA:"))
         if ppa_info["description"] is not None:
-            print(" %s" % (ppa_info["description"].encode("utf-8") or ""))
+            print(" %s" % (ppa_info["description"]))
         print(_(" More info: %s") % str(ppa_info["web_link"]))
 
         if sys.stdin.isatty():
@@ -199,7 +197,7 @@ def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
         if (urllib.urlopen(repo_url).getcode() == 404):
             raise PPAException(_("This PPA does not support %s") % base_codename)
     except Exception as e:
-        print e
+        print (e)
         raise PPAException(_("This PPA does not support %s") % base_codename)
 
     return json.loads(json_data)
@@ -346,8 +344,7 @@ class Repository():
         name = name.replace("/ubuntu", "")
         name = name.replace("/ppa", "")
         if self.line.startswith("deb-src"):
-            name = name.decode("utf8", "replace")
-            suffix = _("Sources").decode("utf8", "replace")
+            suffix = _("Sources")
             name = "%s (%s)" % (name, suffix)
         return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
 
@@ -513,16 +510,15 @@ class MirrorSelectionDialog(object):
     def check_mirror_up_to_date(self, url):
         if (self.default_mirror_age is None or self.default_mirror_age < 2):
             # If the default server was updated recently, the age is irrelevant (it would measure the time between now and the last update)
-            #print "OK - default mirror age is not conclusive %s" % url
             return True
         mirror_timestamp = self.get_url_last_modified(url)
         if mirror_timestamp is None:
-            print "Error: Can't find the age of %s !!" % url
+            print ("Error: Can't find the age of %s !!" % url)
             return False
         mirror_date = datetime.datetime.fromtimestamp(mirror_timestamp)
         mirror_age = (self.default_mirror_date - mirror_date).days
         if (mirror_age > 2):
-            print "Error: %s is out of date by %d days!" % (url, mirror_age)
+            print ("Error: %s is out of date by %d days!" % (url, mirror_age))
             return False
         else:
             # Age is fine :)
@@ -576,7 +572,7 @@ class MirrorSelectionDialog(object):
                 test_url = "%s/dists/%s/main/Contents-amd64.gz" % (url, self.codename)
             if (self.is_base or self.check_mirror_up_to_date("%s/db/version" % url)):
                 c = pycurl.Curl()
-                buff = cStringIO.StringIO()
+                buff = BytesIO()
                 c.setopt(pycurl.URL, test_url)
                 c.setopt(pycurl.CONNECTTIMEOUT, 5)
                 c.setopt(pycurl.TIMEOUT, 20)
@@ -588,8 +584,8 @@ class MirrorSelectionDialog(object):
             else:
                 # the mirror is not up to date
                 download_speed = -1
-        except Exception, error:
-            print "Error '%s' on url %s" % (error, url)
+        except Exception as error:
+            print ("Error '%s' on url %s" % (error, url))
             download_speed = 0
 
         self.show_speed_test_result(iter, download_speed)
@@ -623,7 +619,7 @@ class MirrorSelectionDialog(object):
             lookup = str(urllib.urlopen('http://geoip.ubuntu.com/lookup').read())
             cur_country_code = re.search('<CountryCode>(.*)</CountryCode>', lookup).group(1)
             if cur_country_code == 'None': cur_country_code = None
-        except Exception, detail:
+        except Exception as detail:
             cur_country_code = None  # no internet connection
 
         self.local_country_code = cur_country_code or os.environ.get('LANG', 'US').split('.')[0].split('_')[-1]  # fallback to LANG location or 'US'
@@ -691,7 +687,6 @@ class MirrorSelectionDialog(object):
             self.default_mirror_date = datetime.datetime.fromtimestamp(mirror_timestamp)
             now = datetime.datetime.now()
             self.default_mirror_age = (now - self.default_mirror_date).days
-            #print "Default mirror (%s/db/version) age: %d days" % (self.default_mirror, self.default_mirror_age)
 
         self._update_list()
         self._dialog.show_all()
@@ -715,7 +710,9 @@ class Application(object):
         # Prevent settings from being saved until the interface is fully loaded
         self._interface_loaded = False
 
-        self.lsb_codename = commands.getoutput("lsb_release -sc")
+        self.infobar_visible = False
+
+        self.lsb_codename = subprocess.getoutput("lsb_release -sc")
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
@@ -731,7 +728,9 @@ class Application(object):
         self._notebook = self.builder.get_object("notebook")
         self._official_repositories_box = self.builder.get_object("official_repositories_box")
 
-        config_parser = ConfigParser.RawConfigParser()
+        self.apt = mintcommon.APT(self._main_window)
+
+        config_parser = configparser.RawConfigParser()
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % self.lsb_codename)
         self.config = {}
         self.optional_components = []
@@ -756,11 +755,8 @@ class Application(object):
         if self.config["general"]["use_ppas"] == "false":
             self.builder.get_object("vbuttonbox1").remove(self.builder.get_object("toggle_ppas"))
 
-        self.builder.get_object("reload_button_label").set_markup("%s" % _("No action required"))
-
         self.builder.get_object("label_mirror_description").set_markup("%s (%s)" % (_("Main"), self.config["general"]["codename"]) )
         self.builder.get_object("label_base_mirror_description").set_markup("%s (%s)" % (_("Base"), self.config["general"]["base_codename"]) )
-
         self.builder.get_object("source_code_cb").connect("toggled", self.apply_official_sources)
 
         self.selected_components = []
@@ -911,7 +907,6 @@ class Application(object):
 
         self.builder.get_object("button_mirror").connect("clicked", self.select_new_mirror)
         self.builder.get_object("button_base_mirror").connect("clicked", self.select_new_base_mirror)
-        self.builder.get_object("reload_button").connect("clicked", self.update_apt_cache)
 
         self.builder.get_object("button_ppa_add").connect("clicked", self.add_ppa)
         self.builder.get_object("button_ppa_edit").connect("clicked", self.edit_ppa)
@@ -988,7 +983,7 @@ class Application(object):
     def load_keys(self):
         self.keys = []
         key = None
-        output = commands.getoutput("apt-key list").decode("utf8", "replace")
+        output = subprocess.getoutput("apt-key list")
         for line in output.split("\n"):
             line = line.strip()
             if line.startswith("pub"):
@@ -1057,7 +1052,7 @@ class Application(object):
             ppa_name = ppa_name or "ppa"
             try:
                 ppa_info = get_ppa_info_from_lp(user, ppa_name, self.config["general"]["base_codename"])
-            except Exception, detail:
+            except Exception as detail:
                 self.show_error_dialog(self._main_window, _("Cannot add PPA: '%s'.") % detail)
                 return
 
@@ -1095,9 +1090,7 @@ class Application(object):
     def format_string(self, text):
         if text is None:
             text = ""
-        text = text.encode("utf-8")
         text = text.replace("<", "&lt;").replace(">", "&gt;")
-        text = text.decode("utf8", "replace")
         return text
 
     def edit_ppa(self, widget):
@@ -1129,8 +1122,8 @@ class Application(object):
                 ppa_name = model.get_value(iter, 2)
                 if repository.line.startswith("deb http://ppa.launchpad.net"):
                     self.builder.get_object("button_ppa_examine").set_sensitive(True)
-        except Exception, detail:
-            print detail
+        except Exception as detail:
+            print (detail)
 
     def on_ppa_treeview_doubleclick(self, treeview, path, column):
         self.examine_ppa(None)
@@ -1147,15 +1140,15 @@ class Application(object):
                     if line.endswith("/ubuntu"):
                         line = line[:-7]
                         ppa_owner, ppa_name = line.split("/")
-                        architecture = commands.getoutput("dpkg --print-architecture")
+                        architecture = subprocess.getoutput("dpkg --print-architecture")
                         ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, self.config["general"]["base_codename"], architecture)
                         if os.path.exists(ppa_file):
                             os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s &" % (self.config["general"]["base_codename"], ppa_owner, ppa_name))
                         else:
-                            print "%s not found!" % ppa_file
+                            print ("%s not found!" % ppa_file)
                             self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
-        except Exception, detail:
-            print detail
+        except Exception as detail:
+            print (detail)
 
     def add_repository(self, widget):
         image = Gtk.Image()
@@ -1305,7 +1298,7 @@ class Application(object):
         d.set_default_response(Gtk.ResponseType.OK)
 
         r = d.run()
-        text = entry.get_text().decode('utf8')
+        text = entry.get_text()
         d.destroy()
         if r == Gtk.ResponseType.OK:
             return text
@@ -1373,22 +1366,23 @@ class Application(object):
         self.apply_official_sources()
 
     def enable_reload_button(self):
-        self.builder.get_object("reload_button").set_sensitive(True)
-        self.builder.get_object("reload_button_label").set_markup("<b>%s</b>" % _("Update the cache"))
-        self.builder.get_object("reload_button").set_tooltip_text(_("Click here to update your APT cache with your new sources"))
-        self.builder.get_object("reload_button_image").set_from_stock(Gtk.STOCK_REFRESH, Gtk.IconSize.BUTTON)
+        if not self.infobar_visible:
+            self.infobar_visible = True
+            infobar = Gtk.InfoBar()
+            infobar.set_message_type(Gtk.MessageType.INFO)
+            info_label = Gtk.Label()
+            infobar_message = "%s\n<small>%s</small>" % (_("Your configuration changed"), _("Click OK to update your APT cache"))
+            info_label.set_markup(infobar_message)
+            infobar.get_content_area().pack_start(info_label,False, False,0)
+            infobar.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+            infobar.connect("response", self._on_infobar_response)
+            self.builder.get_object("box_infobar").pack_start(infobar, True, True,0)
+            infobar.show_all()
 
-    def disable_reload_button(self):
-        self.builder.get_object("reload_button").set_sensitive(False)
-        self.builder.get_object("reload_button_label").set_markup("%s" % _("No action required"))
-        self.builder.get_object("reload_button").set_tooltip_text(_("Your APT cache is up to date"))
-        self.builder.get_object("reload_button_image").set_from_stock(Gtk.STOCK_OK, Gtk.IconSize.BUTTON)
-
-    def update_apt_cache(self, widget=None):
-        self.disable_reload_button()
-        cmd = ["sudo", "/usr/sbin/synaptic", "--hide-main-window", "--update-at-startup", "--non-interactive", "--parent-window-id", "%s" % self._main_window.get_window().get_xid()]
-        comnd = subprocess.Popen(' '.join(cmd), shell=True)
-        #returnCode = comnd.wait()
+    def _on_infobar_response(self, infobar, response_id):
+        infobar.destroy()
+        self.infobar_visible = False
+        self.apt.update_cache()
 
     def apply_official_sources(self, widget=None):
         # As long as the interface isn't fully loaded, don't save anything
@@ -1535,12 +1529,12 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args()
 
-    lsb_codename = commands.getoutput("lsb_release -sc")
+    lsb_codename = subprocess.getoutput("lsb_release -sc")
     config_dir = "/usr/share/mintsources/%s" % lsb_codename
     if not os.path.exists(config_dir):
         print ("LSB codename: '%s'." % lsb_codename)
         if os.path.exists("/etc/linuxmint/info"):
-            print ("Version of base-files: '%s'." % commands.getoutput("dpkg-query -f '${Version}' -W base-files"))
+            print ("Version of base-files: '%s'." % subprocess.getoutput("dpkg-query -f '${Version}' -W base-files"))
             print ("Your LSB codename isn't a valid Linux Mint codename.")
         else:
             print ("This codename isn't currently supported.")
@@ -1549,7 +1543,7 @@ if __name__ == "__main__":
 
     if len(args) > 1 and (args[0] == "add-apt-repository"):
         ppa_line = args[1]
-        lsb_codename = commands.getoutput("lsb_release -sc")
+        lsb_codename = subprocess.getoutput("lsb_release -sc")
         config_parser = ConfigParser.RawConfigParser()
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
         codename = config_parser.get("general", "base_codename")

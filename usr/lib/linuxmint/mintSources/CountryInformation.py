@@ -33,11 +33,11 @@ class CountryInformation(object):
       et = ElementTree(file=fname)
       it = et.getiterator('iso_3166_entry')
       for elm in it:
-        if elm.attrib.has_key("common_name"):
+        if "common_name" in elm.attrib:
           descr = elm.attrib["common_name"]
         else:
           descr = elm.attrib["name"]
-        if elm.attrib.has_key("alpha_2_code"):
+        if "alpha_2_code" in elm.attrib:
           code = elm.attrib["alpha_2_code"]
         else:
           code = elm.attrib["alpha_3_code"]
@@ -53,7 +53,7 @@ class CountryInformation(object):
     self.country = self.get_country_name(self.code)
 
   def get_country_name(self, code):
-    if self.countries.has_key(code):
+    if code in self.countries:
         name = self.countries[code]
         return name
     else:
