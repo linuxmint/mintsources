@@ -2,4 +2,4 @@
 
 sudo rm -rf /usr/lib/linuxmint/mintSources
 sudo cp -R usr /
-mintsources
+sudo mintsources

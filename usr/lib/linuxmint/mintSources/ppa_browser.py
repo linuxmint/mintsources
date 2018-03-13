@@ -1,11 +1,12 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 import os
 import sys
 import apt
-import commands
 import gettext
 import tempfile
 import subprocess
+import mintcommon
+import platform
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -17,17 +18,17 @@ gettext.install("mintsources", "/usr/share/linuxmint/locale")
 class PPA_Browser():
 
     def __init__(self, base_codename, ppa_owner, ppa_name):
-        architecture = commands.getoutput("dpkg --print-architecture")
+        if platform.machine() == "X86_64":
+            architecture = "amd64"
+        else:
+            architecture = "i386"
         ppa_origin = "LP-PPA-%s-%s" % (ppa_owner, ppa_name)
         ppa_origin_simple = "LP-PPA-%s" % (ppa_owner)
         ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, base_codename, architecture)
 
         if not os.path.exists(ppa_file):
-            print "%s not found!" % ppa_file
+            print ("%s not found!" % ppa_file)
             sys.exit(1)
-
-        # print "Using origin: %s" % ppa_origin
-        # print "Using release info: %s" % ppa_file
 
         self.packages_to_install = []
         self.packages_installed_from_ppa = []
@@ -68,8 +69,9 @@ class PPA_Browser():
         col.set_sort_column_id(2)
 
         cache = apt.Cache()
+        self.apt = mintcommon.APT(self.window)
 
-        packages = commands.getoutput("grep 'Package:' %s | sort | awk {'print $2;'}" % ppa_file).split("\n")
+        packages = subprocess.getoutput("grep 'Package:' %s | sort | awk {'print $2;'}" % ppa_file).split("\n")
         for package in packages:
             if package in cache:
                 pkg = cache[package]
@@ -87,7 +89,7 @@ class PPA_Browser():
                                     self.packages_installed_from_ppa.append(pkg.name)
                             else:
                                 self.model.append((pkg, False, "<b>%s</b> <small>%s</small>" % (pkg.name, candidate.version)))
-
+                            break
 
         treeview.show()
         self.window.show_all()
@@ -115,18 +117,11 @@ class PPA_Browser():
         self.install_button.set_sensitive(len(self.packages_to_install) > 0)
 
     def install (self, button):
-        cmd = ["pkexec", "/usr/sbin/synaptic", "--hide-main-window", "--non-interactive", "--parent-window-id", "%s" % self.window.get_window().get_xid(), "-o", "Synaptic::closeZvt=true"]
-        f = tempfile.NamedTemporaryFile()
-        for pkg in self.packages_to_install:
-            f.write("%s\tinstall\n" % pkg)
-        cmd.append("--set-selections-file")
-        cmd.append("%s" % f.name)
-        f.flush()
-        comnd = subprocess.Popen(' '.join(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-        returnCode = comnd.wait()
-        f.close()
-        if (returnCode == 0):
-            sys.exit(0)
+        self.apt.set_finished_callback(self.exit)
+        self.apt.install_packages(self.packages_to_install)
+
+    def exit(self, transaction=None, exit_state=None):
+        sys.exit(0)
 
 if __name__ == "__main__":
     base_codename = sys.argv[1]
