@@ -7,13 +7,19 @@ import tempfile
 import subprocess
 import mintcommon
 import platform
-
+import locale
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0') # Needed to get xid
 from gi.repository import Gtk, GdkX11
 
-gettext.install("mintsources", "/usr/share/linuxmint/locale")
+# i18n
+APP = 'mintsources'
+LOCALE_DIR = "/usr/share/linuxmint/locale"
+locale.bindtextdomain(APP, LOCALE_DIR)
+gettext.bindtextdomain(APP, LOCALE_DIR)
+gettext.textdomain(APP)
+_ = gettext.gettext
 
 class PPA_Browser():
 
@@ -36,6 +42,7 @@ class PPA_Browser():
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("mintsources")
         self.builder.add_from_file(glade_file)
 
         self.window = self.builder.get_object("ppa_window")
@@ -45,11 +52,8 @@ class PPA_Browser():
         self.builder.get_object("button_cancel").connect("clicked", Gtk.main_quit)
         self.install_button = self.builder.get_object("button_install")
         self.install_button.connect("clicked", self.install)
-        self.install_button.set_label(_("Install"))
         self.install_button.set_sensitive(False)
         self.builder.get_object("label_ppa_name").set_markup("<b>%s/%s</b>" % (ppa_owner, ppa_name))
-        self.builder.get_object("button_cancel").set_label(_("Cancel"))
-        self.builder.get_object("label_explanation").set_markup("<i>%s</i>" % _("This PPA provides the following packages. Please select the ones you want to install:"))
 
         self.model = Gtk.ListStore(object, bool, str)
         treeview = self.builder.get_object("treeview_ppa_pkgs")

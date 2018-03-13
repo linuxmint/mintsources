@@ -21,6 +21,7 @@ import urllib
 import pycurl
 from optparse import OptionParser
 from sets import Set
+import locale
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -31,6 +32,14 @@ BUTTON_LABEL_MAX_LENGTH = 30
 
 FLAG_PATH = "/usr/share/iso-flag-png/%s.png"
 FLAG_SIZE = 16
+
+# i18n
+APP = 'mintsources'
+LOCALE_DIR = "/usr/share/linuxmint/locale"
+locale.bindtextdomain(APP, LOCALE_DIR)
+gettext.bindtextdomain(APP, LOCALE_DIR)
+gettext.textdomain(APP)
+_ = gettext.gettext
 
 # Used as a decorator to run things in the background
 def async(func):
@@ -248,8 +257,6 @@ class PPAException(Exception):
 
     def __str__(self):
         return repr(self.value)
-
-gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
 SPEED_PIX_WIDTH = 125
 SPEED_PIX_HEIGHT = 16
@@ -713,6 +720,7 @@ class Application(object):
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("mintsources")
         self.builder.add_from_file(glade_file)
         self._main_window = self.builder.get_object("main_window")
 
@@ -750,49 +758,8 @@ class Application(object):
 
         self.builder.get_object("reload_button_label").set_markup("%s" % _("No action required"))
 
-        self.builder.get_object("label_title_official").set_markup("%s" % _("Official repositories"))
-        self.builder.get_object("label_title_ppa").set_markup("%s" % _("PPAs"))
-        self.builder.get_object("label_title_3rd").set_markup("%s" % _("Additional repositories"))
-        self.builder.get_object("label_title_keys").set_markup("%s" % _("Authentication keys"))
-        self.builder.get_object("label_title_maintenance").set_markup("%s" % _("Maintenance"))
-
-        self.builder.get_object("label_mirrors").set_markup("<b>%s</b>" % _("Mirrors"))
         self.builder.get_object("label_mirror_description").set_markup("%s (%s)" % (_("Main"), self.config["general"]["codename"]) )
         self.builder.get_object("label_base_mirror_description").set_markup("%s (%s)" % (_("Base"), self.config["general"]["base_codename"]) )
-        self.builder.get_object("button_mirror").set_tooltip_text(_("Select a faster server..."))
-        self.builder.get_object("button_base_mirror").set_tooltip_text(_("Select a faster server..."))
-
-        self.builder.get_object("label_optional_components").set_markup("<b>%s</b>" % _("Optional components"))
-        self.builder.get_object("label_source_code").set_markup("<b>%s</b>" % _("Source code"))
-
-        self.set_button_text(self.builder.get_object("label_ppa_add"), _("Add a new PPA..."))
-        self.set_button_text(self.builder.get_object("label_ppa_edit"), _("Edit URL..."))
-        self.set_button_text(self.builder.get_object("label_ppa_remove"), _("Remove"))
-        self.set_button_text(self.builder.get_object("label_ppa_examine"), _("Open PPA"))
-        self.builder.get_object("label_ppa_examine").set_tooltip_text(_("Look inside the PPA and install packages it provides"))
-
-        self.set_button_text(self.builder.get_object("label_repository_add"), _("Add a new repository..."))
-        self.set_button_text(self.builder.get_object("label_repository_edit"), _("Edit URL..."))
-        self.set_button_text(self.builder.get_object("label_repository_remove"), _("Remove"))
-
-        self.set_button_text(self.builder.get_object("label_keys_add"), _("Import key file..."))
-        self.set_button_text(self.builder.get_object("label_keys_fetch"), _("Download a key..."))
-        self.set_button_text(self.builder.get_object("label_keys_remove"), _("Remove"))
-
-        self.builder.get_object("button_mergelist_label").set_markup("%s" % _("Fix MergeList problems"))
-        self.builder.get_object("button_mergelist").set_tooltip_text("%s" % _("If you experience MergeList problems, click this button to solve the problem."))
-        self.builder.get_object("button_purge_label").set_markup("%s" % _("Purge residual configuration"))
-        self.builder.get_object("button_purge").set_tooltip_text("%s" % _("Packages sometimes leave configuration files on the system even after they are removed."))
-        self.builder.get_object("button_remove_foreign_label").set_markup("%s" % _("Remove foreign packages"))
-        self.builder.get_object("button_remove_foreign").set_tooltip_text("%s" % _("Packages which do not come from known repositories are listed here and can be removed."))
-        self.builder.get_object("button_downgrade_foreign_label").set_markup("%s" % _("Downgrade foreign packages"))
-        self.builder.get_object("button_downgrade_foreign").set_tooltip_text("%s" % _("Packages which version does not come from known repositories are listed here and can be downgraded."))
-
-        self.builder.get_object("label_description").set_markup("<b>%s</b>" % self.config["general"]["description"])
-
-        self.builder.get_object("image_icon").set_from_icon_name("mintsources-mint", Gtk.IconSize.DND)
-
-        self.builder.get_object("source_code_cb").set_label(_("Enable source code repositories"))
 
         self.builder.get_object("source_code_cb").connect("toggled", self.apply_official_sources)
 
@@ -919,14 +886,12 @@ class Application(object):
         self.load_keys()
 
         if not os.path.exists("/etc/apt/sources.list.d/official-package-repositories.list"):
-            print "Sources missing, generating default sources list!"
+            print ("Sources missing, generating default sources list!")
             self.generate_missing_sources()
 
         self.detect_official_sources()
 
         self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)
-        self.builder.get_object("label_revert").set_markup(_("Restore the default settings"))
-        self.builder.get_object("revert_button").set_tooltip_text(_("Restore the official repositories to their default settings"))
 
         self._tab_buttons = [
             self.builder.get_object("toggle_official_repos"),

@@ -7,12 +7,19 @@ import tempfile
 import subprocess
 import mintcommon
 import gi
+import locale
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Vte', '2.91')
 from gi.repository import Gtk, Vte, GLib
 
-gettext.install("mintsources", "/usr/share/linuxmint/locale")
+# i18n
+APP = 'mintsources'
+LOCALE_DIR = "/usr/share/linuxmint/locale"
+locale.bindtextdomain(APP, LOCALE_DIR)
+gettext.bindtextdomain(APP, LOCALE_DIR)
+gettext.textdomain(APP)
+_ = gettext.gettext
 
 (PKG_ID, PKG_CHECKED, PKG_NAME, PKG_INSTALLED_VERSION, PKG_REPO_VERSION, PKG_SORT_NAME) = range(6)
 
@@ -25,6 +32,7 @@ class Foreign_Browser():
         glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
 
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("mintsources")
         self.builder.add_from_file(glade_file)
 
         self.window = self.builder.get_object("foreign_window")
@@ -46,10 +54,6 @@ class Foreign_Browser():
         self.select_button.connect("clicked", self.select_all)
         self.select_button.set_label(_("Select All"))
         self.select_button_selects_all = True
-
-        self.builder.get_object("button_foreign_cancel").set_label(_("Cancel"))
-        self.builder.get_object("label_foreign_warning").set_markup("<b>%s</b>" % _("WARNING"))
-        self.builder.get_object("label_foreign_review").set_markup("<i>%s</i>" % _("Review the information below very carefully before validating the command:"))
 
         self.model = Gtk.ListStore(str, bool, str, str, str, str)
         # PKG_ID, PKG_CHECKED, PKG_NAME, PKG_INSTALLED_VERSION, PKG_REPO_VERSION, PKG_SORT_NAME
