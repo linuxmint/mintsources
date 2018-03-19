@@ -1006,8 +1006,8 @@ class Application(object):
         dialog = Gtk.FileChooserDialog(_("Open.."),
                                None,
                                Gtk.FileChooserAction.OPEN,
-                               (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+                               (_("Cancel"), Gtk.ResponseType.CANCEL,
+                                _("Open"), Gtk.ResponseType.OK))
         dialog.set_default_response(Gtk.ResponseType.OK)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
@@ -1242,8 +1242,8 @@ class Application(object):
         confirmation_button = Gtk.ResponseType.ACCEPT
         d = Gtk.Dialog(None, parent,
                        Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                       (Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT,
-                      Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT))
+                       (_("Cancel"), Gtk.ResponseType.REJECT,
+                       _("OK"), Gtk.ResponseType.ACCEPT))
         d.set_size_request(550, 400)
         d.vbox.pack_start(s, True, True, 0)
         d.set_title("")
@@ -1292,6 +1292,8 @@ class Application(object):
 
         entry = Gtk.Entry()
         entry.set_text(default)
+        entry.set_margin_start(6)
+        entry.set_margin_end(6)
         entry.show()
         d.vbox.pack_end(entry, False, False, 0)
         entry.connect('activate', lambda _: d.response(Gtk.ResponseType.OK))
