@@ -1374,7 +1374,7 @@ class Application(object):
             infobar_message = "%s\n<small>%s</small>" % (_("Your configuration changed"), _("Click OK to update your APT cache"))
             info_label.set_markup(infobar_message)
             infobar.get_content_area().pack_start(info_label,False, False,0)
-            infobar.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+            infobar.add_button(_("OK"), Gtk.ResponseType.OK)
             infobar.connect("response", self._on_infobar_response)
             self.builder.get_object("box_infobar").pack_start(infobar, True, True,0)
             infobar.show_all()
