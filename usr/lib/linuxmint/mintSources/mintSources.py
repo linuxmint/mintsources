@@ -1072,7 +1072,7 @@ class Application(object):
                 # Add the PPA in sources.list.d
                 with open(file, "w") as text_file:
                     text_file.write("%s\n" % deb_line)
-                    text_file.write("%s\n" % debsrc_line)
+                    text_file.write("%s\n" % "# "+debsrc_line)
 
                 # Add the package line in the UI
                 repository = Repository(self, deb_line, file, True)
@@ -1080,7 +1080,7 @@ class Application(object):
                 tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
 
                 # Add the source line in the UI
-                repository = Repository(self, debsrc_line, file, True)
+                repository = Repository(self, debsrc_line, file, False)
                 self.ppas.append(repository)
                 tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
 
