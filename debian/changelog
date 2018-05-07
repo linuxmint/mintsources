@@ -1,3 +1,27 @@
+mintsources (1.7.5) tara; urgency=medium
+
+  [ Clement Lefebvre ]
+  * Cindy: Switch to deb.debian.org
+  * Don't rely on "apt version"
+  * Migrate to Pkexec
+  * Migrate ppa_browser to python3/aptdaemon
+  * Migrate foreign package removal to Aptdaemon
+  * Simplify UI
+  * Turn "Update the cache" button into an infobar
+  * Packaging: Update dependencies
+
+  [ JosephMcc ]
+  * Ui: Clean up some uses of stock buttons (#106)
+  * Dialogs: Do a bit of cleanup (#107)
+
+  [ PaulXiCao ]
+  * adding PPAs disables the sources repo by default (#110)
+
+  [ Clement Lefebvre ]
+  * l10n: Update files
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 07 May 2018 12:23:01 +0100
+
 mintsources (1.7.4) tara; urgency=medium
 
   * Add support for LMDE 3
