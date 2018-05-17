@@ -1,3 +1,10 @@
+mintsources (1.7.6) tara; urgency=medium
+
+  * Fix UI not expanding properly
+  * Fix listing keys with new version of apt-key
+
+ -- Clement Lefebvre <root@linuxmint.com>  Thu, 17 May 2018 15:04:19 +0100
+
 mintsources (1.7.5) tara; urgency=medium
 
   [ Clement Lefebvre ]
