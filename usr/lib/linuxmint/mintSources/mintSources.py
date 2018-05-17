@@ -276,10 +276,10 @@ class Key():
         self.uid = ""
 
     def delete(self):
-        os.system("apt-key del %s" % self.pub)
+        os.system("apt-key del '%s'" % self.pub)
 
     def get_name(self):
-        return "<b>%s</b>\n<small><i>%s</i></small>" % (GObject.markup_escape_text(self.uid), GObject.markup_escape_text(self.pub))
+        return "%s\n<small>    %s</small>" % (GObject.markup_escape_text(self.uid), GObject.markup_escape_text(self.pub))
 
 class Mirror():
     def __init__(self, country_code, url, name):
@@ -984,19 +984,30 @@ class Application(object):
         self.keys = []
         key = None
         output = subprocess.getoutput("apt-key list")
+        lines = []
         for line in output.split("\n"):
             line = line.strip()
-            if line.startswith("pub"):
-                pub = line[3:].strip()
-                pub = pub[6:]
-                pub = pub.split(" ")[0]
+            if line.startswith("/etc/apt"):
+                continue
+            if line.startswith("-----"):
+                continue
+            if line == "":
+                continue
+            lines.append(line)
+
+        for key_data in "\n".join(lines).split("pub   "):
+            key_data = key_data.split("\n")
+            if len(key_data) > 3:
+                extra = key_data[0]
+                pub = key_data[1]
+                name = key_data[2]
+                name = name.replace("uid ", "")
+                if "]" in name:
+                    name = name.split("]")[1].strip()
                 key = Key(pub)
+                key.uid = name
                 if pub not in self.system_keys:
                     self.keys.append(key)
-            elif line.startswith("uid") and key is not None:
-                key.uid = line[3:].strip()
-            elif line.startswith("sub") and key is not None:
-                key.sub = line[3:].strip()
 
         self._keys_model.clear()
         for key in self.keys:
