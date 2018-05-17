@@ -1,3 +1,9 @@
+mintsources (1.7.7) tara; urgency=medium
+
+  * Fix adding PPAs
+
+ -- Clement Lefebvre <root@linuxmint.com>  Thu, 17 May 2018 19:23:30 +0100
+
 mintsources (1.7.6) tara; urgency=medium
 
   * Fix UI not expanding properly
