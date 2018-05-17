@@ -15,8 +15,8 @@ from CountryInformation import CountryInformation
 import re
 import json
 import datetime
-import urllib
-import pycurl
+from urllib.request import urlopen
+import requests
 from optparse import OptionParser
 import locale
 import mintcommon
@@ -176,31 +176,20 @@ def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
 
     lp_url = LAUNCHPAD_PPA_API % (owner_name, ppa_name)
     try:
-        callback = CurlCallback()
-        curl = pycurl.Curl()
-        curl.setopt(pycurl.SSL_VERIFYPEER, 1)
-        curl.setopt(pycurl.SSL_VERIFYHOST, 2)
-        curl.setopt(pycurl.WRITEFUNCTION, callback.body_callback)
-        if LAUNCHPAD_PPA_CERT:
-            curl.setopt(pycurl.CAINFO, LAUNCHPAD_PPA_CERT)
-        curl.setopt(pycurl.URL, str(lp_url))
-        curl.setopt(pycurl.HTTPHEADER, ["Accept: application/json"])
-        curl.perform()
-        curl.close()
-        json_data = callback.contents
+        json_data = requests.get(lp_url).json()
     except pycurl.error as e:
         raise PPAException("Error reading %s: %s" % (lp_url, e), e)
 
     # Make sure the PPA supports our base release
     repo_url = "http://ppa.launchpad.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename)
     try:
-        if (urllib.urlopen(repo_url).getcode() == 404):
+        if (urlopen(repo_url).getcode() == 404):
             raise PPAException(_("This PPA does not support %s") % base_codename)
     except Exception as e:
         print (e)
         raise PPAException(_("This PPA does not support %s") % base_codename)
 
-    return json.loads(json_data)
+    return json_data
 
 def encode(s):
     return re.sub("[^a-zA-Z0-9_-]", "_", s)
@@ -244,7 +233,7 @@ class CurlCallback:
         self.contents = ''
 
     def body_callback(self, buf):
-        self.contents = self.contents + buf
+        self.contents = self.contents + str(buf)
 
 
 class PPAException(Exception):
@@ -616,7 +605,7 @@ class MirrorSelectionDialog(object):
 
         # Try to find out where we're located...
         try:
-            lookup = str(urllib.urlopen('http://geoip.ubuntu.com/lookup').read())
+            lookup = str(urlopen('http://geoip.ubuntu.com/lookup').read())
             cur_country_code = re.search('<CountryCode>(.*)</CountryCode>', lookup).group(1)
             if cur_country_code == 'None': cur_country_code = None
         except Exception as detail:
@@ -1557,7 +1546,7 @@ if __name__ == "__main__":
     if len(args) > 1 and (args[0] == "add-apt-repository"):
         ppa_line = args[1]
         lsb_codename = subprocess.getoutput("lsb_release -sc")
-        config_parser = ConfigParser.RawConfigParser()
+        config_parser = configparser.RawConfigParser()
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
         codename = config_parser.get("general", "base_codename")
         use_ppas = config_parser.get("general", "use_ppas")
