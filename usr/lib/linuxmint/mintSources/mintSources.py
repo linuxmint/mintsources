@@ -15,7 +15,7 @@ from CountryInformation import CountryInformation
 import re
 import json
 import datetime
-import urllib
+import urllib.request as urllib
 import pycurl
 from optparse import OptionParser
 import locale
@@ -178,16 +178,18 @@ def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
     try:
         callback = CurlCallback()
         curl = pycurl.Curl()
+        data = BytesIO()
         curl.setopt(pycurl.SSL_VERIFYPEER, 1)
         curl.setopt(pycurl.SSL_VERIFYHOST, 2)
         curl.setopt(pycurl.WRITEFUNCTION, callback.body_callback)
         if LAUNCHPAD_PPA_CERT:
             curl.setopt(pycurl.CAINFO, LAUNCHPAD_PPA_CERT)
         curl.setopt(pycurl.URL, str(lp_url))
+        curl.setopt(curl.WRITEFUNCTION, data.write)
         curl.setopt(pycurl.HTTPHEADER, ["Accept: application/json"])
         curl.perform()
         curl.close()
-        json_data = callback.contents
+        json_data = json.loads(data.getvalue())
     except pycurl.error as e:
         raise PPAException("Error reading %s: %s" % (lp_url, e), e)
 
@@ -200,7 +202,7 @@ def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
         print (e)
         raise PPAException(_("This PPA does not support %s") % base_codename)
 
-    return json.loads(json_data)
+    return json_data
 
 def encode(s):
     return re.sub("[^a-zA-Z0-9_-]", "_", s)
@@ -244,7 +246,7 @@ class CurlCallback:
         self.contents = ''
 
     def body_callback(self, buf):
-        self.contents = self.contents + buf
+        self.contents = self.contents + str(buf)
 
 
 class PPAException(Exception):
@@ -1557,7 +1559,7 @@ if __name__ == "__main__":
     if len(args) > 1 and (args[0] == "add-apt-repository"):
         ppa_line = args[1]
         lsb_codename = subprocess.getoutput("lsb_release -sc")
-        config_parser = ConfigParser.RawConfigParser()
+        config_parser = configparser.RawConfigParser()
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
         codename = config_parser.get("general", "base_codename")
         use_ppas = config_parser.get("general", "use_ppas")
