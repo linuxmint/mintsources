@@ -963,7 +963,7 @@ class Application(object):
         self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)
 
     def fix_mergelist(self, widget):
-        os.system("rm /var/lib/apt/lists/* -vf")
+        os.system("rm /var/lib/apt/lists/* -vrf")
         image = Gtk.Image()
         image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
