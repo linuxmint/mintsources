@@ -39,6 +39,8 @@ gettext.bindtextdomain(APP, LOCALE_DIR)
 gettext.textdomain(APP)
 _ = gettext.gettext
 
+os.umask(0o022)
+
 # Used as a decorator to run things in the background
 def async(func):
     def wrapper(*args, **kwargs):
