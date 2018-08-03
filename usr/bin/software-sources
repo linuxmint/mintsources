@@ -4,8 +4,4 @@ import os
 import subprocess
 import sys
 
-if os.getuid() != 0:
-    print("mintsources needs to be run as root.")
-    sys.exit(1)
-
-subprocess.Popen("/usr/lib/linuxmint/mintSources/mintSources.py")
+subprocess.run(["pkexec", "/usr/lib/linuxmint/mintSources/mintSources.py"])
