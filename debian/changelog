@@ -1,3 +1,17 @@
+mintsources (1.8.0) tara; urgency=medium
+
+  [ Michael Webster ]
+  * mintSources.py: Set the umask explicitly at startup.  If the user has changed their umask in .profile, it could cause the sources files to be unreadable by mintUpdate (which runs as the user, not root), resulting in a broken state.
+  * polkit: Use auth_admin for the action file, to require an admin user rather than allowing the current user to authenticate.
+  * generate_desktop_files: fix polkit default auth type
+  * Use /usr/share/bin/mintsources as the pkexec target, so the temporary password memory will function from the menu.
+
+  [ monsta ]
+  * remove directories too when cleaning package lists (#115)
+  * fix runtime dependencies (#114)
+
+ -- Clement Lefebvre <root@linuxmint.com>  Thu, 09 Aug 2018 17:57:31 +0200
+
 mintsources (1.7.9) tara; urgency=medium
 
   * Add message in polkit policy
