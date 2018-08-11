@@ -39,7 +39,7 @@ class PPA_Browser():
         self.packages_to_install = []
         self.packages_installed_from_ppa = []
 
-        glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
+        glade_file = "/usr/lib/linuxmint/mintSources/mintsources.glade"
 
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain("mintsources")
@@ -53,7 +53,7 @@ class PPA_Browser():
         self.install_button = self.builder.get_object("button_install")
         self.install_button.connect("clicked", self.install)
         self.install_button.set_sensitive(False)
-        self.builder.get_object("label_ppa_name").set_markup("<b>%s/%s</b>" % (ppa_owner, ppa_name))
+        self.builder.get_object("label_ppa_name").set_markup("%s/%s" % (ppa_owner, ppa_name))
 
         self.model = Gtk.ListStore(object, bool, str)
         treeview = self.builder.get_object("treeview_ppa_pkgs")
@@ -86,13 +86,13 @@ class PPA_Browser():
                             if pkg.is_installed:
                                 if pkg.installed.version != candidate.version:
                                     already_installed_str = _("version %s already installed") % pkg.installed.version
-                                    self.model.append((pkg, False, "<b>%s</b> <small>%s (%s)</small>" % (pkg.name, candidate.version, already_installed_str)))
+                                    self.model.append((pkg, False, "<b>%s</b>\n%s (%s)" % (pkg.name, candidate.version, already_installed_str)))
                                 else:
                                     already_installed_str = _("already installed")
-                                    self.model.append((pkg, False, "<b>%s</b> <small>%s (%s)</small>" % (pkg.name, candidate.version, already_installed_str)))
+                                    self.model.append((pkg, False, "<b>%s</b>\n%s (%s)" % (pkg.name, candidate.version, already_installed_str)))
                                     self.packages_installed_from_ppa.append(pkg.name)
                             else:
-                                self.model.append((pkg, False, "<b>%s</b> <small>%s</small>" % (pkg.name, candidate.version)))
+                                self.model.append((pkg, False, "<b>%s</b>\n%s" % (pkg.name, candidate.version)))
                             break
 
         treeview.show()
