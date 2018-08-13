@@ -29,7 +29,7 @@ class Foreign_Browser():
 
         self.downgrade_mode = (sys.argv[1] == "downgrade") # whether to downgrade or remove packages
 
-        glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
+        glade_file = "/usr/lib/linuxmint/mintSources/mintsources.glade"
 
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain("mintsources")
@@ -44,10 +44,10 @@ class Foreign_Browser():
         self.action_button.connect("clicked", self.install)
         if self.downgrade_mode:
             self.action_button.set_label(_("Downgrade"))
-            self.builder.get_object("label_foreign_explanation").set_markup("<i>%s</i>" % _("The version of the following packages doesn't match the one from the repositories:"))
+            self.builder.get_object("label_foreign_explanation").set_markup("%s" % _("The version of the following packages doesn't match the one from the repositories:"))
         else:
             self.action_button.set_label(_("Remove"))
-            self.builder.get_object("label_foreign_explanation").set_markup("<i>%s</i>" % _("The packages below are installed on your computer but not present in the repositories:"))
+            self.builder.get_object("label_foreign_explanation").set_markup("%s" % _("The packages below are installed on your computer but not present in the repositories:"))
         self.action_button.set_sensitive(False)
 
         self.select_button = self.builder.get_object("button_foreign_select")
@@ -173,13 +173,13 @@ class Foreign_Browser():
                 foreign_packages.append(self.model.get_value(iter, PKG_ID))
             iter = self.model.iter_next(iter)
         if self.downgrade_mode:
-            self.builder.get_object("notebook1").set_current_page(1)
+            self.builder.get_object("stack1").set_visible_child_name("vte")
             terminal = Vte.Terminal()
             terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], ["/bin/dash"], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
             terminal.feed_child("apt-get install %s\n" % " ".join(foreign_packages), -1)
             terminal.show()
-            self.builder.get_object("vbox_vte").add(terminal)
-            self.builder.get_object("vbox_vte").show_all()
+            self.builder.get_object("box_vte").add(terminal)
+            self.builder.get_object("box_vte").show_all()
         else:
             self.apt.set_finished_callback(self.exit)
             self.apt.remove_packages(foreign_packages)

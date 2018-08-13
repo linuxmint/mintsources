@@ -24,7 +24,8 @@ import mintcommon
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0') # Needed to get xid
-from gi.repository import Gtk, Gdk, GdkPixbuf, GdkX11, GObject, Pango
+gi.require_version('XApp', '1.0')
+from gi.repository import Gtk, Gdk, GdkPixbuf, GdkX11, GObject, Pango, XApp
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
@@ -40,6 +41,15 @@ gettext.textdomain(APP)
 _ = gettext.gettext
 
 os.umask(0o022)
+
+CUSTOM_CSS = """
+.sources-sidebar label{
+    font-weight: bold;
+    font-size: 1.1em;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+"""
 
 # Used as a decorator to run things in the background
 def async(func):
@@ -337,7 +347,7 @@ class Repository():
         if self.line.startswith("deb-src"):
             suffix = _("Sources")
             name = "%s (%s)" % (name, suffix)
-        return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
+        return "<b>%s</b>\n%s\n%s" % (name, self.line, self.file)
 
     def get_repository_name(self):
         line = self.line.strip()
@@ -367,16 +377,20 @@ class Repository():
                 name = "%s (%s)" % (name, _("Sources"))
         return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
 
-class ComponentToggleCheckBox(Gtk.CheckButton):
+class ComponentSwitchBox(Gtk.Box):
     def __init__(self, application, component, window):
         self.application = application
         self.component = component
         self.window_object = window
-        Gtk.CheckButton.__init__(self, self.component.description)
-        self.set_active(component.selected)
-        self.connect("toggled", self._on_toggled)
+        Gtk.Box.__init__(self)
+        label = Gtk.Label(self.component.description)
+        self.pack_start(label, False, False, 0)
+        switch = Gtk.Switch()
+        self.pack_end(switch, False, False, 0)
+        switch.set_active(component.selected)
+        switch.connect("notify::active", self._on_toggled)
 
-    def _on_toggled(self, widget):
+    def _on_toggled(self, widget, gparam):
         # As long as the interface isn't fully loaded, don't do anything
         if not self.application._interface_loaded:
             return
@@ -705,7 +719,7 @@ class Application(object):
 
         self.lsb_codename = subprocess.getoutput("lsb_release -sc")
 
-        glade_file = "/usr/lib/linuxmint/mintSources/mintSources.glade"
+        glade_file = "/usr/lib/linuxmint/mintSources/mintsources.glade"
 
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain("mintsources")
@@ -716,8 +730,18 @@ class Application(object):
 
         self._main_window.set_icon_name("software-sources")
 
-        self._notebook = self.builder.get_object("notebook")
-        self._official_repositories_box = self.builder.get_object("official_repositories_box")
+        stack_sidebar = XApp.StackSidebar(orientation=Gtk.Orientation.VERTICAL)
+        self.builder.get_object("sidebar_container").pack_start(stack_sidebar, True, True, 0)
+        stack_sidebar.set_stack(self.builder.get_object("main_stack"))
+
+        stack_sidebar.get_style_context().add_class("sources-sidebar")
+        style_provider = Gtk.CssProvider()
+        style_provider.load_from_data(str.encode(CUSTOM_CSS))
+        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(),
+                                                 style_provider,
+                                                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        self._official_repositories_page = self.builder.get_object("official_repositories_page")
 
         self.apt = mintcommon.APT(self._main_window)
 
@@ -744,32 +768,31 @@ class Application(object):
                     self.config[section][param] = config_parser.get(section, param)
 
         if self.config["general"]["use_ppas"] == "false":
-            self.builder.get_object("vbuttonbox1").remove(self.builder.get_object("toggle_ppas"))
+            self.builder.get_object("main_stack").remove(self.builder.get_object("ppas_page"))
 
         self.builder.get_object("label_mirror_description").set_markup("%s (%s)" % (_("Main"), self.config["general"]["codename"]) )
         self.builder.get_object("label_base_mirror_description").set_markup("%s (%s)" % (_("Base"), self.config["general"]["base_codename"]) )
-        self.builder.get_object("source_code_cb").connect("toggled", self.apply_official_sources)
+        self.builder.get_object("source_code_switch").connect("notify::active", self.apply_official_sources)
 
         self.selected_components = []
         if (len(self.optional_components) > 0):
             if os.path.exists("/etc/linuxmint/info"):
                 # This is Mint, we want to warn people about Romeo
                 warning_label = Gtk.Label()
-                #warning_label.set_alignment(0, 0.5)
-                warning_label.set_markup("<span font_style='oblique' font_stretch='ultracondensed'>%s</span>" % _("Warning: Unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))
+                warning_label.set_markup("<span font_stretch='ultracondensed'>%s</span>" % _("Warning: Unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))
                 warning_label.set_line_wrap(True)
                 warning_label.set_justify(Gtk.Justification.FILL)
-                self.builder.get_object("vbox_optional_components").pack_start(warning_label, True, True, 6)
-            components_table = Gtk.Table()
-            self.builder.get_object("vbox_optional_components").pack_start(components_table, True, True, 0)
-            self.builder.get_object("vbox_optional_components").show_all()
-            nb_components = 0
+                self.builder.get_object("box_optional_components").pack_start(warning_label, True, True, 6)
+
+            components_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            self.builder.get_object("box_optional_components").pack_start(components_box, True, True, 0)
+            self.builder.get_object("box_optional_components").show_all()
+
             for i in range(len(self.optional_components)):
                 component = self.optional_components[i]
-                cb = ComponentToggleCheckBox(self, component, self._main_window)
+                cb = ComponentSwitchBox(self, component, self._main_window)
                 component.set_widget(cb)
-                components_table.attach(cb, 0, 1, nb_components, nb_components + 1)
-                nb_components += 1
+                components_box.pack_start(cb, True, False, 0)
 
         self.mirrors = self.read_mirror_list(self.config["mirrors"]["mirrors"])
         self.base_mirrors = self.read_mirror_list(self.config["mirrors"]["base_mirrors"])
@@ -839,6 +862,8 @@ class Application(object):
         self._repository_treeview = self.builder.get_object("treeview_repository")
         self._repository_treeview.set_model(self._repository_model)
         self._repository_treeview.set_headers_clickable(True)
+        repo_selection = self._repository_treeview.get_selection()
+        repo_selection.connect("changed", self.repo_selected)
 
         self._repository_model.set_sort_column_id(2, Gtk.SortType.ASCENDING)
 
@@ -862,6 +887,8 @@ class Application(object):
         self._keys_treeview = self.builder.get_object("treeview_keys")
         self._keys_treeview.set_model(self._keys_model)
         self._keys_treeview.set_headers_clickable(True)
+        keys_selection = self._keys_treeview.get_selection()
+        keys_selection.connect("changed", self.key_selected)
 
         self._keys_model.set_sort_column_id(1, Gtk.SortType.ASCENDING)
 
@@ -880,19 +907,7 @@ class Application(object):
 
         self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)
 
-        self._tab_buttons = [
-            self.builder.get_object("toggle_official_repos"),
-            self.builder.get_object("toggle_ppas"),
-            self.builder.get_object("toggle_additional_repos"),
-            self.builder.get_object("toggle_authentication_keys"),
-            self.builder.get_object("toggle_maintenance")
-        ]
-
         self._main_window.connect("delete_event", lambda w,e: Gtk.main_quit())
-        for i in range(len(self._tab_buttons)):
-            self._tab_buttons[i].connect("clicked", self._on_tab_button_clicked, i)
-            self._tab_buttons[i].set_active(False)
-
 
         self.mirror_selection_dialog = MirrorSelectionDialog(self, self.builder)
 
@@ -903,7 +918,6 @@ class Application(object):
         self.builder.get_object("button_ppa_edit").connect("clicked", self.edit_ppa)
         self.builder.get_object("button_ppa_remove").connect("clicked", self.remove_ppa)
         self.builder.get_object("button_ppa_examine").connect("clicked", self.examine_ppa)
-        self.builder.get_object("button_ppa_examine").set_sensitive(False)
 
         self.builder.get_object("button_repository_add").connect("clicked", self.add_repository)
         self.builder.get_object("button_repository_edit").connect("clicked", self.edit_repository)
@@ -1039,6 +1053,9 @@ class Application(object):
                 key.delete()
                 self.load_keys()
 
+    def key_selected(self, selection):
+        self.builder.get_object("button_keys_remove").set_sensitive(True)
+
     def add_ppa(self, widget):
         image = Gtk.Image()
         image.set_from_icon_name("mintsources-ppa", Gtk.IconSize.DIALOG)
@@ -1117,6 +1134,9 @@ class Application(object):
                 self.ppas.remove(repository)
 
     def ppa_selected(self, selection):
+        self.builder.get_object("button_ppa_edit").set_sensitive(True)
+        self.builder.get_object("button_ppa_remove").set_sensitive(True)
+
         try:
             self.builder.get_object("button_ppa_examine").set_sensitive(False)
             (model, iter) = selection.get_selected()
@@ -1153,6 +1173,10 @@ class Application(object):
         except Exception as detail:
             print (detail)
 
+    def repo_selected(self, selection):
+        self.builder.get_object("button_repository_edit").set_sensitive(True)
+        self.builder.get_object("button_repository_remove").set_sensitive(True)
+
     def add_repository(self, widget):
         image = Gtk.Image()
         image.set_from_icon_name("mintsources-additional", Gtk.IconSize.DIALOG)
@@ -1176,7 +1200,6 @@ class Application(object):
 
             self.enable_reload_button()
 
-
     def edit_repository(self, widget):
         selection = self._repository_treeview.get_selection()
         (model, iter) = selection.get_selected()
@@ -1196,7 +1219,6 @@ class Application(object):
                 model.remove(iter)
                 repository.delete()
                 self.repositories.remove(repository)
-
 
     def show_confirmation_dialog(self, parent, message, image=None, affirmation=None, yes_no=False):
         buttons = Gtk.ButtonsType.OK_CANCEL
@@ -1343,16 +1365,6 @@ class Application(object):
             self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
         self.apply_official_sources()
 
-    def _on_tab_button_clicked(self, button, page_index):
-        if page_index == self._notebook.get_current_page() and button.get_active() == True:
-            return
-        if page_index != self._notebook.get_current_page() and button.get_active() == False:
-            return
-        self._notebook.set_current_page(page_index)
-        for i in self._tab_buttons:
-            i.set_active(False)
-        button.set_active(True)
-
     def run(self):
         self._main_window.show_all()
         Gtk.main()
@@ -1362,7 +1374,7 @@ class Application(object):
         self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
         self.selected_base_mirror = self.config["mirrors"]["base_default"]
         self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
-        self.builder.get_object("source_code_cb").set_active(False)
+        self.builder.get_object("source_code_switch").set_active(False)
 
         for component in self.optional_components:
             component.selected = False
@@ -1389,7 +1401,7 @@ class Application(object):
         self.infobar_visible = False
         self.apt.update_cache()
 
-    def apply_official_sources(self, widget=None):
+    def apply_official_sources(self, widget=None, gparam=None):
         # As long as the interface isn't fully loaded, don't save anything
         if not self._interface_loaded:
             return
@@ -1416,7 +1428,7 @@ class Application(object):
 
         # Update official sources repositories
         os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
-        if (self.builder.get_object("source_code_cb").get_active()):
+        if (self.builder.get_object("source_code_switch").get_active()):
             template = open('/usr/share/mintsources/%s/official-source-repositories.list' % self.lsb_codename, 'r').read()
             template = template.replace("$codename", self.config["general"]["codename"])
             template = template.replace("$basecodename", self.config["general"]["base_codename"])
@@ -1447,7 +1459,7 @@ class Application(object):
         self.selected_base_mirror = self.config["mirrors"]["base_default"]
 
         # Detect source code repositories
-        self.builder.get_object("source_code_cb").set_active(os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list"))
+        self.builder.get_object("source_code_switch").set_active(os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list"))
 
         listfile = open('/etc/apt/sources.list.d/official-package-repositories.list', 'r')
         for line in listfile.readlines():
