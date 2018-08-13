@@ -1377,11 +1377,16 @@ class Application(object):
             self.infobar_visible = True
             infobar = Gtk.InfoBar()
             infobar.set_message_type(Gtk.MessageType.INFO)
+            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            image = Gtk.Image.new_from_icon_name("dialog-warning-symbolic", Gtk.IconSize.DND)
+            box.pack_start(image, False, False, 0)
             info_label = Gtk.Label()
-            infobar_message = "%s\n<small>%s</small>" % (_("Your configuration changed"), _("Click OK to update your APT cache"))
+            infobar_message = "<b>%s</b>\n%s" % (_("Your configuration changed"), _("Click OK to update your APT cache"))
             info_label.set_markup(infobar_message)
-            infobar.get_content_area().pack_start(info_label,False, False,0)
+            box.pack_start(info_label, False, False, 0)
+            infobar.get_content_area().pack_start(box, False, False, 0)
             infobar.add_button(_("OK"), Gtk.ResponseType.OK)
+            infobar.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
             infobar.connect("response", self._on_infobar_response)
             self.builder.get_object("box_infobar").pack_start(infobar, True, True,0)
             infobar.show_all()
@@ -1389,7 +1394,9 @@ class Application(object):
     def _on_infobar_response(self, infobar, response_id):
         infobar.destroy()
         self.infobar_visible = False
-        self.apt.update_cache()
+
+        if response_id == Gtk.ResponseType.OK:
+            self.apt.update_cache()
 
     def apply_official_sources(self, widget=None, gparam=None):
         # As long as the interface isn't fully loaded, don't save anything
