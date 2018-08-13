@@ -776,23 +776,13 @@ class Application(object):
 
         self.selected_components = []
         if (len(self.optional_components) > 0):
-            if os.path.exists("/etc/linuxmint/info"):
-                # This is Mint, we want to warn people about Romeo
-                warning_label = Gtk.Label()
-                warning_label.set_markup("<span font_stretch='ultracondensed'>%s</span>" % _("Warning: Unstable packages can introduce regressions and negatively impact your system. Please do not enable these options in Linux Mint unless it was suggested by the development team."))
-                warning_label.set_line_wrap(True)
-                warning_label.set_justify(Gtk.Justification.FILL)
-                self.builder.get_object("box_optional_components").pack_start(warning_label, True, True, 6)
-
-            components_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-            self.builder.get_object("box_optional_components").pack_start(components_box, True, True, 0)
-            self.builder.get_object("box_optional_components").show_all()
-
             for i in range(len(self.optional_components)):
                 component = self.optional_components[i]
                 cb = ComponentSwitchBox(self, component, self._main_window)
                 component.set_widget(cb)
-                components_box.pack_start(cb, True, False, 0)
+                self.builder.get_object("box_optional_components").pack_start(cb, True, False, 0)
+
+            self.builder.get_object("box_optional_components").show_all()
 
         self.mirrors = self.read_mirror_list(self.config["mirrors"]["mirrors"])
         self.base_mirrors = self.read_mirror_list(self.config["mirrors"]["base_mirrors"])
