@@ -1362,7 +1362,7 @@ class Application(object):
             infobar = Gtk.InfoBar()
             infobar.set_message_type(Gtk.MessageType.INFO)
             box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            image = Gtk.Image.new_from_icon_name("dialog-warning-symbolic", Gtk.IconSize.DND)
+            image = Gtk.Image.new_from_icon_name("dialog-information-symbolic", Gtk.IconSize.LARGE_TOOLBAR)
             box.pack_start(image, False, False, 0)
             info_label = Gtk.Label()
             infobar_message = "<b>%s</b>\n%s" % (_("Your configuration changed"), _("Click OK to update your APT cache"))
