@@ -42,15 +42,6 @@ _ = gettext.gettext
 
 os.umask(0o022)
 
-CUSTOM_CSS = """
-.sources-sidebar label{
-    font-weight: bold;
-    font-size: 1.1em;
-    padding-left: 4px;
-    padding-right: 4px;
-}
-"""
-
 # Used as a decorator to run things in the background
 def async(func):
     def wrapper(*args, **kwargs):
@@ -730,16 +721,9 @@ class Application(object):
 
         self._main_window.set_icon_name("software-sources")
 
-        stack_sidebar = XApp.StackSidebar(orientation=Gtk.Orientation.VERTICAL)
+        stack_sidebar = XApp.StackSidebar()
         self.builder.get_object("sidebar_container").pack_start(stack_sidebar, True, True, 0)
         stack_sidebar.set_stack(self.builder.get_object("main_stack"))
-
-        stack_sidebar.get_style_context().add_class("sources-sidebar")
-        style_provider = Gtk.CssProvider()
-        style_provider.load_from_data(str.encode(CUSTOM_CSS))
-        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(),
-                                                 style_provider,
-                                                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         self._official_repositories_page = self.builder.get_object("official_repositories_page")
 
