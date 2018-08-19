@@ -611,7 +611,7 @@
                   <packing>
                     <property name="name">official_repositories</property>
                     <property name="title" translatable="yes">Official Repositories</property>
-                    <property name="icon_name">mintsources</property>
+                    <property name="icon_name">package-x-generic-symbolic</property>
                   </packing>
                 </child>
                 <child>
@@ -747,7 +747,7 @@
                   <packing>
                     <property name="name">ppas</property>
                     <property name="title" translatable="yes">PPAs</property>
-                    <property name="icon_name">mintsources-ppa</property>
+                    <property name="icon_name">process-stop-symbolic</property>
                     <property name="position">1</property>
                   </packing>
                 </child>
@@ -870,7 +870,7 @@
                   <packing>
                     <property name="name">additional_repositories</property>
                     <property name="title" translatable="yes">Additional Repositories</property>
-                    <property name="icon_name">mintsources-additional</property>
+                    <property name="icon_name">network-workgroup-symbolic</property>
                     <property name="position">2</property>
                   </packing>
                 </child>
@@ -992,7 +992,7 @@
                   <packing>
                     <property name="name">authentication_keys</property>
                     <property name="title" translatable="yes">Authentication Keys</property>
-                    <property name="icon_name">mintsources-keys</property>
+                    <property name="icon_name">dialog-password-symbolic</property>
                     <property name="position">3</property>
                   </packing>
                 </child>
@@ -1074,7 +1074,7 @@
                   <packing>
                     <property name="name">maintenance</property>
                     <property name="title" translatable="yes">Maintenance</property>
-                    <property name="icon_name">mintsources-maintenance</property>
+                    <property name="icon_name">preferences-other-symbolic</property>
                     <property name="position">4</property>
                   </packing>
                 </child>
