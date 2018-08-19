@@ -23,7 +23,6 @@ Depends: python3-apt,
          lsb-release
 Replaces: software-properties-common (<< 1),
           software-properties-gtk (<< 1),
-          software-properties-kde (<< 1),
           python-software-properties (<< 1),
           python3-software-properties (<< 1),
 Description: Software Sources configuration tool
@@ -36,12 +35,6 @@ Description: Transitional package
  This package is obsolete and replaced with mintsources.
 
 Package: software-properties-gtk
-Architecture: all
-Depends: mintsources
-Description: Transitional package
- This package is obsolete and replaced with mintsources.
-
-Package: software-properties-kde
 Architecture: all
 Depends: mintsources
 Description: Transitional package
