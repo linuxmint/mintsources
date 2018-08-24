@@ -380,10 +380,15 @@ class ComponentSwitchBox(Gtk.Box):
         self.pack_end(switch, False, False, 0)
         switch.set_active(component.selected)
         switch.connect("notify::active", self._on_toggled)
+        self.signal_handled = False
 
     def _on_toggled(self, widget, gparam):
         # As long as the interface isn't fully loaded, don't do anything
         if not self.application._interface_loaded:
+            return
+
+        if self.signal_handled:
+            self.signal_handled = False
             return
 
         if widget.get_active() and os.path.exists("/etc/linuxmint/info"):
@@ -393,6 +398,7 @@ class ComponentSwitchBox(Gtk.Box):
                     self.application.apply_official_sources()
                 else:
                     widget.set_active(not widget.get_active())
+                    self.signal_handled = True
             else:
                 self.component.selected = widget.get_active()
                 self.application.apply_official_sources()
