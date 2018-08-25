@@ -2,6 +2,7 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
+  <requires lib="xapp" version="0.0"/>
   <object class="GtkWindow" id="foreign_window">
     <property name="can_focus">False</property>
     <property name="default_width">600</property>
@@ -306,13 +307,10 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
-              <object class="GtkBox" id="sidebar_container">
+              <object class="XAppStackSidebar">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="orientation">vertical</property>
-                <child>
-                  <placeholder/>
-                </child>
+                <property name="stack">main_stack</property>
               </object>
               <packing>
                 <property name="expand">False</property>
