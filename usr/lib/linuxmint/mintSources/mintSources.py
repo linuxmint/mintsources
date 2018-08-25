@@ -727,10 +727,6 @@ class Application(object):
 
         self._main_window.set_icon_name("software-sources")
 
-        stack_sidebar = XApp.StackSidebar()
-        self.builder.get_object("sidebar_container").pack_start(stack_sidebar, True, True, 0)
-        stack_sidebar.set_stack(self.builder.get_object("main_stack"))
-
         self._official_repositories_page = self.builder.get_object("official_repositories_page")
 
         self.apt = mintcommon.APT(self._main_window)
