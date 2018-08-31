@@ -711,6 +711,7 @@ class Application(object):
 
         # Prevent settings from being saved until the interface is fully loaded
         self._interface_loaded = False
+        self._currently_applying_sources = False
 
         self.infobar_visible = False
 
@@ -758,7 +759,6 @@ class Application(object):
 
         self.builder.get_object("label_mirror_description").set_markup("%s (%s)" % (_("Main"), self.config["general"]["codename"]) )
         self.builder.get_object("label_base_mirror_description").set_markup("%s (%s)" % (_("Base"), self.config["general"]["base_codename"]) )
-        self.builder.get_object("source_code_switch").connect("notify::active", self.apply_official_sources)
 
         self.selected_components = []
         if (len(self.optional_components) > 0):
@@ -788,6 +788,9 @@ class Application(object):
 
         if "/etc/apt/sources.list.d/official-source-repositories.list" in source_files:
             source_files.remove("/etc/apt/sources.list.d/official-source-repositories.list")
+
+        if "/etc/apt/sources.list.d/official-dbgsym-repositories.list" in source_files:
+            source_files.remove("/etc/apt/sources.list.d/official-dbgsym-repositories.list")
 
         for source_file in source_files:
             file = open(source_file, "r")
@@ -907,6 +910,9 @@ class Application(object):
         self.builder.get_object("button_purge").connect("clicked", self.fix_purge)
         self.builder.get_object("button_remove_foreign").connect("clicked", self.remove_foreign)
         self.builder.get_object("button_downgrade_foreign").connect("clicked", self.downgrade_foreign)
+
+        self.builder.get_object("source_code_switch").connect("notify::active", self.apply_official_sources)
+        self.builder.get_object("debug_symbol_switch").connect("notify::active", self.apply_official_sources)
 
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
@@ -1350,13 +1356,18 @@ class Application(object):
         self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
         self.selected_base_mirror = self.config["mirrors"]["base_default"]
         self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
+
+        self._currently_applying_sources = True
         self.builder.get_object("source_code_switch").set_active(False)
+        self.builder.get_object("debug_symbol_switch").set_active(False)
 
         for component in self.optional_components:
             component.selected = False
             component.widget.set_active(False)
 
         self.apply_official_sources()
+
+        self._currently_applying_sources = False
 
     def enable_reload_button(self):
         if not self.infobar_visible:
@@ -1387,6 +1398,9 @@ class Application(object):
     def apply_official_sources(self, widget=None, gparam=None):
         # As long as the interface isn't fully loaded, don't save anything
         if not self._interface_loaded:
+            return
+
+        if self._currently_applying_sources:
             return
 
         self.update_flags()
@@ -1421,11 +1435,24 @@ class Application(object):
             with open("/etc/apt/sources.list.d/official-source-repositories.list", "w") as text_file:
                 text_file.write(template)
 
+        # Update dbgsym repositories
+        os.system("rm -f /etc/apt/sources.list.d/official-dbgsym-repositories.list")
+        if (self.builder.get_object("debug_symbol_switch").get_active()):
+            template = open('/usr/share/mintsources/%s/official-dbgsym-repositories.list' % self.lsb_codename, 'r').read()
+            template = template.replace("$codename", self.config["general"]["codename"])
+            template = template.replace("$basecodename", self.config["general"]["base_codename"])
+            template = template.replace("$optionalcomponents", ' '.join(selected_components))
+            template = template.replace("$mirror", self.selected_mirror)
+            template = template.replace("$basemirror", self.selected_base_mirror)
+            with open("/etc/apt/sources.list.d/official-dbgsym-repositories.list", "w") as text_file:
+                text_file.write(template)
+
         self.enable_reload_button()
 
     def generate_missing_sources(self):
         os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")
         os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
+        os.system("rm -f /etc/apt/sources.list.d/official-dbgsym-repositories.list")
 
         template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r').read()
         template = template.replace("$codename", self.config["general"]["codename"])
@@ -1441,8 +1468,9 @@ class Application(object):
         self.selected_mirror = self.config["mirrors"]["default"]
         self.selected_base_mirror = self.config["mirrors"]["base_default"]
 
-        # Detect source code repositories
+        # Detect source code and dbgsym repositories
         self.builder.get_object("source_code_switch").set_active(os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list"))
+        self.builder.get_object("debug_symbol_switch").set_active(os.path.exists("/etc/apt/sources.list.d/official-dbgsym-repositories.list"))
 
         listfile = open('/etc/apt/sources.list.d/official-package-repositories.list', 'r')
         for line in listfile.readlines():

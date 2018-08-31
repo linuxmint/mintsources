@@ -1,0 +1,3 @@
+deb http://ddebs.ubuntu.com $basecodename main restricted universe multiverse
+deb http://ddebs.ubuntu.com $basecodename-updates main restricted universe multiverse
+deb http://ddebs.ubuntu.com $basecodename-proposed main restricted universe multiverse 
