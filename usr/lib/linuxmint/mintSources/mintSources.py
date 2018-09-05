@@ -21,7 +21,6 @@ from optparse import OptionParser
 import locale
 import mintcommon
 import glob
-from collections import OrderedDict
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0') # Needed to get xid
@@ -988,16 +987,21 @@ class Application(object):
         self.enable_reload_button()
 
     def remove_duplicates(self, widget):
+        knownlines = set()
         for listfile in ["/etc/apt/sources.list"] + glob.glob("/etc/apt/sources.list.d/*.list"):
             with open(listfile) as f:
-                lines = list(OrderedDict.fromkeys(f.readlines()))
+                lines = []
+                for line in f.readlines():
+                    if line not in knownlines:
+                        if not line.startswith('#'):
+                            knownlines.add(line)
+                        lines.append(line)
             with open(listfile, 'w') as f:
                 for line in lines:
                     f.write(line)
         image = Gtk.Image()
         image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("Duplicate entries removed. Please reload the cache."), image, affirmation=True)
-        self.enable_reload_button()
 
     def load_keys(self):
         self.keys = []
