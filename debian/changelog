@@ -1,3 +1,23 @@
+mintsources (1.8.1) tessa; urgency=medium
+
+  [ JosephMcc ]
+  * Revamp the UI (#119)
+  * Merge "Optional Components" and "Source code"
+  * Improve the infobar styling
+  * Relayout the buttons in Maintenance
+  * Restyle the sidebar to use the mintwelcome styling
+  * Use a bit smaller icon in the infobar
+  * Use a header bar
+  * Switch the sidebar to symbolic icons
+  * Remove kde support
+  * Don't show the infobar when you decline the romeo dialog
+  * Use the XAppStackSidebar in glade
+
+  [ Clement Lefebvre ]
+  * Add support for Mint 19.1 Tessa
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 10 Sep 2018 10:28:13 +0100
+
 mintsources (1.8.0) tara; urgency=medium
 
   [ Michael Webster ]
