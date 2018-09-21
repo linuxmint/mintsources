@@ -376,10 +376,10 @@ class ComponentSwitchBox(Gtk.Box):
         Gtk.Box.__init__(self)
         label = Gtk.Label(self.component.description)
         self.pack_start(label, False, False, 0)
-        switch = Gtk.Switch()
-        self.pack_end(switch, False, False, 0)
-        switch.set_active(component.selected)
-        switch.connect("notify::active", self._on_toggled)
+        self.switch = Gtk.Switch()
+        self.pack_end(self.switch, False, False, 0)
+        self.switch.set_active(component.selected)
+        self.switch.connect("notify::active", self._on_toggled)
         self.signal_handled = False
 
     def _on_toggled(self, widget, gparam):
@@ -405,6 +405,9 @@ class ComponentSwitchBox(Gtk.Box):
         else:
             self.component.selected = widget.get_active()
             self.application.apply_official_sources()
+
+    def set_active(self, active):
+        self.switch.set_active(active)
 
 class MirrorSelectionDialog(object):
     MIRROR_COLUMN = 0
@@ -970,23 +973,38 @@ class Application(object):
 
     def remove_duplicates(self, widget):
         knownlines = set()
-        found_duplicates = False
-        for listfile in ["/etc/apt/sources.list"] + glob.glob("/etc/apt/sources.list.d/*.list"):
+
+        # Parse official sources first
+        for listfile in glob.glob("/etc/apt/sources.list.d/official*.list"):
             with open(listfile) as f:
                 lines = []
-                found_duplicates_in_this_file = False
                 for line in f.readlines():
+                    line = line.strip()
                     if line not in knownlines:
                         if not line.startswith('#'):
                             knownlines.add(line)
-                        lines.append(line)
-                    else:
-                        found_duplicates = True
-                        found_duplicates_in_this_file = True
-            if found_duplicates_in_this_file:
-                with open(listfile, 'w') as f:
-                    for line in lines:
-                        f.write(line)
+
+        # Now parse other sources and remove any duplicates
+        found_duplicates = False
+        for listfile in ["/etc/apt/sources.list"] + glob.glob("/etc/apt/sources.list.d/*.list"):
+            if not listfile.startswith("/etc/apt/sources.list.d/official"):
+                with open(listfile) as f:
+                    lines = []
+                    found_duplicates_in_this_file = False
+                    for line in f.readlines():
+                        line = line.strip()
+                        if line not in knownlines:
+                            if not line.startswith('#'):
+                                knownlines.add(line)
+                            lines.append(line)
+                        else:
+                            found_duplicates = True
+                            found_duplicates_in_this_file = True
+                if found_duplicates_in_this_file:
+                    print("Found duplicates in %s, rewriting it." % listfile)
+                    with open(listfile, 'w') as f:
+                        for line in lines:
+                            f.write("%s\n" % line)
         image = Gtk.Image()
         image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
         if found_duplicates:
@@ -1393,9 +1411,10 @@ class Application(object):
             component.selected = False
             component.widget.set_active(False)
 
+        self._currently_applying_sources = False
+
         self.apply_official_sources()
 
-        self._currently_applying_sources = False
 
     def enable_reload_button(self):
         if not self.infobar_visible:
