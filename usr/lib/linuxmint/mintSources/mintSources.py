@@ -20,7 +20,7 @@ import requests
 from optparse import OptionParser
 import locale
 import mintcommon
-
+import glob
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0') # Needed to get xid
@@ -908,6 +908,7 @@ class Application(object):
 
         self.builder.get_object("button_mergelist").connect("clicked", self.fix_mergelist)
         self.builder.get_object("button_purge").connect("clicked", self.fix_purge)
+        self.builder.get_object("button_duplicates").connect("clicked", self.remove_duplicates)
         self.builder.get_object("button_remove_foreign").connect("clicked", self.remove_foreign)
         self.builder.get_object("button_downgrade_foreign").connect("clicked", self.downgrade_foreign)
 
@@ -966,6 +967,23 @@ class Application(object):
         image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
         self.enable_reload_button()
+
+    def remove_duplicates(self, widget):
+        knownlines = set()
+        for listfile in ["/etc/apt/sources.list"] + glob.glob("/etc/apt/sources.list.d/*.list"):
+            with open(listfile) as f:
+                lines = []
+                for line in f.readlines():
+                    if line not in knownlines:
+                        if not line.startswith('#'):
+                            knownlines.add(line)
+                        lines.append(line)
+            with open(listfile, 'w') as f:
+                for line in lines:
+                    f.write(line)
+        image = Gtk.Image()
+        image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
+        self.show_confirmation_dialog(self._main_window, _("Duplicate entries removed. Please reload the cache."), image, affirmation=True)
 
     def load_keys(self):
         self.keys = []
