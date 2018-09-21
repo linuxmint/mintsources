@@ -154,5 +154,3 @@ Type=Application
 Categories=GNOME;GTK;System;Settings;X-GNOME-SystemSettings;X-GNOME-Settings-Panel;XFCE;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;
 X-GNOME-Settings-Panel=software-properties
 MimeType=text/x-apt-sources-list;
-X-KDE-SubstituteUID=true
-NotShowIn=KDE;
