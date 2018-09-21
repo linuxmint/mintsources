@@ -1,3 +1,23 @@
+mintsources (1.8.2) tessa; urgency=medium
+
+  [ Michael Webster ]
+  * Add option to enable dbgsym repos. (#117)
+
+  [ Clement Lefebvre ]
+  * Fix dbgsyms repos
+  * l10n: Fix mgsids and generate POT
+  * Fix generate_desktop_files
+  * l10n: Msgid fixes.
+
+  [ gm10 ]
+  * Add "Remove duplicate repositories" maintenance option (#123)
+
+  [ Clement Lefebvre ]
+  * Small fixes for duplicate entries
+  * Small fixes
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 21 Sep 2018 16:10:43 +0100
+
 mintsources (1.8.1) tessa; urgency=medium
 
   [ JosephMcc ]
