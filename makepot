@@ -1,5 +1,5 @@
 #!/bin/bash
 
-intltool-extract --type=gettext/glade usr/lib/linuxmint/mintSources/mintSources.glade
-xgettext --language=Python --keyword=_ --keyword=N_ --output=mintsources.pot usr/lib/linuxmint/mintSources/mintSources.py usr/lib/linuxmint/mintSources/ppa_browser.py usr/lib/linuxmint/mintSources/foreign_packages.py usr/bin/software-sources usr/bin/add-apt-repository generate_desktop_files usr/lib/linuxmint/mintSources/mintSources.glade.h
-rm -f usr/lib/linuxmint/mintSources/mintSources.glade.h
+intltool-extract --type=gettext/glade usr/lib/linuxmint/mintSources/mintsources.glade
+xgettext --language=Python --keyword=_ --keyword=N_ --output=mintsources.pot usr/lib/linuxmint/mintSources/mintSources.py usr/lib/linuxmint/mintSources/ppa_browser.py usr/lib/linuxmint/mintSources/foreign_packages.py usr/bin/software-sources usr/bin/add-apt-repository generate_desktop_files usr/lib/linuxmint/mintSources/mintsources.glade.h
+rm -f usr/lib/linuxmint/mintSources/mintsources.glade.h
