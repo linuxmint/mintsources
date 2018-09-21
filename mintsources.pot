@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-21 12:45+0100\n"
+"POT-Creation-Date: 2018-09-21 13:22+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -61,7 +61,7 @@ msgid "Adding PPAs is not supported"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintSources.py:135
-#: usr/lib/linuxmint/mintSources/mintSources.py:1058
+#: usr/lib/linuxmint/mintSources/mintSources.py:1086
 #, python-format
 msgid "Cannot add PPA: '%s'."
 msgstr ""
@@ -177,80 +177,88 @@ msgstr ""
 msgid "Key"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:961
+#: usr/lib/linuxmint/mintSources/mintSources.py:962
 msgid "There is no more residual configuration on the system."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:967
+#: usr/lib/linuxmint/mintSources/mintSources.py:968
 msgid "The problem was fixed. Please reload the cache."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1005
+#: usr/lib/linuxmint/mintSources/mintSources.py:993
+msgid "Duplicate entries were removed. Please reload the cache."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:996
+msgid "No duplicate entries were found."
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintSources.py:1033
 msgid "Open.."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1008
-#: usr/lib/linuxmint/mintSources/mintSources.py:1252
-#: usr/lib/linuxmint/mintSources/mintSources.py:1386
+#: usr/lib/linuxmint/mintSources/mintSources.py:1036
+#: usr/lib/linuxmint/mintSources/mintSources.py:1280
+#: usr/lib/linuxmint/mintSources/mintSources.py:1414
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:4
 msgid "Cancel"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1009
+#: usr/lib/linuxmint/mintSources/mintSources.py:1037
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:17
 msgid "Open"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1021
+#: usr/lib/linuxmint/mintSources/mintSources.py:1049
 msgid ""
 "Please enter the 8 characters of the public key you want to download from "
 "keyserver.ubuntu.com:"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1034
+#: usr/lib/linuxmint/mintSources/mintSources.py:1062
 msgid "Are you sure you want to permanently remove this key?"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1051
+#: usr/lib/linuxmint/mintSources/mintSources.py:1079
 msgid "Please enter the name of the PPA you want to add:"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1103
+#: usr/lib/linuxmint/mintSources/mintSources.py:1131
 msgid "Edit the URL of the PPA"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1113
+#: usr/lib/linuxmint/mintSources/mintSources.py:1141
 msgid "Are you sure you want to permanently remove this PPA?"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1154
+#: usr/lib/linuxmint/mintSources/mintSources.py:1182
 msgid ""
 "The content of this PPA is not available. Please refresh the cache and try "
 "again."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1172
+#: usr/lib/linuxmint/mintSources/mintSources.py:1200
 msgid "Please enter the name of the repository you want to add:"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1190
+#: usr/lib/linuxmint/mintSources/mintSources.py:1218
 msgid "Edit the URL of the repository"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1200
+#: usr/lib/linuxmint/mintSources/mintSources.py:1228
 msgid "Are you sure you want to permanently remove this repository?"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1253
-#: usr/lib/linuxmint/mintSources/mintSources.py:1385
+#: usr/lib/linuxmint/mintSources/mintSources.py:1281
+#: usr/lib/linuxmint/mintSources/mintSources.py:1413
 msgid "OK"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1381
+#: usr/lib/linuxmint/mintSources/mintSources.py:1409
 msgid "Your configuration changed"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:1381
+#: usr/lib/linuxmint/mintSources/mintSources.py:1409
 msgid "Click OK to update your APT cache"
 msgstr ""
 
@@ -395,31 +403,35 @@ msgid "Purge residual configuration"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:25
-msgid "Remove foreign packages"
+msgid "Remove duplicate entries"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:26
-msgid "Downgrade foreign packages"
+msgid "Remove foreign packages"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:27
-msgid "Maintenance"
+msgid "Downgrade foreign packages"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:28
-msgid "Select Mirror"
+msgid "Maintenance"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:29
-msgid "Apply"
+msgid "Select Mirror"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:30
+msgid "Apply"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:31
 msgid ""
 "This PPA provides the following packages. Please select the ones you want to "
 "install."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:31
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:32
 msgid "Install"
 msgstr ""

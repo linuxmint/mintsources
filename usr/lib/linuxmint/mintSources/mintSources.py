@@ -970,20 +970,30 @@ class Application(object):
 
     def remove_duplicates(self, widget):
         knownlines = set()
+        found_duplicates = False
         for listfile in ["/etc/apt/sources.list"] + glob.glob("/etc/apt/sources.list.d/*.list"):
             with open(listfile) as f:
                 lines = []
+                found_duplicates_in_this_file = False
                 for line in f.readlines():
                     if line not in knownlines:
                         if not line.startswith('#'):
                             knownlines.add(line)
                         lines.append(line)
-            with open(listfile, 'w') as f:
-                for line in lines:
-                    f.write(line)
+                    else:
+                        found_duplicates = True
+                        found_duplicates_in_this_file = True
+            if found_duplicates_in_this_file:
+                with open(listfile, 'w') as f:
+                    for line in lines:
+                        f.write(line)
         image = Gtk.Image()
         image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
-        self.show_confirmation_dialog(self._main_window, _("Duplicate entries removed. Please reload the cache."), image, affirmation=True)
+        if found_duplicates:
+            self.show_confirmation_dialog(self._main_window, _("Duplicate entries were removed. Please reload the cache."), image, affirmation=True)
+            self.enable_reload_button()
+        else:
+            self.show_confirmation_dialog(self._main_window, _("No duplicate entries were found."), image, affirmation=True)
 
     def load_keys(self):
         self.keys = []

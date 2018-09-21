@@ -1066,7 +1066,7 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="button_duplicates">
-                            <property name="label" translatable="yes">Remove duplicate repositories</property>
+                            <property name="label" translatable="yes">Remove duplicate entries</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
