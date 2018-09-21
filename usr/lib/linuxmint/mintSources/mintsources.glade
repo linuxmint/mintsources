@@ -52,7 +52,7 @@
                       <object class="GtkLabel" id="label_ppa_name1">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Foreign Packages</property>
+                        <property name="label" translatable="yes">Foreign packages</property>
                         <property name="xalign">0</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
@@ -69,7 +69,7 @@
                       <object class="GtkLabel" id="label_foreign_explanation">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">The version of the following packages doesn't match the one from the repositories</property>
+                        <property name="label" translatable="yes">The version of the following packages doesn't match the one from the repositories:</property>
                         <property name="xalign">0</property>
                       </object>
                       <packing>
@@ -225,7 +225,7 @@
                       <object class="GtkLabel" id="label_foreign_review">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Review the information below very carefully before validating the command</property>
+                        <property name="label" translatable="yes">Review the information below very carefully before validating the command.</property>
                         <property name="xalign">0</property>
                       </object>
                       <packing>
@@ -1265,7 +1265,7 @@
                   <object class="GtkLabel" id="label_explanation">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">This PPA provides the following packages. Please select the ones you want to install</property>
+                    <property name="label" translatable="yes">This PPA provides the following packages. Please select the ones you want to install.</property>
                     <property name="xalign">0</property>
                   </object>
                   <packing>

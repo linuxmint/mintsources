@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-21 12:29+0100\n"
+"POT-Creation-Date: 2018-09-21 12:45+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -138,8 +138,8 @@ msgstr ""
 msgid "Unreachable"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:727 generate_desktop_files:27
-#: generate_desktop_files:42 generate_desktop_files:70
+#: usr/lib/linuxmint/mintSources/mintSources.py:727 generate_desktop_files:25
+#: generate_desktop_files:53
 msgid "Software Sources"
 msgstr ""
 
@@ -264,6 +264,7 @@ msgid "already installed"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/foreign_packages.py:39
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:1
 msgid "Foreign packages"
 msgstr ""
 
@@ -273,6 +274,7 @@ msgid "Downgrade"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/foreign_packages.py:47
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:2
 msgid ""
 "The version of the following packages doesn't match the one from the "
 "repositories:"
@@ -319,18 +321,8 @@ msgstr ""
 msgid "Error: need a repository as argument"
 msgstr ""
 
-#: generate_desktop_files:27 generate_desktop_files:42
+#: generate_desktop_files:25
 msgid "Configure the sources for installable software and updates"
-msgstr ""
-
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:1
-msgid "Foreign Packages"
-msgstr ""
-
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:2
-msgid ""
-"The version of the following packages doesn't match the one from the "
-"repositories"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:6
@@ -339,7 +331,7 @@ msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:7
 msgid ""
-"Review the information below very carefully before validating the command"
+"Review the information below very carefully before validating the command."
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:8
@@ -425,7 +417,7 @@ msgstr ""
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:30
 msgid ""
 "This PPA provides the following packages. Please select the ones you want to "
-"install"
+"install."
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:31
