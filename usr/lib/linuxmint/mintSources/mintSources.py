@@ -280,11 +280,13 @@ class Mirror():
         self.name = name
 
 class Repository():
-    def __init__(self, application, line, file, selected):
+    def __init__(self, application, line, file, selected, base_mirror_names = None, base_name = None):
         self.application = application
         self.line = line
         self.file = file
         self.selected = selected
+        self.base_mirror_names = base_mirror_names
+        self.base_name = base_name
 
     def switch(self):
         self.selected = (not self.selected)
@@ -343,30 +345,40 @@ class Repository():
     def get_repository_name(self):
         line = self.line.strip()
         name = line
+        release = ""
         if line.startswith("deb cdrom:"):
             name = _("CD-ROM (Installation Disc)")
         else:
             try:
                 elements = self.line.split(" ")
-                for element in elements:
-                   for protocol in ['http://', 'ftp://', 'https://']:
-                        if element.startswith(protocol):
-                            name = element.replace(protocol, "").split("/")[0]
+                for i, s in enumerate(elements):
+                    if "://" in s:
+                        #release = " / " + " ".join(elements[i+1:])
+                        release = " / " + elements[i+1]
+                        element = s.split("://")[1]
+                        if not element.endswith("/"):
+                            element += "/"
+                        if element in self.base_mirror_names:
+                            name = self.base_name
+                            break
+                        else:
+                            name = element.split("/")[0]
                             subparts = name.split(".")
                             if len(subparts) > 2:
                                 if subparts[-2] != "co":
                                     name = subparts[-2].capitalize()
                                 else:
                                     name = subparts[-3].capitalize()
-                            break
-                name = name.replace("Linuxmint", "Linux Mint")
-                name = name.replace("01", "Intel")
-                name = name.replace("Steampowered", "Steam")
+                            name = name.replace("Linuxmint", "Linux Mint")
+                            name = name.replace("01", "Intel")
+                            name = name.replace("Steampowered", "Steam")
+                        break
             except:
                 pass
             if self.line.startswith("deb-src"):
                 name = "%s (%s)" % (name, _("Sources"))
-        return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
+
+        return "<b>%s</b>%s\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, release, self.line, self.file)
 
 class ComponentSwitchBox(Gtk.Box):
     def __init__(self, application, component, window):
@@ -776,6 +788,18 @@ class Application(object):
         self.mirrors = self.read_mirror_list(self.config["mirrors"]["mirrors"])
         self.base_mirrors = self.read_mirror_list(self.config["mirrors"]["base_mirrors"])
 
+        base_mirror_names = set()
+        for mirror in self.base_mirrors:
+            m = mirror.name.split("://")[1]
+            if not m.endswith("/"):
+                m += "/"
+            base_mirror_names.add(m)
+
+        if "debian" in self.config["mirrors"]["base_default"]:
+            base_name = "Debian"
+        else:
+            base_name = "Ubuntu"
+
         self.repositories = []
         self.ppas = []
 
@@ -805,7 +829,7 @@ class Application(object):
                         line = line.replace('#', '').strip()
                         selected = False
                     if line.startswith("deb"):
-                        repository = Repository(self, line, source_file, selected)
+                        repository = Repository(self, line, source_file, selected, base_mirror_names, base_name)
                         if "ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
                             self.ppas.append(repository)
                         else:
