@@ -1216,17 +1216,34 @@ class Application(object):
             start_line = "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"]
 
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the repository you want to add:"), start_line, image)
-        if line is not None and line.strip().startswith("deb"):
-            # Add the repository in sources.list.d
-            with open("/etc/apt/sources.list.d/additional-repositories.list", "a") as text_file:
-                text_file.write("%s\n" % line)
+        if not line or line == start_line:
+            return
+        r = re.compile(r'deb .*://(.+?)/? (\w+)')
+        match_line = r.match(line)
+        if not match_line:
+            self.show_confirmation_dialog(self._main_window, _("Malformed input, repository not added."), image, affirmation=True)
+        else:
+            r = re.compile(r'.*://(.+?)/? (\w+)')
+            is_duplicate = False
+            for repository in self.repositories:
+                match_repo = r.match(repository.line)
+                if match_repo and match_repo.group(1,2) == match_line.group(1,2):
+                    is_duplicate = True
+                    break
+            if not is_duplicate:
+                additional_sources = "/etc/apt/sources.list.d/additional-repositories.list"
+                # Add the repository in sources.list.d
+                with open(additional_sources, "a") as text_file:
+                    text_file.write("%s\n" % line)
+                # Add the line in the UI
+                repository = Repository(self, line, additional_sources, True)
+                self.repositories.append(repository)
+                tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
 
-            # Add the line in the UI
-            repository = Repository(self, line, "/etc/apt/sources.list.d/additional-repositories.list", True)
-            self.repositories.append(repository)
-            tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
+                self.enable_reload_button()
+            else:
+                self.show_confirmation_dialog(self._main_window, _("This repository is already configured, you cannot add it a second time."), image, affirmation=True)
 
-            self.enable_reload_button()
 
     def edit_repository(self, widget):
         selection = self._repository_treeview.get_selection()
