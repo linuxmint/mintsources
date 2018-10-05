@@ -950,6 +950,9 @@ class Application(object):
                                 url = url[:-1]
                             mirror = Mirror(country_code, url, name)
                             mirror_list.append(mirror)
+        if path.endswith("Debian.mirrors"):
+            mirror = Mirror("WD", "http://deb.debian.org/debian/", "http://deb.debian.org/debian/")
+            mirror_list.append(mirror)
         return mirror_list
 
     def remove_foreign(self, widget):
@@ -1566,7 +1569,7 @@ class Application(object):
                     flag = FLAG_PATH % mirror.country_code.lower()
                 if os.path.exists(flag):
                     mint_flag_path = flag
-                    break
+                break
 
         for mirror in self.base_mirrors:
             if mirror.url[-1] == "/":
@@ -1574,9 +1577,13 @@ class Application(object):
             else:
                 url = mirror.url
             if url in selected_base_mirror:
-                if os.path.exists(FLAG_PATH % mirror.country_code.lower()):
-                    base_flag_path = FLAG_PATH % mirror.country_code.lower()
-                    break
+                if mirror.country_code == "WD":
+                    flag = FLAG_PATH % '_united_nations'
+                else:
+                    flag = FLAG_PATH % mirror.country_code.lower()
+                if os.path.exists(flag):
+                    base_flag_path = flag
+                break
 
         pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(mint_flag_path, -1, FLAG_SIZE)
         self.builder.get_object("image_mirror").set_from_pixbuf(pixbuf)
