@@ -141,7 +141,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
 
         print(_("You are about to add the following PPA:"))
         if ppa_info["description"] is not None:
-            print(" %s" % (ppa_info["description"]))
+            print(" %s" % (str(ppa_info["description"]).encode("utf-8","ignore")))
         print(_(" More info: %s") % str(ppa_info["web_link"]))
 
         if sys.stdin.isatty():
