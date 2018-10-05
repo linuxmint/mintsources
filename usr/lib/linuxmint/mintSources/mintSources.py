@@ -788,17 +788,17 @@ class Application(object):
         self.mirrors = self.read_mirror_list(self.config["mirrors"]["mirrors"])
         self.base_mirrors = self.read_mirror_list(self.config["mirrors"]["base_mirrors"])
 
-        base_mirror_names = set()
+        self.base_mirror_names = set()
         for mirror in self.base_mirrors:
             m = mirror.name.split("://")[1]
             if not m.endswith("/"):
                 m += "/"
-            base_mirror_names.add(m)
+            self.base_mirror_names.add(m)
 
         if "debian" in self.config["mirrors"]["base_default"]:
-            base_name = "Debian"
+            self.base_name = "Debian"
         else:
-            base_name = "Ubuntu"
+            self.base_name = "Ubuntu"
 
         self.repositories = []
         self.ppas = []
@@ -829,7 +829,7 @@ class Application(object):
                         line = line.replace('#', '').strip()
                         selected = False
                     if line.startswith("deb"):
-                        repository = Repository(self, line, source_file, selected, base_mirror_names, base_name)
+                        repository = Repository(self, line, source_file, selected, self.base_mirror_names, self.base_name)
                         if "ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
                             self.ppas.append(repository)
                         else:
@@ -1246,7 +1246,7 @@ class Application(object):
                 text_file.write("%s\n" % line)
 
             # Add the line in the UI
-            repository = Repository(self, line, "/etc/apt/sources.list.d/additional-repositories.list", True)
+            repository = Repository(self, line, "/etc/apt/sources.list.d/additional-repositories.list", True, self.base_mirror_names, self.base_name)
             self.repositories.append(repository)
             tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
 
