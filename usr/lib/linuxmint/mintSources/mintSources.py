@@ -32,6 +32,8 @@ BUTTON_LABEL_MAX_LENGTH = 30
 FLAG_PATH = "/usr/share/iso-flag-png/%s.png"
 FLAG_SIZE = 16
 
+additional_repositories_file = "/etc/apt/sources.list.d/additional-repositories.list"
+
 # i18n
 APP = 'mintsources'
 LOCALE_DIR = "/usr/share/linuxmint/locale"
@@ -105,18 +107,14 @@ def remove_repository_via_cli(line, codename, forceYes):
 
     elif line.startswith("deb ") | line.startswith("http"):
         # Remove the repository from sources.list.d
-        file="/etc/apt/sources.list.d/additional-repositories.list"
         try:
-            readfile = open(file, "r")
-            content = readfile.read()
-            readfile.close()
+            content = open(additional_repositories_file, "r").read()
             content = content.replace(expand_http_line(line, codename), "")
-            with open(file, "w") as writefile:
-                writefile.write(content)
+            open(additional_repositories_file, "w").write(content)
 
             # If file no longer contains any "deb" instances, delete it as well
             if "deb " not in content:
-                os.unlink(file)
+                os.unlink(additional_repositories_file)
         except IOError as detail:
             print (_("failed to remove repository: '%s'") % detail)
 
@@ -166,8 +164,28 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             text_file.write("%s\n" % deb_line)
             text_file.write("%s\n" % debsrc_line)
     elif line.startswith("deb ") | line.startswith("http"):
-        with open("/etc/apt/sources.list.d/additional-repositories.list", "a") as text_file:
-            text_file.write("%s\n" % expand_http_line(line, codename))
+        line = expand_http_line(line, codename)
+        r = re.compile(r'.*://(.+?)/? (\w+)')
+        match_line = r.match(line)
+        if not match_line:
+            print(_("Malformed input, repository not added."))
+            sys.exit(1)
+        if repo_exists(line):
+            print(_("Repository already exists."))
+            #sys.exit(1) # from a result-oriented view it's not a fail
+        else:
+            open(additional_repositories_file, "a").write("%s\n" % line)
+
+def repo_exists(line):
+    r = re.compile(r'.*://(.+?)/? (\w+)')
+    match_line = r.match(line)
+    if match_line:
+        repositories = SourcesList().list
+        for repository in repositories:
+            match_repo = r.match(repository.line)
+            if match_repo and match_repo.group(1,2) == match_line.group(1,2):
+                return True
+    return False
 
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
     DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
@@ -1209,41 +1227,32 @@ class Application(object):
         image = Gtk.Image()
         image.set_from_icon_name("mintsources-additional", Gtk.IconSize.DIALOG)
         start_line = ""
+        default_line = "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"]
         clipboard_text = self.get_clipboard_text("deb")
         if clipboard_text != None:
             start_line = clipboard_text
         else:
-            start_line = "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"]
+            start_line = default_line
 
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the repository you want to add:"), start_line, image)
-        if not line or line == start_line:
+        if not line or line == default_line:
             return
         r = re.compile(r'deb .*://(.+?)/? (\w+)')
         match_line = r.match(line)
         if not match_line:
             self.show_confirmation_dialog(self._main_window, _("Malformed input, repository not added."), image, affirmation=True)
         else:
-            r = re.compile(r'.*://(.+?)/? (\w+)')
-            is_duplicate = False
-            for repository in self.repositories:
-                match_repo = r.match(repository.line)
-                if match_repo and match_repo.group(1,2) == match_line.group(1,2):
-                    is_duplicate = True
-                    break
-            if not is_duplicate:
-                additional_sources = "/etc/apt/sources.list.d/additional-repositories.list"
+            if not repo_exists(line):
                 # Add the repository in sources.list.d
-                with open(additional_sources, "a") as text_file:
-                    text_file.write("%s\n" % line)
+                open(additional_repositories_file, "a").write("%s\n" % line)
                 # Add the line in the UI
-                repository = Repository(self, line, additional_sources, True)
+                repository = Repository(self, line, additional_repositories_file, True)
                 self.repositories.append(repository)
                 tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
 
                 self.enable_reload_button()
             else:
                 self.show_confirmation_dialog(self._main_window, _("This repository is already configured, you cannot add it a second time."), image, affirmation=True)
-
 
     def edit_repository(self, widget):
         selection = self._repository_treeview.get_selection()
