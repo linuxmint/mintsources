@@ -165,9 +165,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             text_file.write("%s\n" % debsrc_line)
     elif line.startswith("deb ") | line.startswith("http"):
         line = expand_http_line(line, codename)
-        r = re.compile(r'.*://(.+?)/? (\w+)')
-        match_line = r.match(line)
-        if not match_line:
+        if repo_malformed(line):
             print(_("Malformed input, repository not added."))
             sys.exit(1)
         if repo_exists(line):
@@ -175,6 +173,13 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             #sys.exit(1) # from a result-oriented view it's not a fail
         else:
             open(additional_repositories_file, "a").write("%s\n" % line)
+
+def repo_malformed(line):
+    r = re.compile(r'.*://.+?/? \w+ \w+')
+    match_line = r.match(line)
+    if not match_line:
+        return True
+    return False
 
 def repo_exists(line):
     r = re.compile(r'.*://(.+?)/? (\w+)')
@@ -1237,9 +1242,7 @@ class Application(object):
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the repository you want to add:"), start_line, image)
         if not line or line == default_line:
             return
-        r = re.compile(r'deb .*://(.+?)/? (\w+)')
-        match_line = r.match(line)
-        if not match_line:
+        if repo_malformed(line):
             self.show_confirmation_dialog(self._main_window, _("Malformed input, repository not added."), image, affirmation=True)
         else:
             if not repo_exists(line):
