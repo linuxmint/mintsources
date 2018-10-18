@@ -1242,6 +1242,7 @@ class Application(object):
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the repository you want to add:"), start_line, image)
         if not line or line == default_line:
             return
+        line = expand_http_line(line, self.config["general"]["base_codename"])
         if repo_malformed(line):
             self.show_confirmation_dialog(self._main_window, _("Malformed input, repository not added."), image, affirmation=True)
         else:
