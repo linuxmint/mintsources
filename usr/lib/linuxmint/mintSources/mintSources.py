@@ -91,12 +91,12 @@ def remove_repository_via_cli(line, codename, forceYes):
 
         # Remove the PPA from sources.list.d
         try:
-            readfile = open(file, "r")
+            readfile = open(file, "r", encoding="utf-8", errors="ignore")
             content = readfile.read()
             readfile.close()
             content = content.replace(deb_line, "")
             content = content.replace(debsrc_line, "")
-            with open(file, "w") as writefile:
+            with open(file, "w", encoding="utf-8", errors="ignore") as writefile:
                 writefile.write(content)
 
             # If file no longer contains any "deb" instances, delete it as well
@@ -108,9 +108,9 @@ def remove_repository_via_cli(line, codename, forceYes):
     elif line.startswith("deb ") | line.startswith("http"):
         # Remove the repository from sources.list.d
         try:
-            content = open(additional_repositories_file, "r").read()
+            content = open(additional_repositories_file, "r", encoding="utf-8", errors="ignore").read()
             content = content.replace(expand_http_line(line, codename), "")
-            open(additional_repositories_file, "w").write(content)
+            open(additional_repositories_file, "w", encoding="utf-8", errors="ignore").write(content)
 
             # If file no longer contains any "deb" instances, delete it as well
             if "deb " not in content:
@@ -160,7 +160,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         os.system("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys %s" % short_key)
 
         # Add the PPA in sources.list.d
-        with open(file, "w") as text_file:
+        with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
             text_file.write("%s\n" % deb_line)
             text_file.write("%s\n" % debsrc_line)
     elif line.startswith("deb ") | line.startswith("http"):
@@ -172,7 +172,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             print(_("Repository already exists."))
             #sys.exit(1) # from a result-oriented view it's not a fail
         else:
-            open(additional_repositories_file, "a").write("%s\n" % line)
+            open(additional_repositories_file, "a", encoding="utf-8", errors="ignore").write("%s\n" % line)
 
 def repo_malformed(line):
     r = re.compile(r'.*://.+?/? \w+ \w+')
@@ -312,7 +312,7 @@ class Repository():
     def switch(self):
         self.selected = (not self.selected)
 
-        readfile = open(self.file, "r")
+        readfile = open(self.file, "r", encoding="utf-8", errors="ignore")
         content = readfile.read()
         readfile.close()
 
@@ -322,27 +322,27 @@ class Repository():
         else:
             content = content.replace(self.line, "# %s" % self.line)
 
-        with open(self.file, "w") as writefile:
+        with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
             writefile.write(content)
 
         self.application.enable_reload_button()
 
     def edit(self, newline):
-        readfile = open(self.file, "r")
+        readfile = open(self.file, "r", encoding="utf-8", errors="ignore")
         content = readfile.read()
         readfile.close()
         content = content.replace(self.line, newline)
-        with open(self.file, "w") as writefile:
+        with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
             writefile.write(content)
         self.line = newline
         self.application.enable_reload_button()
 
     def delete(self):
-        readfile = open(self.file, "r")
+        readfile = open(self.file, "r", encoding="utf-8", errors="ignore")
         content = readfile.read()
         readfile.close()
         content = content.replace(self.line, "")
-        with open(self.file, "w") as writefile:
+        with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
             writefile.write(content)
 
         # If the file no longer contains any "deb" instances, delete it as well
@@ -479,7 +479,7 @@ class MirrorSelectionDialog(object):
 
         self.country_info = CountryInformation()
 
-        with open('/usr/lib/linuxmint/mintSources/countries.json') as data_file:
+        with open('/usr/lib/linuxmint/mintSources/countries.json', encoding="utf-8", errors="ignore") as data_file:
             self.countries = json.load(data_file)
 
     def _row_activated(self, treeview, path, view_column):
@@ -819,7 +819,7 @@ class Application(object):
             source_files.remove("/etc/apt/sources.list.d/official-dbgsym-repositories.list")
 
         for source_file in source_files:
-            file = open(source_file, "r")
+            file = open(source_file, "r", encoding="utf-8", errors="ignore")
             for line in file.readlines():
                 line = line.strip()
                 if line != "":
@@ -954,7 +954,7 @@ class Application(object):
     def read_mirror_list(self, path):
         mirror_list = []
         country_code = None
-        mirrorsfile = open(path, "r")
+        mirrorsfile = open(path, "r", encoding="utf-8", errors="ignore")
         for line in mirrorsfile.readlines():
             line = line.strip()
             if line != "":
@@ -999,7 +999,7 @@ class Application(object):
 
         # Parse official sources first
         for listfile in glob.glob("/etc/apt/sources.list.d/official*.list"):
-            with open(listfile) as f:
+            with open(listfile, encoding="utf-8", errors="ignore") as f:
                 lines = []
                 for line in f.readlines():
                     line = line.strip()
@@ -1011,7 +1011,7 @@ class Application(object):
         found_duplicates = False
         for listfile in ["/etc/apt/sources.list"] + glob.glob("/etc/apt/sources.list.d/*.list"):
             if not listfile.startswith("/etc/apt/sources.list.d/official"):
-                with open(listfile) as f:
+                with open(listfile, encoding="utf-8", errors="ignore") as f:
                     lines = []
                     found_duplicates_in_this_file = False
                     for line in f.readlines():
@@ -1025,7 +1025,7 @@ class Application(object):
                             found_duplicates_in_this_file = True
                 if found_duplicates_in_this_file:
                     print("Found duplicates in %s, rewriting it." % listfile)
-                    with open(listfile, 'w') as f:
+                    with open(listfile, 'w', encoding="utf-8", errors="ignore") as f:
                         for line in lines:
                             f.write("%s\n" % line)
         image = Gtk.Image()
@@ -1141,7 +1141,7 @@ class Application(object):
                 self.load_keys()
 
                 # Add the PPA in sources.list.d
-                with open(file, "w") as text_file:
+                with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
                     text_file.write("%s\n" % deb_line)
                     text_file.write("%s\n" % "# "+debsrc_line)
 
@@ -1248,7 +1248,7 @@ class Application(object):
         else:
             if not repo_exists(line):
                 # Add the repository in sources.list.d
-                open(additional_repositories_file, "a").write("%s\n" % line)
+                open(additional_repositories_file, "a", encoding="utf-8", errors="ignore").write("%s\n" % line)
                 # Add the line in the UI
                 repository = Repository(self, line, additional_repositories_file, True)
                 self.repositories.append(repository)
@@ -1490,38 +1490,38 @@ class Application(object):
 
         # Update official packages repositories
         os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")
-        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r').read()
+        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r', encoding="utf-8", errors="ignore").read()
         template = template.replace("$codename", self.config["general"]["codename"])
         template = template.replace("$basecodename", self.config["general"]["base_codename"])
         template = template.replace("$optionalcomponents", ' '.join(selected_components))
         template = template.replace("$mirror", self.selected_mirror)
         template = template.replace("$basemirror", self.selected_base_mirror)
 
-        with open("/etc/apt/sources.list.d/official-package-repositories.list", "w") as text_file:
+        with open("/etc/apt/sources.list.d/official-package-repositories.list", "w", encoding="utf-8", errors="ignore") as text_file:
             text_file.write(template)
 
         # Update official sources repositories
         os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
         if (self.builder.get_object("source_code_switch").get_active()):
-            template = open('/usr/share/mintsources/%s/official-source-repositories.list' % self.lsb_codename, 'r').read()
+            template = open('/usr/share/mintsources/%s/official-source-repositories.list' % self.lsb_codename, 'r', encoding="utf-8", errors="ignore").read()
             template = template.replace("$codename", self.config["general"]["codename"])
             template = template.replace("$basecodename", self.config["general"]["base_codename"])
             template = template.replace("$optionalcomponents", ' '.join(selected_components))
             template = template.replace("$mirror", self.selected_mirror)
             template = template.replace("$basemirror", self.selected_base_mirror)
-            with open("/etc/apt/sources.list.d/official-source-repositories.list", "w") as text_file:
+            with open("/etc/apt/sources.list.d/official-source-repositories.list", "w", encoding="utf-8", errors="ignore") as text_file:
                 text_file.write(template)
 
         # Update dbgsym repositories
         os.system("rm -f /etc/apt/sources.list.d/official-dbgsym-repositories.list")
         if (self.builder.get_object("debug_symbol_switch").get_active()):
-            template = open('/usr/share/mintsources/%s/official-dbgsym-repositories.list' % self.lsb_codename, 'r').read()
+            template = open('/usr/share/mintsources/%s/official-dbgsym-repositories.list' % self.lsb_codename, 'r', encoding="utf-8", errors="ignore").read()
             template = template.replace("$codename", self.config["general"]["codename"])
             template = template.replace("$basecodename", self.config["general"]["base_codename"])
             template = template.replace("$optionalcomponents", ' '.join(selected_components))
             template = template.replace("$mirror", self.selected_mirror)
             template = template.replace("$basemirror", self.selected_base_mirror)
-            with open("/etc/apt/sources.list.d/official-dbgsym-repositories.list", "w") as text_file:
+            with open("/etc/apt/sources.list.d/official-dbgsym-repositories.list", "w", encoding="utf-8", errors="ignore") as text_file:
                 text_file.write(template)
 
         self.enable_reload_button()
@@ -1531,14 +1531,14 @@ class Application(object):
         os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
         os.system("rm -f /etc/apt/sources.list.d/official-dbgsym-repositories.list")
 
-        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r').read()
+        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r', encoding="utf-8", errors="ignore").read()
         template = template.replace("$codename", self.config["general"]["codename"])
         template = template.replace("$basecodename", self.config["general"]["base_codename"])
         template = template.replace("$optionalcomponents", '')
         template = template.replace("$mirror", self.config["mirrors"]["default"])
         template = template.replace("$basemirror", self.config["mirrors"]["base_default"])
 
-        with open("/etc/apt/sources.list.d/official-package-repositories.list", "w") as text_file:
+        with open("/etc/apt/sources.list.d/official-package-repositories.list", "w", encoding="utf-8", errors="ignore") as text_file:
             text_file.write(template)
 
     def detect_official_sources(self):
@@ -1549,7 +1549,7 @@ class Application(object):
         self.builder.get_object("source_code_switch").set_active(os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list"))
         self.builder.get_object("debug_symbol_switch").set_active(os.path.exists("/etc/apt/sources.list.d/official-dbgsym-repositories.list"))
 
-        listfile = open('/etc/apt/sources.list.d/official-package-repositories.list', 'r')
+        listfile = open('/etc/apt/sources.list.d/official-package-repositories.list', 'r', encoding="utf-8", errors="ignore")
         for line in listfile.readlines():
             if (self.config["detection"]["main_identifier"] in line):
                 for component in self.optional_components:
