@@ -931,7 +931,7 @@ class Application(object):
     def read_mirror_list(self, path):
         mirror_list = []
         country_code = None
-        mirrorsfile = open(path, "r")
+        mirrorsfile = open(path, "r",encoding='utf-8')
         for line in mirrorsfile.readlines():
             line = line.strip()
             if line != "":
