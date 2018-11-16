@@ -110,7 +110,8 @@ def remove_repository_via_cli(line, codename, forceYes):
         try:
             content = open(additional_repositories_file, "r", encoding="utf-8", errors="ignore").read()
             content = content.replace(expand_http_line(line, codename), "")
-            open(additional_repositories_file, "w", encoding="utf-8", errors="ignore").write(content)
+            with open(additional_repositories_file, "w", encoding="utf-8", errors="ignore") as f:
+                f.write(content)
 
             # If file no longer contains any "deb" instances, delete it as well
             if "deb " not in content:
@@ -172,7 +173,8 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             print(_("Repository already exists."))
             #sys.exit(1) # from a result-oriented view it's not a fail
         else:
-            open(additional_repositories_file, "a", encoding="utf-8", errors="ignore").write("%s\n" % line)
+            with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
+                f.write("%s\n" % line)
 
 def repo_malformed(line):
     r = re.compile(r'.*://.+?/? \w+ \w+')
@@ -1248,7 +1250,8 @@ class Application(object):
         else:
             if not repo_exists(line):
                 # Add the repository in sources.list.d
-                open(additional_repositories_file, "a", encoding="utf-8", errors="ignore").write("%s\n" % line)
+                with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
+                    f.write("%s\n" % line)
                 # Add the line in the UI
                 repository = Repository(self, line, additional_repositories_file, True)
                 self.repositories.append(repository)
