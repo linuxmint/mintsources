@@ -157,8 +157,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         debsrc_line = 'deb-src' + deb_line[3:]
 
         # Add the key
-        short_key = ppa_info["signing_key_fingerprint"][-8:]
-        os.system("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys %s" % short_key)
+        os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % ppa_info["signing_key_fingerprint"])
 
         # Add the PPA in sources.list.d
         with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
@@ -305,11 +304,13 @@ class Mirror():
         self.name = name
 
 class Repository():
-    def __init__(self, application, line, file, selected):
+    def __init__(self, application, line, file, selected, base_mirror_names = None, base_name = None):
         self.application = application
         self.line = line
         self.file = file
         self.selected = selected
+        self.base_mirror_names = base_mirror_names
+        self.base_name = base_name
 
     def switch(self):
         self.selected = (not self.selected)
@@ -368,30 +369,40 @@ class Repository():
     def get_repository_name(self):
         line = self.line.strip()
         name = line
+        release = ""
         if line.startswith("deb cdrom:"):
             name = _("CD-ROM (Installation Disc)")
         else:
             try:
                 elements = self.line.split(" ")
-                for element in elements:
-                   for protocol in ['http://', 'ftp://', 'https://']:
-                        if element.startswith(protocol):
-                            name = element.replace(protocol, "").split("/")[0]
+                for i, s in enumerate(elements):
+                    if "://" in s:
+                        #release = " / " + " ".join(elements[i+1:])
+                        release = " / " + elements[i+1]
+                        element = s.split("://")[1]
+                        if not element.endswith("/"):
+                            element += "/"
+                        if element in self.base_mirror_names:
+                            name = self.base_name
+                            break
+                        else:
+                            name = element.split("/")[0]
                             subparts = name.split(".")
                             if len(subparts) > 2:
                                 if subparts[-2] != "co":
                                     name = subparts[-2].capitalize()
                                 else:
                                     name = subparts[-3].capitalize()
-                            break
-                name = name.replace("Linuxmint", "Linux Mint")
-                name = name.replace("01", "Intel")
-                name = name.replace("Steampowered", "Steam")
+                            name = name.replace("Linuxmint", "Linux Mint")
+                            name = name.replace("01", "Intel")
+                            name = name.replace("Steampowered", "Steam")
+                        break
             except:
                 pass
             if self.line.startswith("deb-src"):
                 name = "%s (%s)" % (name, _("Sources"))
-        return "<b>%s</b>\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, self.line, self.file)
+
+        return "<b>%s</b>%s\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, release, self.line, self.file)
 
 class ComponentSwitchBox(Gtk.Box):
     def __init__(self, application, component, window):
@@ -801,6 +812,18 @@ class Application(object):
         self.mirrors = self.read_mirror_list(self.config["mirrors"]["mirrors"])
         self.base_mirrors = self.read_mirror_list(self.config["mirrors"]["base_mirrors"])
 
+        self.base_mirror_names = set()
+        for mirror in self.base_mirrors:
+            m = mirror.name.split("://")[1]
+            if not m.endswith("/"):
+                m += "/"
+            self.base_mirror_names.add(m)
+
+        if "debian" in self.config["mirrors"]["base_default"]:
+            self.base_name = "Debian"
+        else:
+            self.base_name = "Ubuntu"
+
         self.repositories = []
         self.ppas = []
 
@@ -830,7 +853,7 @@ class Application(object):
                         line = line.replace('#', '').strip()
                         selected = False
                     if line.startswith("deb"):
-                        repository = Repository(self, line, source_file, selected)
+                        repository = Repository(self, line, source_file, selected, self.base_mirror_names, self.base_name)
                         if "ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
                             self.ppas.append(repository)
                         else:
@@ -975,6 +998,9 @@ class Application(object):
                                 url = url[:-1]
                             mirror = Mirror(country_code, url, name)
                             mirror_list.append(mirror)
+        if path.endswith("Debian.mirrors"):
+            mirror = Mirror("WD", "http://deb.debian.org/debian/", "http://deb.debian.org/debian/")
+            mirror_list.append(mirror)
         return mirror_list
 
     def remove_foreign(self, widget):
@@ -1138,8 +1164,7 @@ class Application(object):
                 debsrc_line = 'deb-src' + deb_line[3:]
 
                 # Add the key
-                short_key = ppa_info["signing_key_fingerprint"][-8:]
-                os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % short_key)
+                os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % ppa_info["signing_key_fingerprint"])
                 self.load_keys()
 
                 # Add the PPA in sources.list.d
@@ -1256,7 +1281,6 @@ class Application(object):
                 repository = Repository(self, line, additional_repositories_file, True)
                 self.repositories.append(repository)
                 tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
-
                 self.enable_reload_button()
             else:
                 self.show_confirmation_dialog(self._main_window, _("This repository is already configured, you cannot add it a second time."), image, affirmation=True)
@@ -1599,7 +1623,7 @@ class Application(object):
                     flag = FLAG_PATH % mirror.country_code.lower()
                 if os.path.exists(flag):
                     mint_flag_path = flag
-                    break
+                break
 
         for mirror in self.base_mirrors:
             if mirror.url[-1] == "/":
@@ -1607,9 +1631,13 @@ class Application(object):
             else:
                 url = mirror.url
             if url in selected_base_mirror:
-                if os.path.exists(FLAG_PATH % mirror.country_code.lower()):
-                    base_flag_path = FLAG_PATH % mirror.country_code.lower()
-                    break
+                if mirror.country_code == "WD":
+                    flag = FLAG_PATH % '_united_nations'
+                else:
+                    flag = FLAG_PATH % mirror.country_code.lower()
+                if os.path.exists(flag):
+                    base_flag_path = flag
+                break
 
         pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(mint_flag_path, -1, FLAG_SIZE)
         self.builder.get_object("image_mirror").set_from_pixbuf(pixbuf)
