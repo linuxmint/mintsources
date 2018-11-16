@@ -158,8 +158,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         debsrc_line = 'deb-src' + deb_line[3:]
 
         # Add the key
-        short_key = ppa_info["signing_key_fingerprint"][-8:]
-        os.system("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys %s" % short_key)
+        os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % ppa_info["signing_key_fingerprint"])
 
         # Add the PPA in sources.list.d
         with open(file, "w") as text_file:
@@ -1140,8 +1139,7 @@ class Application(object):
                 debsrc_line = 'deb-src' + deb_line[3:]
 
                 # Add the key
-                short_key = ppa_info["signing_key_fingerprint"][-8:]
-                os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % short_key)
+                os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % ppa_info["signing_key_fingerprint"])
                 self.load_keys()
 
                 # Add the PPA in sources.list.d
