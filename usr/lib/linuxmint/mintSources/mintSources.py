@@ -158,7 +158,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         debsrc_line = 'deb-src' + deb_line[3:]
 
         # Add the key
-        os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % ppa_info["signing_key_fingerprint"])
+        subprocess.call(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", "--recv-keys", ppa_info["signing_key_fingerprint"]])
 
         # Add the PPA in sources.list.d
         with open(file, "w") as text_file:
@@ -267,7 +267,7 @@ class Key():
         self.uid = ""
 
     def delete(self):
-        os.system("apt-key del '%s'" % self.pub)
+        subprocess.call(["apt-key", "del", self.pub])
 
     def get_name(self):
         return "%s\n<small>    %s</small>" % (GObject.markup_escape_text(self.uid), GObject.markup_escape_text(self.pub))
@@ -1089,9 +1089,9 @@ class Application(object):
     def fetch_key(self, widget):
         image = Gtk.Image()
         image.set_from_icon_name("mintsources-keys", Gtk.IconSize.DIALOG)
-        line = self.show_entry_dialog(self._main_window, _("Please enter the 8 characters of the public key you want to download from keyserver.ubuntu.com:"), "", image)
-        if line is not None:
-            res = os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % line)
+        fingerprint = self.show_entry_dialog(self._main_window, _("Please enter the fingerprint of the public key you want to download from keyserver.ubuntu.com:"), "", image)
+        if fingerprint is not None:
+            subprocess.call(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", "--recv-keys", fingerprint])
             self.load_keys()
             self.enable_reload_button()
 
@@ -1138,7 +1138,7 @@ class Application(object):
                 debsrc_line = 'deb-src' + deb_line[3:]
 
                 # Add the key
-                os.system("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys %s" % ppa_info["signing_key_fingerprint"])
+                subprocess.call(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", "--recv-keys", ppa_info["signing_key_fingerprint"]])
                 self.load_keys()
 
                 # Add the PPA in sources.list.d
