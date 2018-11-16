@@ -1059,14 +1059,13 @@ class Application(object):
             if len(key_data) > 3:
                 extra = key_data[0]
                 pub = key_data[1]
-                pub_short = "".join(pub.split()[-2:])
                 name = key_data[2]
                 name = name.replace("uid ", "")
                 if "]" in name:
                     name = name.split("]")[1].strip()
-                key = Key(pub_short)
+                key = Key(pub)
                 key.uid = name
-                if pub_short not in self.system_keys:
+                if pub not in self.system_keys:
                     self.keys.append(key)
 
         self._keys_model.clear()
