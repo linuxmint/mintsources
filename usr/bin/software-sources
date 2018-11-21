@@ -5,6 +5,13 @@ import subprocess
 import sys
 
 if os.getuid() != 0:
-    subprocess.run(["pkexec", "/usr/bin/mintsources"])
+    cmd = ["pkexec", "/usr/bin/mintsources"]
+    if "http_proxy" in os.environ:
+        cmd.extend(["--http-proxy", os.environ["http_proxy"]])
+    if "https_proxy" in os.environ:
+        cmd.extend(["--https-proxy", os.environ["https_proxy"]])
+    if "no_proxy" in os.environ:
+        cmd.extend(["--no-proxy", os.environ["no_proxy"]])
+    subprocess.run(cmd)
 else:
-    subprocess.run(["/usr/lib/linuxmint/mintSources/mintSources.py"])
+    subprocess.run(["/usr/lib/linuxmint/mintSources/mintSources.py"] + sys.argv[1:])

@@ -1629,8 +1629,18 @@ if __name__ == "__main__":
         help="force yes on all confirmation questions", default=False)
     parser.add_option("-r", "--remove", dest="remove", action="store_true",
         help="Remove the specified repository", default=False)
+    parser.add_option("--http-proxy", dest="http_proxy", help="HTTP proxy")
+    parser.add_option("--https-proxy", dest="https_proxy", help="HTTPS proxy")
+    parser.add_option("--no-proxy", dest="no_proxy", help="Proxy exclusions")
 
     (options, args) = parser.parse_args()
+
+    if options.http_proxy:
+        os.environ["http_proxy"] = options.http_proxy
+    if options.https_proxy:
+        os.environ["https_proxy"] = options.https_proxy
+    if options.no_proxy:
+        os.environ["no_proxy"] = options.no_proxy
 
     lsb_codename = subprocess.getoutput("lsb_release -sc")
     config_dir = "/usr/share/mintsources/%s" % lsb_codename
