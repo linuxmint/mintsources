@@ -1,3 +1,28 @@
+mintsources (1.8.3) tessa; urgency=medium
+
+  [ Clement Lefebvre ]
+  * Append deb.debian.org to Debian mirror list
+
+  [ sinihappo ]
+  * Allow UTF-8 characters in mirrorsfile regardless of current locale. (#129)
+
+  [ gm10 ]
+  * Add release after repo name and use base name for base mirrors (#124)
+  * Use full fingerprint for PPA keys (#126)
+
+  [ Clement Lefebvre ]
+  * Keys: Show full fingerprints
+  * Keys: Use subprocess module to prevent injection
+
+  [ gm10 ]
+  * Better input validation when adding repositories to prevent malformed and duplicate entries (#125)
+
+  [ Clement Lefebvre ]
+  * l10n: Update POT
+  * l10n: Update files
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 28 Nov 2018 12:30:59 +0000
+
 mintsources (1.8.2) tessa; urgency=medium
 
   [ Michael Webster ]
