@@ -165,33 +165,28 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             text_file.write("%s\n" % debsrc_line)
     elif line.startswith("deb ") | line.startswith("http"):
         line = expand_http_line(line, codename)
-        if repo_malformed(line):
+        result = validate_repo(line)
+        if result == "malformed":
             print(_("Malformed input, repository not added."))
             sys.exit(1)
-        if repo_exists(line):
+        elif result == "duplicate":
             print(_("Repository already exists."))
-            #sys.exit(1) # from a result-oriented view it's not a fail
+            sys.exit(1)
         else:
-            with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
-                f.write("%s\n" % line)
+            open(additional_repositories_file, "a", encoding="utf-8", errors="ignore").write("%s\n" % line)
 
-def repo_malformed(line):
-    r = re.compile(r'.*://.+?/? \w+ \w+')
+def validate_repo(line):
+    r = re.compile(r'.*://(.+?)/? (\S+)')
     match_line = r.match(line)
     if not match_line:
-        return True
-    return False
-
-def repo_exists(line):
-    r = re.compile(r'.*://(.+?)/? (\w+)')
-    match_line = r.match(line)
+        return "malformed"
     if match_line:
         repositories = SourcesList().list
         for repository in repositories:
             match_repo = r.match(repository.line)
             if match_repo and match_repo.group(1,2) == match_line.group(1,2):
-                return True
-    return False
+                return "duplicate"
+    return None
 
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
     DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
@@ -1269,20 +1264,20 @@ class Application(object):
         if not line or line == default_line:
             return
         line = expand_http_line(line, self.config["general"]["base_codename"])
-        if repo_malformed(line):
+        result = validate_repo(line)
+        if result == "malformed":
             self.show_confirmation_dialog(self._main_window, _("Malformed input, repository not added."), image, affirmation=True)
+        elif result == "duplicate":
+            self.show_confirmation_dialog(self._main_window, _("This repository is already configured, you cannot add it a second time."), image, affirmation=True)
         else:
-            if not repo_exists(line):
-                # Add the repository in sources.list.d
-                with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
-                    f.write("%s\n" % line)
-                # Add the line in the UI
-                repository = Repository(self, line, additional_repositories_file, True)
-                self.repositories.append(repository)
-                tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
-                self.enable_reload_button()
-            else:
-                self.show_confirmation_dialog(self._main_window, _("This repository is already configured, you cannot add it a second time."), image, affirmation=True)
+            # Add the repository in sources.list.d
+            open(additional_repositories_file, "a", encoding="utf-8", errors="ignore").write("%s\n" % line)
+            # Add the line in the UI
+            repository = Repository(self, line, additional_repositories_file, True, self.base_mirror_names, self.base_name)
+            self.repositories.append(repository)
+            tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
+
+            self.enable_reload_button()
 
     def edit_repository(self, widget):
         selection = self._repository_treeview.get_selection()
