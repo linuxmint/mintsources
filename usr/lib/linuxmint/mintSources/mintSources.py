@@ -165,28 +165,38 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             text_file.write("%s\n" % debsrc_line)
     elif line.startswith("deb ") | line.startswith("http"):
         line = expand_http_line(line, codename)
-        result = validate_repo(line)
-        if result == "malformed":
+        if repo_malformed(line):
             print(_("Malformed input, repository not added."))
             sys.exit(1)
-        elif result == "duplicate":
+        if repo_exists(line):
             print(_("Repository already exists."))
-            sys.exit(1)
+            #sys.exit(1) # from a result-oriented view it's not a fail
         else:
-            open(additional_repositories_file, "a", encoding="utf-8", errors="ignore").write("%s\n" % line)
+            with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
+                f.write("%s\n" % line)
 
-def validate_repo(line):
-    r = re.compile(r'.*://(.+?)/? (\S+)')
+def repo_malformed(line):
+    r = re.compile(r'.*://.+?/? \S+')
     match_line = r.match(line)
     if not match_line:
-        return "malformed"
+        return True
+    return False
+
+def repo_exists(line):
+    r = re.compile(r'.*://(.+?)/? (.+)')
+    match_line = r.match(line)
     if match_line:
         repositories = SourcesList().list
         for repository in repositories:
             match_repo = r.match(repository.line)
-            if match_repo and match_repo.group(1,2) == match_line.group(1,2):
-                return "duplicate"
-    return None
+            if match_repo and match_repo.group(1) == match_line.group(1):
+                if match_repo.group(2) == match_line.group(2):
+                    return True
+                repo_args = match_repo.group(2).split(" ")
+                for arg in match_line.group(2).split(" ")[1:]:
+                    if arg in repo_args[1:]:
+                        return True
+    return False
 
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
     DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
@@ -1264,20 +1274,20 @@ class Application(object):
         if not line or line == default_line:
             return
         line = expand_http_line(line, self.config["general"]["base_codename"])
-        result = validate_repo(line)
-        if result == "malformed":
+        if repo_malformed(line):
             self.show_confirmation_dialog(self._main_window, _("Malformed input, repository not added."), image, affirmation=True)
-        elif result == "duplicate":
-            self.show_confirmation_dialog(self._main_window, _("This repository is already configured, you cannot add it a second time."), image, affirmation=True)
         else:
-            # Add the repository in sources.list.d
-            open(additional_repositories_file, "a", encoding="utf-8", errors="ignore").write("%s\n" % line)
-            # Add the line in the UI
-            repository = Repository(self, line, additional_repositories_file, True, self.base_mirror_names, self.base_name)
-            self.repositories.append(repository)
-            tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
-
-            self.enable_reload_button()
+            if not repo_exists(line):
+                # Add the repository in sources.list.d
+                with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
+                    f.write("%s\n" % line)
+                # Add the line in the UI
+                repository = Repository(self, line, additional_repositories_file, True)
+                self.repositories.append(repository)
+                tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
+                self.enable_reload_button()
+            else:
+                self.show_confirmation_dialog(self._main_window, _("This repository is already configured, you cannot add it a second time."), image, affirmation=True)
 
     def edit_repository(self, widget):
         selection = self._repository_treeview.get_selection()
