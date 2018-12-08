@@ -196,9 +196,11 @@ def repo_exists(line):
                 if match_repo.group(2) == match_line.group(2):
                     return True
                 repo_args = match_repo.group(2).split(" ")
-                for arg in match_line.group(2).split(" ")[1:]:
-                    if arg in repo_args[1:]:
-                        return True
+                line_args = match_line.group(2).split(" ")
+                if repo_args[0] == line_args[0]:
+                    for arg in line_args[1:]:
+                        if arg in repo_args[1:]:
+                            return True
     return False
 
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
