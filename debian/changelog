@@ -1,3 +1,10 @@
+mintsources (1.8.4) tessa; urgency=medium
+
+  [ gm10 ]
+  * Add padding to reload notification infobar to keep it visually separate (#135)
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sat, 15 Dec 2018 13:08:18 +0000
+
 mintsources (1.8.3) tessa; urgency=medium
 
   [ Clement Lefebvre ]
