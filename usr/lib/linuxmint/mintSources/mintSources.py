@@ -1488,7 +1488,7 @@ class Application(object):
             infobar.add_button(_("OK"), Gtk.ResponseType.OK)
             infobar.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
             infobar.connect("response", self._on_infobar_response)
-            self.builder.get_object("box_infobar").pack_start(infobar, True, True,0)
+            self.builder.get_object("box_infobar").pack_start(infobar, True, True, 5)
             infobar.show_all()
 
     def _on_infobar_response(self, infobar, response_id):
