@@ -179,7 +179,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
                 f.write("%s\n" % line)
 
 def repo_malformed(line):
-    r = re.compile(r'.*://.+?/? \S+')
+    r = re.compile(r'(?:deb|deb-src)\s+\w+://.+?/?\s+\S+')
     match_line = r.match(line)
     if not match_line:
         return True
@@ -363,7 +363,7 @@ class Repository():
             writefile.writelines(content)
 
         # If the file no longer contains any "deb" instances, delete it as well
-        if not next((s for s in content if "deb " in s), None):
+        if not next((s for s in content if "deb" in s or "deb-src" in s), None):
             os.unlink(self.file)
 
         self.application.enable_reload_button()
