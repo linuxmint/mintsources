@@ -186,17 +186,19 @@ def repo_malformed(line):
     return False
 
 def repo_exists(line):
-    r = re.compile(r'.*://(.+?)/? (.+)')
-    match_line = r.match(line)
+    r = re.compile(r'^[#\s]*(\S+)\s*(?:\[.*\])? \w+://(.+?)/? (.+)')
+    match_line = r.match(line.strip())
     if match_line:
         repositories = SourcesList().list
         for repository in repositories:
-            match_repo = r.match(repository.line)
-            if match_repo and match_repo.group(1) == match_line.group(1):
-                if match_repo.group(2) == match_line.group(2):
+            match_repo = r.match(repository.line.strip())
+            if not match_repo:
+                continue
+            if match_repo.group(1, 2) == match_line.group(1, 2):
+                if match_repo.group(3) == match_line.group(3):
                     return True
-                repo_args = match_repo.group(2).split(" ")
-                line_args = match_line.group(2).split(" ")
+                repo_args = match_repo.group(3).split(" ")
+                line_args = match_line.group(3).split(" ")
                 if repo_args[0] == line_args[0]:
                     for arg in line_args[1:]:
                         if arg in repo_args[1:]:
