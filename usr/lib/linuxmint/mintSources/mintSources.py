@@ -324,49 +324,39 @@ class Repository():
         self.base_mirror_names = base_mirror_names
         self.base_name = base_name
 
-    def switch(self):
-        self.selected = (not self.selected)
-
+    def modify_source_file(self, target_line):
         with open(self.file, "r", encoding="utf-8", errors="ignore") as readfile:
             content = readfile.readlines()
-            if self.selected:
-                line = next((s for s in content if s.endswith(self.line + "\n")), None)
-                if line:
-                    content[content.index(line)] = line.lstrip("#").lstrip(" ")
-            else:
-                line = "%s\n" % self.line
-                if line in content:
-                    content[content.index(line)] = "# %s\n" % self.line
-        with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
-            writefile.writelines(content)
-
-        self.application.enable_reload_button()
-
-    def edit(self, newline):
-        with open(self.file, "r", encoding="utf-8", errors="ignore") as readfile:
-            content = readfile.readlines()
-            line = "%s\n" % self.line
-            if line in content:
-                content[content.index(line)] = "%s\n" % newline
-        with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
-            writefile.writelines(content)
-        self.line = newline
-        self.application.enable_reload_button()
-
-    def delete(self):
-        with open(self.file, "r", encoding="utf-8", errors="ignore") as readfile:
-            content = readfile.readlines()
-            line = next((s for s in content if s.endswith(self.line + "\n")), None)
-            if line:
-                content.remove(line)
-        with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
-            writefile.writelines(content)
+        line = next((s for s in content if s.strip().endswith(self.line)), None)
+        if not line:
+            # failed to find the line in the file, either the file got modified exernally
+            # or the user previously edited the last "deb" or "deb-src" out and we silently
+            # deleted it below - FIXME: UI will remain inconsistent until user deletes
+            return
+        if target_line:
+            content[content.index(line)] = "%s%s\n" % ("" if self.selected else "# ", target_line)
+        else:
+            content.remove(line)
 
         # If the file no longer contains any "deb" instances, delete it as well
         if not next((s for s in content if "deb" in s or "deb-src" in s), None):
             os.unlink(self.file)
+        else:
+            with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
+                writefile.writelines(content)
 
         self.application.enable_reload_button()
+
+    def switch(self):
+        self.selected = (not self.selected)
+        self.modify_source_file(self.line)
+
+    def edit(self, newline):
+        self.modify_source_file(newline)
+        self.line = newline
+
+    def delete(self):
+        self.modify_source_file(None)
 
     def get_ppa_name(self):
         elements = self.line.split(" ")
