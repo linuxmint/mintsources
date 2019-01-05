@@ -45,7 +45,7 @@ _ = gettext.gettext
 os.umask(0o022)
 
 # Used as a decorator to run things in the background
-def async(func):
+def run_async(func):
     def wrapper(*args, **kwargs):
         thread = threading.Thread(target=func, args=args, kwargs=kwargs)
         thread.daemon = True
@@ -156,8 +156,13 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         deb_line = expand_http_line(deb_line, codename)
         debsrc_line = 'deb-src' + deb_line[3:]
 
-        # Add the key
-        subprocess.call(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", "--recv-keys", ppa_info["signing_key_fingerprint"]])
+        # Add the key if not in keyring
+        keys = subprocess.run(["apt-key","--quiet", "adv","--with-colons", "--batch", \
+            "--fixed-list-mode", "--list-keys"], stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL).stdout.decode().split(":")
+        if not ppa_info["signing_key_fingerprint"] in keys:
+            subprocess.run(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", \
+                "--recv-keys", ppa_info["signing_key_fingerprint"]])
 
         # Add the PPA in sources.list.d
         with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
@@ -565,7 +570,7 @@ class MirrorSelectionDialog(object):
             # Age is fine :)
             return True
 
-    @async
+    @run_async
     def _all_speed_tests(self):
         model_iters = [] # Don't iterate through iters directly.. we're modifying their orders..
         iter = self._mirrors_model.get_iter_first()
@@ -1156,30 +1161,43 @@ class Application(object):
 
             image = Gtk.Image()
             image.set_from_icon_name("mintsources-ppa", Gtk.IconSize.DIALOG)
-            info_text = "%s\n\n%s\n\n%s\n\n%s" % (line, self.format_string(ppa_info["displayname"]), self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
+            info_text = "%s\n\n%s\n\n%s\n\n%s" % (line,
+                self.format_string(ppa_info["displayname"]),
+                self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
             if self.show_confirm_ppa_dialog(self._main_window, info_text):
                 (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
 
-                # Add the key
-                subprocess.call(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", "--recv-keys", ppa_info["signing_key_fingerprint"]])
-                self.load_keys()
+                # Add the key if not in keyring
+                keys = subprocess.run(["apt-key","--quiet", "adv","--with-colons", "--batch",\
+                    "--fixed-list-mode", "--list-keys"], stdout=subprocess.PIPE,
+                     stderr=subprocess.DEVNULL).stdout.decode().split(":")
+                if not ppa_info["signing_key_fingerprint"] in keys:
+                    subprocess.run(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com",\
+                    "--recv-keys", ppa_info["signing_key_fingerprint"]])
+                    self.load_keys()
 
                 # Add the PPA in sources.list.d
+                sources_enabled = self.builder.get_object("source_code_switch").get_active()
                 with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
                     text_file.write("%s\n" % deb_line)
-                    text_file.write("%s\n" % "# "+debsrc_line)
+                    text_file.write("%s%s\n" % ("" if sources_enabled else "# ", debsrc_line))
 
-                # Add the package line in the UI
-                repository = Repository(self, deb_line, file, True)
-                self.ppas.append(repository)
-                tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
+                # Add the package line to the UI or replace it if it exists
+                def add_to_ui(line):
+                    repo = next((repo for repo in self.ppas if (repo.line == line and repo.file == file)), None)
+                    if repo:
+                        iter = next((item.iter for item in self._ppa_model if line in self._ppa_model.get_value(item.iter, 2).split("\n")), None)
+                        if iter:
+                            self._ppa_model.remove(iter)
+                        self.ppas.remove(repo)
+                    repository = Repository(self, line, file, True)
+                    self.ppas.append(repository)
+                    tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
 
-                # Add the source line in the UI
-                repository = Repository(self, debsrc_line, file, False)
-                self.ppas.append(repository)
-                tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
+                add_to_ui(deb_line)
+                add_to_ui(debsrc_line)
 
                 self.enable_reload_button()
 
