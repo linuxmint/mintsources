@@ -207,10 +207,14 @@ def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
     LAUNCHPAD_PPA_CERT = "/etc/ssl/certs/ca-certificates.crt"
 
     lp_url = LAUNCHPAD_PPA_API % (owner_name, ppa_name)
+
+    data = requests.get(lp_url)
+    if not data.ok:
+        raise PPAException(_("PPA not found"))
     try:
-        json_data = requests.get(lp_url).json()
+        json_data = data.json()
     except pycurl.error as e:
-        raise PPAException("Error reading %s: %s" % (lp_url, e), e)
+        raise PPAException("%s %s: %s" % (_("Error reading"), lp_url, e))
 
     # Make sure the PPA supports our base release
     repo_url = "http://ppa.launchpad.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename)
@@ -1151,7 +1155,9 @@ class Application(object):
 
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the PPA you want to add:"), start_line, image)
         if line is not None:
-            user, sep, ppa_name = line.split(":")[1].partition("/")
+            if ":" in line:
+                line = line.split(":")[1]
+            user, sep, ppa_name = line.partition("/")
             ppa_name = ppa_name or "ppa"
             try:
                 ppa_info = get_ppa_info_from_lp(user, ppa_name, self.config["general"]["base_codename"])
