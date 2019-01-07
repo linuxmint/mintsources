@@ -1012,13 +1012,13 @@ class Application(object):
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
         image = Gtk.Image()
-        image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
+        image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)
 
     def fix_mergelist(self, widget):
         os.system("rm /var/lib/apt/lists/* -vrf")
         image = Gtk.Image()
-        image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
+        image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
         self.enable_reload_button()
 
@@ -1057,7 +1057,7 @@ class Application(object):
                         for line in lines:
                             f.write("%s\n" % line)
         image = Gtk.Image()
-        image.set_from_icon_name("mintsources-maintenance", Gtk.IconSize.DIALOG)
+        image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
         if found_duplicates:
             self.show_confirmation_dialog(self._main_window, _("Duplicate entries were removed. Please reload the cache."), image, affirmation=True)
             self.enable_reload_button()
@@ -1113,7 +1113,7 @@ class Application(object):
 
     def fetch_key(self, widget):
         image = Gtk.Image()
-        image.set_from_icon_name("mintsources-keys", Gtk.IconSize.DIALOG)
+        image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
         fingerprint = self.show_entry_dialog(self._main_window, _("Please enter the fingerprint of the public key you want to download from keyserver.ubuntu.com:"), "", image)
         if fingerprint is not None:
             subprocess.call(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", "--recv-keys", fingerprint])
@@ -1126,7 +1126,7 @@ class Application(object):
         if (iter != None):
             key = model.get(iter, 0)[0]
             image = Gtk.Image()
-            image.set_from_icon_name("mintsources-keys", Gtk.IconSize.DIALOG)
+            image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
             if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image, yes_no=True)):
                 key.delete()
                 self.load_keys()
@@ -1136,7 +1136,7 @@ class Application(object):
 
     def add_ppa(self, widget):
         image = Gtk.Image()
-        image.set_from_icon_name("mintsources-ppa", Gtk.IconSize.DIALOG)
+        image.set_from_icon_name("process-stop-symbolic", Gtk.IconSize.DIALOG)
         start_line = ""
         clipboard_text = self.get_clipboard_text("ppa")
         if clipboard_text != None:
@@ -1155,7 +1155,7 @@ class Application(object):
                 return
 
             image = Gtk.Image()
-            image.set_from_icon_name("mintsources-ppa", Gtk.IconSize.DIALOG)
+            image.set_from_icon_name("process-stop-symbolic", Gtk.IconSize.DIALOG)
             info_text = "%s\n\n%s\n\n%s\n\n%s" % (line, self.format_string(ppa_info["displayname"]), self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
             if self.show_confirm_ppa_dialog(self._main_window, info_text):
                 (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
@@ -1256,7 +1256,7 @@ class Application(object):
 
     def add_repository(self, widget):
         image = Gtk.Image()
-        image.set_from_icon_name("mintsources-additional", Gtk.IconSize.DIALOG)
+        image.set_from_icon_name("network-workgroup-symbolic", Gtk.IconSize.DIALOG)
         start_line = ""
         default_line = "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"]
         clipboard_text = self.get_clipboard_text("deb")
