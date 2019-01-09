@@ -157,17 +157,13 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         debsrc_line = 'deb-src' + deb_line[3:]
 
         # Add the key if not in keyring
-        keys = subprocess.run(["apt-key","--quiet", "adv","--with-colons", "--batch", \
-            "--fixed-list-mode", "--list-keys"], stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL).stdout.decode().split(":")
-        if not ppa_info["signing_key_fingerprint"] in keys:
-            subprocess.run(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", \
-                "--recv-keys", ppa_info["signing_key_fingerprint"]])
+        add_new_key(ppa_info["signing_key_fingerprint"])
 
         # Add the PPA in sources.list.d
         with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
             text_file.write("%s\n" % deb_line)
             text_file.write("%s\n" % debsrc_line)
+
     elif line.startswith("deb ") | line.startswith("http"):
         line = expand_http_line(line, codename)
         if repo_malformed(line):
@@ -179,6 +175,21 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         else:
             with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
                 f.write("%s\n" % line)
+
+def add_new_key(key):
+    """ Add the key if not in keyring """
+    keys = subprocess.run(["apt-key","--quiet", "adv","--with-colons", "--batch",\
+        "--fixed-list-mode", "--list-keys"], stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL).stdout.decode().split(":")
+    if not key in keys:
+        add_key_remote(key)
+
+def add_key_remote(key):
+    try:
+        subprocess.run(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", "--recv-keys", key], check=True)
+    except subprocess.CalledProcessError:
+        return False
+    return True
 
 def repo_malformed(line):
     r = re.compile(r'.*://.+?/? \w+ \w+')
@@ -1104,7 +1115,7 @@ class Application(object):
 
         self._keys_model.clear()
         for key in self.keys:
-            tree_iter = self._keys_model.append((key, key.get_name()))
+            self._keys_model.append((key, key.get_name()))
 
     def add_key(self, widget):
         dialog = Gtk.FileChooserDialog(_("Open.."),
@@ -1125,9 +1136,13 @@ class Application(object):
         image.set_from_icon_name("mintsources-keys", Gtk.IconSize.DIALOG)
         fingerprint = self.show_entry_dialog(self._main_window, _("Please enter the fingerprint of the public key you want to download from keyserver.ubuntu.com:"), "", image)
         if fingerprint is not None:
-            subprocess.call(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com", "--recv-keys", fingerprint])
+            add_key_remote(fingerprint)
             self.load_keys()
             self.enable_reload_button()
+
+    def add_new_key(self, key):
+        add_new_key(key)
+        self.load_keys()
 
     def remove_key(self, widget):
         selection = self._keys_treeview.get_selection()
@@ -1147,19 +1162,20 @@ class Application(object):
         image = Gtk.Image()
         image.set_from_icon_name("mintsources-ppa", Gtk.IconSize.DIALOG)
         start_line = ""
+        default_line = "ppa:username/ppa"
         clipboard_text = self.get_clipboard_text("ppa")
         if clipboard_text != None:
             start_line = clipboard_text
         else:
-            start_line = "ppa:username/ppa"
+            start_line = default_line
 
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the PPA you want to add:"), start_line, image)
-        if line is not None:
-            if ":" in line:
-                line = line.split(":")[1]
-            user, sep, ppa_name = line.partition("/")
-            ppa_name = ppa_name or "ppa"
+        if line:
             try:
+                if not line.startswith("ppa:") or line == default_line:
+                    raise ValueError("Invalid PPA name")
+                user, sep, ppa_name = line.split(":", 1)[1].partition("/")
+                ppa_name = ppa_name or "ppa"
                 ppa_info = get_ppa_info_from_lp(user, ppa_name, self.config["general"]["base_codename"])
             except Exception as detail:
                 self.show_error_dialog(self._main_window, _("Cannot add PPA: '%s'.") % detail)
@@ -1176,13 +1192,7 @@ class Application(object):
                 debsrc_line = 'deb-src' + deb_line[3:]
 
                 # Add the key if not in keyring
-                keys = subprocess.run(["apt-key","--quiet", "adv","--with-colons", "--batch",\
-                    "--fixed-list-mode", "--list-keys"], stdout=subprocess.PIPE,
-                     stderr=subprocess.DEVNULL).stdout.decode().split(":")
-                if not ppa_info["signing_key_fingerprint"] in keys:
-                    subprocess.run(["apt-key", "adv", "--keyserver", "keyserver.ubuntu.com",\
-                    "--recv-keys", ppa_info["signing_key_fingerprint"]])
-                    self.load_keys()
+                self.add_new_key(ppa_info["signing_key_fingerprint"])
 
                 # Add the PPA in sources.list.d
                 sources_enabled = self.builder.get_object("source_code_switch").get_active()
