@@ -20,7 +20,8 @@ Depends: python3-apt,
          gir1.2-xapp-1.0,
          dash,
          iso-flag-png,
-         lsb-release
+         lsb-release,
+         mint-common (>= 2)
 Replaces: software-properties-common (<< 1),
           software-properties-gtk (<< 1),
           python-software-properties (<< 1),

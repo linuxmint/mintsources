@@ -5,7 +5,7 @@ import apt
 import gettext
 import tempfile
 import subprocess
-import mintcommon
+import mintcommon.aptdaemon
 import gi
 import locale
 
@@ -85,7 +85,7 @@ class Foreign_Browser():
             treeview.append_column(col)
             col.set_sort_column_id(PKG_REPO_VERSION)
 
-        self.apt = mintcommon.APT(self.window)
+        self.apt = mintcommon.aptdaemon.APT(self.window)
 
         cache = apt.Cache()
         for key in cache.keys():

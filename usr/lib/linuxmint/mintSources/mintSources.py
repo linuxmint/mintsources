@@ -19,7 +19,7 @@ from urllib.request import urlopen
 import requests
 from optparse import OptionParser
 import locale
-import mintcommon
+import mintcommon.aptdaemon
 import glob
 import gi
 gi.require_version('Gtk', '3.0')
@@ -769,7 +769,7 @@ class Application(object):
 
         self._official_repositories_page = self.builder.get_object("official_repositories_page")
 
-        self.apt = mintcommon.APT(self._main_window)
+        self.apt = mintcommon.aptdaemon.APT(self._main_window)
 
         config_parser = configparser.RawConfigParser()
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % self.lsb_codename)
