@@ -159,10 +159,11 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         # Add the key if not in keyring
         add_new_key(ppa_info["signing_key_fingerprint"])
 
-        # Add the PPA in sources.list.d
+        # Add the PPA
+        sources_enabled = os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list")
         with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
             text_file.write("%s\n" % deb_line)
-            text_file.write("%s\n" % debsrc_line)
+            text_file.write("%s%s\n" % ("" if sources_enabled else "# ", debsrc_line))
 
     elif line.startswith("deb ") | line.startswith("http"):
         line = expand_http_line(line, codename)
