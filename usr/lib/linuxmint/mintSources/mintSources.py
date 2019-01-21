@@ -379,10 +379,13 @@ class Repository():
                     if "://" in s:
                         #release = " / " + " ".join(elements[i+1:])
                         release = " / " + elements[i+1]
-                        element = s.split("://")[1]
+                        protocol, element = s.split("://", 1)
                         if not element.endswith("/"):
                             element += "/"
-                        if element in self.base_mirror_names:
+                        if protocol == "file":
+                            name = _("Local Repository")
+                            release = ""
+                        elif element in self.base_mirror_names:
                             name = self.base_name
                             break
                         else:
