@@ -1102,7 +1102,7 @@ class Application(object):
 
     def add_key(self, widget):
         dialog = Gtk.FileChooserDialog(_("Open.."),
-                               None,
+                               self._main_window,
                                Gtk.FileChooserAction.OPEN,
                                (_("Cancel"), Gtk.ResponseType.CANCEL,
                                 _("Open"), Gtk.ResponseType.OK))
