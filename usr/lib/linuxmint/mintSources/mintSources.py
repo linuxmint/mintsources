@@ -86,21 +86,21 @@ def remove_repository_via_cli(line, codename, forceYes):
             print (_("Cannot get info about PPA: '%s'.") % detail)
 
         (deb_line, file) = expand_ppa_line(line.strip(), codename)
-        deb_line = expand_http_line(deb_line, codename)
-        debsrc_line = 'deb-src' + deb_line[3:]
+        deb_line = expand_http_line(deb_line, codename) + "\n"
+        debsrc_line = 'deb-src' + deb_line[3:] + "\n"
 
         # Remove the PPA from sources.list.d
         try:
-            readfile = open(file, "r", encoding="utf-8", errors="ignore")
-            content = readfile.read()
-            readfile.close()
-            content = content.replace(deb_line, "")
-            content = content.replace(debsrc_line, "")
+            with open(file, "r", encoding="utf-8", errors="ignore") as readfile:
+                content = readfile.readlines()
+                for line in (deb_line, debsrc_line):
+                    if line in content:
+                        content.remove(line)
             with open(file, "w", encoding="utf-8", errors="ignore") as writefile:
-                writefile.write(content)
+                writefile.writelines(content)
 
             # If file no longer contains any "deb" instances, delete it as well
-            if "deb " not in content:
+            if not next((s for s in content if "deb " in s), None):
                 os.unlink(file)
         except IOError as detail:
             print (_("failed to remove PPA: '%s'") % detail)
@@ -108,13 +108,16 @@ def remove_repository_via_cli(line, codename, forceYes):
     elif line.startswith("deb ") | line.startswith("http"):
         # Remove the repository from sources.list.d
         try:
-            content = open(additional_repositories_file, "r", encoding="utf-8", errors="ignore").read()
-            content = content.replace(expand_http_line(line, codename), "")
-            with open(additional_repositories_file, "w", encoding="utf-8", errors="ignore") as f:
-                f.write(content)
+            with open(additional_repositories_file, "r", encoding="utf-8", errors="ignore") as readfile:
+                content = readfile.readlines()
+                line = "%s\n" % expand_http_line(line, codename)
+                if line in content:
+                    content.remove(line)
+            with open(additional_repositories_file, "w", encoding="utf-8", errors="ignore") as writefile:
+                writefile.writelines(content)
 
             # If file no longer contains any "deb" instances, delete it as well
-            if "deb " not in content:
+            if not next((s for s in content if "deb " in s), None):
                 os.unlink(additional_repositories_file)
         except IOError as detail:
             print (_("failed to remove repository: '%s'") % detail)
@@ -176,21 +179,30 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
                 f.write("%s\n" % line)
 
 def repo_malformed(line):
-    r = re.compile(r'.*://.+?/? \w+ \w+')
+    r = re.compile(r'(?:deb|deb-src)\s+\w+://.+?/?\s+\S+')
     match_line = r.match(line)
     if not match_line:
         return True
     return False
 
 def repo_exists(line):
-    r = re.compile(r'.*://(.+?)/? (\w+)')
-    match_line = r.match(line)
+    r = re.compile(r'^[#\s]*(\S+)\s*(?:\[.*\])? \w+://(.+?)/? (.+)')
+    match_line = r.match(line.strip())
     if match_line:
         repositories = SourcesList().list
         for repository in repositories:
-            match_repo = r.match(repository.line)
-            if match_repo and match_repo.group(1,2) == match_line.group(1,2):
-                return True
+            match_repo = r.match(repository.line.strip())
+            if not match_repo:
+                continue
+            if match_repo.group(1, 2) == match_line.group(1, 2):
+                if match_repo.group(3) == match_line.group(3):
+                    return True
+                repo_args = match_repo.group(3).split(" ")
+                line_args = match_line.group(3).split(" ")
+                if repo_args[0] == line_args[0]:
+                    for arg in line_args[1:]:
+                        if arg in repo_args[1:]:
+                            return True
     return False
 
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
@@ -312,47 +324,39 @@ class Repository():
         self.base_mirror_names = base_mirror_names
         self.base_name = base_name
 
-    def switch(self):
-        self.selected = (not self.selected)
-
-        readfile = open(self.file, "r", encoding="utf-8", errors="ignore")
-        content = readfile.read()
-        readfile.close()
-
-        if self.selected:
-            content = content.replace("#%s" % self.line, self.line)
-            content = content.replace("# %s" % self.line, self.line)
+    def modify_source_file(self, target_line):
+        with open(self.file, "r", encoding="utf-8", errors="ignore") as readfile:
+            content = readfile.readlines()
+        line = next((s for s in content if s.strip().endswith(self.line)), None)
+        if not line:
+            # failed to find the line in the file, either the file got modified exernally
+            # or the user previously edited the last "deb" or "deb-src" out and we silently
+            # deleted it below - FIXME: UI will remain inconsistent until user deletes
+            return
+        if target_line:
+            content[content.index(line)] = "%s%s\n" % ("" if self.selected else "# ", target_line)
         else:
-            content = content.replace(self.line, "# %s" % self.line)
-
-        with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
-            writefile.write(content)
-
-        self.application.enable_reload_button()
-
-    def edit(self, newline):
-        readfile = open(self.file, "r", encoding="utf-8", errors="ignore")
-        content = readfile.read()
-        readfile.close()
-        content = content.replace(self.line, newline)
-        with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
-            writefile.write(content)
-        self.line = newline
-        self.application.enable_reload_button()
-
-    def delete(self):
-        readfile = open(self.file, "r", encoding="utf-8", errors="ignore")
-        content = readfile.read()
-        readfile.close()
-        content = content.replace(self.line, "")
-        with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
-            writefile.write(content)
+            content.remove(line)
 
         # If the file no longer contains any "deb" instances, delete it as well
-        if "deb" not in content:
+        if not next((s for s in content if "deb" in s or "deb-src" in s), None):
             os.unlink(self.file)
+        else:
+            with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
+                writefile.writelines(content)
 
         self.application.enable_reload_button()
+
+    def switch(self):
+        self.selected = (not self.selected)
+        self.modify_source_file(self.line)
+
+    def edit(self, newline):
+        self.modify_source_file(newline)
+        self.line = newline
+
+    def delete(self):
+        self.modify_source_file(None)
 
     def get_ppa_name(self):
         elements = self.line.split(" ")
