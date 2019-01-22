@@ -178,12 +178,13 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
                 f.write("%s\n" % line)
 
 def add_new_key(key):
-    """ Add the key if not in keyring """
-    keys = subprocess.run(["apt-key","--quiet", "adv","--with-colons", "--batch",\
-        "--fixed-list-mode", "--list-keys"], stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL).stdout.decode().split(":")
-    if not key in keys:
-        add_key_remote(key)
+    # """ Add the key if not in keyring """
+    # keys = subprocess.run(["apt-key","--quiet", "adv","--with-colons", "--batch",\
+    #     "--fixed-list-mode", "--list-keys"], stdout=subprocess.PIPE,
+    #         stderr=subprocess.DEVNULL).stdout.decode().split(":")
+    # if not key in keys:
+    #     add_key_remote(key)
+    add_key_remote(key)
 
 def add_key_remote(key):
     try:
