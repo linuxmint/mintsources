@@ -222,11 +222,11 @@ def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
 
     data = requests.get(lp_url)
     if not data.ok:
-        raise PPAException(_("PPA not found"))
+        raise PPAException(_("No valid PPA of this name was found."))
     try:
         json_data = data.json()
     except pycurl.error as e:
-        raise PPAException("%s %s: %s" % (_("Error reading"), lp_url, e))
+        raise PPAException(_("No valid PPA of this name was found."))
 
     # Make sure the PPA supports our base release
     repo_url = "http://ppa.launchpad.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename)
@@ -1177,12 +1177,12 @@ class Application(object):
         if line:
             try:
                 if not line.startswith("ppa:") or line == default_line:
-                    raise ValueError("Invalid PPA name")
+                    raise ValueError(_("The name of the PPA you entered isn't formatted correctly."))
                 user, sep, ppa_name = line.split(":", 1)[1].partition("/")
                 ppa_name = ppa_name or "ppa"
                 ppa_info = get_ppa_info_from_lp(user, ppa_name, self.config["general"]["base_codename"])
-            except Exception as detail:
-                self.show_error_dialog(self._main_window, _("Cannot add PPA: '%s'.") % detail)
+            except Exception as error_msg:
+                self.show_error_dialog(self._main_window, error_msg)
                 return
 
             image = Gtk.Image()
