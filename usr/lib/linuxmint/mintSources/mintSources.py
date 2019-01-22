@@ -1206,19 +1206,19 @@ class Application(object):
                     text_file.write("%s%s\n" % ("" if sources_enabled else "# ", debsrc_line))
 
                 # Add the package line to the UI or replace it if it exists
-                def add_to_ui(line):
+                def add_to_ui(line, selected=True):
                     repo = next((repo for repo in self.ppas if (repo.line == line and repo.file == file)), None)
                     if repo:
                         iter = next((item.iter for item in self._ppa_model if line in self._ppa_model.get_value(item.iter, 2).split("\n")), None)
                         if iter:
                             self._ppa_model.remove(iter)
                         self.ppas.remove(repo)
-                    repository = Repository(self, line, file, True)
+                    repository = Repository(self, line, file, selected)
                     self.ppas.append(repository)
-                    tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
+                    tree_iter = self._ppa_model.append((repository, selected, repository.get_ppa_name()))
 
                 add_to_ui(deb_line)
-                add_to_ui(debsrc_line)
+                add_to_ui(debsrc_line, sources_enabled)
 
                 self.enable_reload_button()
 
