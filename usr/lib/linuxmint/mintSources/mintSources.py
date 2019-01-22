@@ -1284,7 +1284,7 @@ class Application(object):
                 with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
                     f.write("%s\n" % line)
                 # Add the line in the UI
-                repository = Repository(self, line, additional_repositories_file, True)
+                repository = Repository(self, line, additional_repositories_file, True, self.base_mirror_names, self.base_name)
                 self.repositories.append(repository)
                 tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
                 self.enable_reload_button()
