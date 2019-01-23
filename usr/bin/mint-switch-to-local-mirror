@@ -3,15 +3,18 @@
 #TODO: Factorize mirror detection/analysis code into mint-common
 # It's used in here, but also in mintsources itself, and in mintupdate...
 
-import os, sys
-import lsb_release
 import datetime
-import pycurl
-import json
-import urllib.request as urllibrequest
-import re
-import random
 import fileinput
+import json
+import os
+import random
+import re
+import sys
+import urllib.request as urllibrequest
+
+import lsb_release
+
+import pycurl
 
 MIRROR_LIST = "/usr/share/mint-mirrors/linuxmint.list"
 SOURCES_LIST = "/etc/apt/sources.list.d/official-package-repositories.list"

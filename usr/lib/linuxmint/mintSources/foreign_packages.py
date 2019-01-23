@@ -1,22 +1,21 @@
 #!/usr/bin/python3
-import os
-import sys
-import apt
-import gettext
-import tempfile
-import subprocess
-import mintcommon.aptdaemon
-import gi
-import locale
 
+import gettext
+import os
+import subprocess
+import sys
+
+import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Vte', '2.91')
 from gi.repository import Gtk, Vte, GLib
 
+import apt
+import mintcommon.aptdaemon
+
 # i18n
 APP = 'mintsources'
 LOCALE_DIR = "/usr/share/linuxmint/locale"
-locale.bindtextdomain(APP, LOCALE_DIR)
 gettext.bindtextdomain(APP, LOCALE_DIR)
 gettext.textdomain(APP)
 _ = gettext.gettext

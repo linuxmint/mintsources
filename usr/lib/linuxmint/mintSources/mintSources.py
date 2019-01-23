@@ -18,9 +18,8 @@ import datetime
 from urllib.request import urlopen
 import requests
 from optparse import OptionParser
-import locale
 import mintcommon.aptdaemon
-import glob
+from glob import glob
 import apt_pkg
 import shutil
 import gi
@@ -39,7 +38,6 @@ additional_repositories_file = "/etc/apt/sources.list.d/additional-repositories.
 # i18n
 APP = 'mintsources'
 LOCALE_DIR = "/usr/share/linuxmint/locale"
-locale.bindtextdomain(APP, LOCALE_DIR)
 gettext.bindtextdomain(APP, LOCALE_DIR)
 gettext.textdomain(APP)
 _ = gettext.gettext
@@ -267,7 +265,7 @@ def expand_ppa_line(abrev, distro_codename):
     ppa_owner = abrev.split("/")[0]
     try:
         ppa_name = abrev.split("/")[1]
-    except IndexError:
+    except:
         ppa_name = "ppa"
     sourceslistd = "/etc/apt/sources.list.d"
     line = "deb http://ppa.launchpad.net/%s/%s/ubuntu %s main" % (ppa_owner, ppa_name, distro_codename)
@@ -282,7 +280,7 @@ def expand_http_line(line, distro_codename):
       apt-add-repository 'deb http://packages.medibuntu.org/ base_codename free non-free'
     """
     if not line.startswith("http"):
-      return line
+        return line
     repo = line.split()[0]
     try:
         areas = line.split(" ",1)[1]
@@ -610,7 +608,7 @@ class MirrorSelectionDialog(object):
                     if mirror in self.visible_mirrors:
                         url = self._mirrors_model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
                         self._speed_test (iter, url)
-            except Exception as e:
+            except:
                 pass # null types will occur here...
 
     def _get_speed_label(self, speed):
@@ -1059,7 +1057,7 @@ class Application(object):
         knownlines = set()
 
         # Parse official sources first
-        for listfile in glob.glob("/etc/apt/sources.list.d/official*.list"):
+        for listfile in glob("/etc/apt/sources.list.d/official*.list"):
             with open(listfile, encoding="utf-8", errors="ignore") as f:
                 lines = []
                 for line in f.readlines():
@@ -1070,7 +1068,7 @@ class Application(object):
 
         # Now parse other sources and remove any duplicates
         found_duplicates = False
-        for listfile in ["/etc/apt/sources.list"] + glob.glob("/etc/apt/sources.list.d/*.list"):
+        for listfile in ["/etc/apt/sources.list"] + glob("/etc/apt/sources.list.d/*.list"):
             if not listfile.startswith("/etc/apt/sources.list.d/official"):
                 with open(listfile, encoding="utf-8", errors="ignore") as f:
                     lines = []
