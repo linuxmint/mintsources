@@ -1286,7 +1286,10 @@ class Application(object):
                         architecture = subprocess.getoutput("dpkg --print-architecture")
                         ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, self.config["general"]["base_codename"], architecture)
                         if os.path.exists(ppa_file):
-                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s &" % (self.config["general"]["base_codename"], ppa_owner, ppa_name))
+                            self._main_window.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
+                            Gdk.flush()
+                            subprocess.run(["/usr/lib/linuxmint/mintSources/ppa_browser.py", self.config["general"]["base_codename"], ppa_owner, ppa_name])
+                            self._main_window.get_window().set_cursor(None)
                         else:
                             print ("%s not found!" % ppa_file)
                             self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
