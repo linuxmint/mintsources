@@ -1263,7 +1263,7 @@ class Application(object):
             if (iter != None):
                 repository = model.get_value(iter, 0)
                 ppa_name = model.get_value(iter, 2)
-                if repository.line.startswith("deb http://ppa.launchpad.net"):
+                if repository.selected and repository.line.startswith("deb http://ppa.launchpad.net"):
                     self.builder.get_object("button_ppa_examine").set_sensitive(True)
         except Exception as detail:
             print (detail)
@@ -1278,7 +1278,7 @@ class Application(object):
             if (iter != None):
                 repository = model.get_value(iter, 0)
                 ppa_name = model.get_value(iter, 2)
-                if repository.line.startswith("deb http://ppa.launchpad.net"):
+                if repository.selected and repository.line.startswith("deb http://ppa.launchpad.net"):
                     line = repository.line.split()[1].replace("http://ppa.launchpad.net/", "")
                     if line.endswith("/ubuntu"):
                         line = line[:-7]
@@ -1471,6 +1471,7 @@ class Application(object):
         if (iter != None):
             repository = self._ppa_model.get_value(iter, 0)
             repository.switch()
+            self.builder.get_object("button_ppa_examine").set_sensitive(repository.selected)
 
     def repository_toggled(self, renderer, path):
         iter = self._repository_model.get_iter(path)
