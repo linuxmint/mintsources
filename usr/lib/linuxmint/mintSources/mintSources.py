@@ -71,13 +71,13 @@ def remove_repository_via_cli(line, codename, forceYes):
             print(_(" More info: %s") % str(ppa_info["web_link"]))
 
             if sys.stdin.isatty():
-                if not(forceYes):
+                if not forceYes:
                     print(_("Press Enter to continue or Ctrl+C to cancel"))
                     sys.stdin.readline()
             else:
-                if not(forceYes):
-                        print(_("Unable to prompt for response.  Please run with -y"))
-                        sys.exit(1)
+                if not forceYes:
+                    print(_("Unable to prompt for response.  Please run with -y"))
+                    sys.exit(1)
 
         except KeyboardInterrupt as detail:
             print (_("Cancelling..."))
@@ -265,7 +265,7 @@ def expand_ppa_line(abrev, distro_codename):
     ppa_owner = abrev.split("/")[0]
     try:
         ppa_name = abrev.split("/")[1]
-    except IndexError as e:
+    except IndexError:
         ppa_name = "ppa"
     sourceslistd = "/etc/apt/sources.list.d"
     line = "deb http://ppa.launchpad.net/%s/%s/ubuntu %s main" % (ppa_owner, ppa_name, distro_codename)
