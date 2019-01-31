@@ -853,41 +853,7 @@ class Application(object):
         else:
             self.base_name = "Ubuntu"
 
-        self.repositories = []
-        self.ppas = []
-
-        source_files = []
-        if os.path.exists("/etc/apt/sources.list"):
-            source_files.append("/etc/apt/sources.list")
-        for file in os.listdir("/etc/apt/sources.list.d"):
-            if file.endswith(".list"):
-                source_files.append("/etc/apt/sources.list.d/%s" % file)
-
-        if "/etc/apt/sources.list.d/official-package-repositories.list" in source_files:
-            source_files.remove("/etc/apt/sources.list.d/official-package-repositories.list")
-
-        if "/etc/apt/sources.list.d/official-source-repositories.list" in source_files:
-            source_files.remove("/etc/apt/sources.list.d/official-source-repositories.list")
-
-        if "/etc/apt/sources.list.d/official-dbgsym-repositories.list" in source_files:
-            source_files.remove("/etc/apt/sources.list.d/official-dbgsym-repositories.list")
-
-        for source_file in source_files:
-            file = open(source_file, "r", encoding="utf-8", errors="ignore")
-            for line in file.readlines():
-                line = line.strip()
-                if line != "":
-                    selected = True
-                    if line.startswith("#"):
-                        line = line.replace('#', '').strip()
-                        selected = False
-                    if line.startswith("deb"):
-                        repository = Repository(self, line, source_file, selected, self.base_mirror_names, self.base_name)
-                        if "ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
-                            self.ppas.append(repository)
-                        else:
-                            self.repositories.append(repository)
-            file.close()
+        self.read_source_lists()
 
         # Add PPAs
         self._ppa_model = Gtk.ListStore(object, bool, str)
@@ -912,9 +878,7 @@ class Application(object):
         self._ppa_treeview.append_column(col)
         col.set_sort_column_id(2)
 
-        if (len(self.ppas) > 0):
-            for repository in self.ppas:
-                tree_iter = self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
+        self.refresh_ppa_model()
 
         # Add repositories
         self._repository_model = Gtk.ListStore(object, bool, str)
@@ -938,9 +902,7 @@ class Application(object):
         self._repository_treeview.append_column(col)
         col.set_sort_column_id(2)
 
-        if (len(self.repositories) > 0):
-            for repository in self.repositories:
-                tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
+        self.refresh_repository_model()
 
         self._keys_model = Gtk.ListStore(object, str)
         self._keys_treeview = self.builder.get_object("treeview_keys")
@@ -997,6 +959,53 @@ class Application(object):
 
         # From now on, we handle modifications to the settings and save them when they happen
         self._interface_loaded = True
+
+    def refresh_repository_model(self):
+        self._repository_model.clear()
+        if len(self.repositories):
+            for repository in self.repositories:
+                self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
+
+    def refresh_ppa_model(self):
+        self._ppa_model.clear()
+        if (len(self.ppas) > 0):
+            for repository in self.ppas:
+                self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
+
+    def read_source_lists(self):
+        self.repositories = []
+        self.ppas = []
+        source_files = []
+        if os.path.exists("/etc/apt/sources.list"):
+            source_files.append("/etc/apt/sources.list")
+        for file in os.listdir("/etc/apt/sources.list.d"):
+            if file.endswith(".list"):
+                source_files.append("/etc/apt/sources.list.d/%s" % file)
+
+        if "/etc/apt/sources.list.d/official-package-repositories.list" in source_files:
+            source_files.remove("/etc/apt/sources.list.d/official-package-repositories.list")
+
+        if "/etc/apt/sources.list.d/official-source-repositories.list" in source_files:
+            source_files.remove("/etc/apt/sources.list.d/official-source-repositories.list")
+
+        if "/etc/apt/sources.list.d/official-dbgsym-repositories.list" in source_files:
+            source_files.remove("/etc/apt/sources.list.d/official-dbgsym-repositories.list")
+
+        for source_file in source_files:
+            with open(source_file, "r", encoding="utf-8", errors="ignore") as file:
+                for line in file.readlines():
+                    line = line.strip()
+                    if line != "":
+                        selected = True
+                        if line.startswith("#"):
+                            line = line.replace('#', '').strip()
+                            selected = False
+                        if line.startswith("deb"):
+                            repository = Repository(self, line, source_file, selected, self.base_mirror_names, self.base_name)
+                            if "ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
+                                self.ppas.append(repository)
+                            else:
+                                self.repositories.append(repository)
 
     def set_button_text(self, label, text):
         label.set_text(text)
@@ -1081,15 +1090,21 @@ class Application(object):
                             found_duplicates = True
                             found_duplicates_in_this_file = True
                 if found_duplicates_in_this_file:
-                    print("Found duplicates in %s, rewriting it." % listfile)
-                    with open(listfile, 'w', encoding="utf-8", errors="ignore") as f:
-                        for line in lines:
-                            f.write("%s\n" % line)
+                    print(f"Found duplicates in {listfile}, rewriting it.")
+                    if not lines:
+                        os.unlink(listfile)
+                    else:
+                        with open(listfile, 'w', encoding="utf-8", errors="ignore") as f:
+                            for line in lines:
+                                f.write("%s\n" % line)
         image = Gtk.Image()
         image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
         if found_duplicates:
             self.show_confirmation_dialog(self._main_window, _("Duplicate entries were removed. Please reload the cache."), image, affirmation=True)
             self.enable_reload_button()
+            self.read_source_lists()
+            self.refresh_ppa_model()
+            self.refresh_repository_model()
         else:
             self.show_confirmation_dialog(self._main_window, _("No duplicate entries were found."), image, affirmation=True)
 
