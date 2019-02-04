@@ -33,7 +33,7 @@
                   <object class="GtkImage" id="image_ppa_logo1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="icon_name">mintsources-foreign</property>
+                    <property name="icon_name">package-x-generic-symbolic</property>
                     <property name="icon_size">6</property>
                   </object>
                   <packing>
@@ -1242,7 +1242,7 @@
               <object class="GtkImage" id="image_ppa_logo">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="icon_name">mintsources-ppa</property>
+                <property name="icon_name">process-stop-symbolic</property>
                 <property name="icon_size">6</property>
               </object>
               <packing>
