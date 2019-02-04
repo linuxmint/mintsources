@@ -22,6 +22,7 @@ import locale
 import mintcommon
 import glob
 import gi
+from ppa_browser import PPA_Browser
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0') # Needed to get xid
 gi.require_version('XApp', '1.0')
@@ -1286,7 +1287,7 @@ class Application(object):
                         architecture = subprocess.getoutput("dpkg --print-architecture")
                         ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, self.config["general"]["base_codename"], architecture)
                         if os.path.exists(ppa_file):
-                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s &" % (self.config["general"]["base_codename"], ppa_owner, ppa_name))
+                            PPA_Browser(self.config["general"]["base_codename"], ppa_owner, ppa_name, self._main_window)
                         else:
                             print ("%s not found!" % ppa_file)
                             self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))

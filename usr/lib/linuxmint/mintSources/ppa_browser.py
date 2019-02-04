@@ -10,8 +10,7 @@ import platform
 import locale
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('GdkX11', '3.0') # Needed to get xid
-from gi.repository import Gtk, GdkX11
+from gi.repository import Gtk
 
 # i18n
 APP = 'mintsources'
@@ -23,7 +22,8 @@ _ = gettext.gettext
 
 class PPA_Browser():
 
-    def __init__(self, base_codename, ppa_owner, ppa_name):
+    def __init__(self, base_codename, ppa_owner, ppa_name, parent_window, standalone=False):
+        self.is_standalone = standalone
         if platform.machine() == "X86_64":
             architecture = "amd64"
         else:
@@ -48,8 +48,11 @@ class PPA_Browser():
         self.window = self.builder.get_object("ppa_window")
         self.window.set_title(_("PPA"))
         self.window.set_icon_name("software-sources")
-        self.window.connect("destroy", Gtk.main_quit)
-        self.builder.get_object("button_cancel").connect("clicked", Gtk.main_quit)
+        self.window.connect("destroy", self.exit)
+        if parent_window is not None:
+            self.window.set_transient_for(parent_window)
+            self.window.set_modal(True)
+        self.builder.get_object("button_cancel").connect("clicked", self.exit)
         self.install_button = self.builder.get_object("button_install")
         self.install_button.connect("clicked", self.install)
         self.install_button.set_sensitive(False)
@@ -125,11 +128,13 @@ class PPA_Browser():
         self.apt.install_packages(self.packages_to_install)
 
     def exit(self, transaction=None, exit_state=None):
-        sys.exit(0)
+        self.window.hide()
+        if self.is_standalone:
+            sys.exit(0)
 
 if __name__ == "__main__":
     base_codename = sys.argv[1]
     ppa_owner = sys.argv[2]
     ppa_name = sys.argv[3]
-    ppa_browser = PPA_Browser(base_codename, ppa_owner, ppa_name)
+    PPA_Browser(base_codename, ppa_owner, ppa_name, True)
     Gtk.main()
