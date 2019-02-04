@@ -3,7 +3,6 @@ import os
 import sys
 import apt
 import gettext
-import tempfile
 import subprocess
 import mintcommon
 import platform
@@ -23,7 +22,6 @@ _ = gettext.gettext
 class PPA_Browser():
 
     def __init__(self, base_codename, ppa_owner, ppa_name, parent_window, standalone=False):
-        self.is_standalone = standalone
         if platform.machine() == "X86_64":
             architecture = "amd64"
         else:
@@ -34,32 +32,33 @@ class PPA_Browser():
 
         if not os.path.exists(ppa_file):
             print ("%s not found!" % ppa_file)
-            sys.exit(1)
+            return
 
+        self.is_standalone = standalone
         self.packages_to_install = []
         self.packages_installed_from_ppa = []
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintsources.glade"
 
-        self.builder = Gtk.Builder()
-        self.builder.set_translation_domain("mintsources")
-        self.builder.add_from_file(glade_file)
+        builder = Gtk.Builder()
+        builder.set_translation_domain("mintsources")
+        builder.add_from_file(glade_file)
 
-        self.window = self.builder.get_object("ppa_window")
+        self.window = builder.get_object("ppa_window")
         self.window.set_title(_("PPA"))
         self.window.set_icon_name("software-sources")
         self.window.connect("destroy", self.exit)
         if parent_window is not None:
             self.window.set_transient_for(parent_window)
             self.window.set_modal(True)
-        self.builder.get_object("button_cancel").connect("clicked", self.exit)
-        self.install_button = self.builder.get_object("button_install")
+        builder.get_object("button_cancel").connect("clicked", self.exit)
+        self.install_button = builder.get_object("button_install")
         self.install_button.connect("clicked", self.install)
         self.install_button.set_sensitive(False)
-        self.builder.get_object("label_ppa_name").set_markup("%s/%s" % (ppa_owner, ppa_name))
+        builder.get_object("label_ppa_name").set_markup("%s/%s" % (ppa_owner, ppa_name))
 
         self.model = Gtk.ListStore(object, bool, str)
-        treeview = self.builder.get_object("treeview_ppa_pkgs")
+        treeview = builder.get_object("treeview_ppa_pkgs")
         treeview.set_model(self.model)
         self.model.set_sort_column_id(2, Gtk.SortType.ASCENDING)
 
@@ -76,8 +75,6 @@ class PPA_Browser():
         col.set_sort_column_id(2)
 
         cache = apt.Cache()
-        self.apt = mintcommon.APT(self.window)
-
         packages = subprocess.getoutput("grep 'Package:' %s | sort | awk {'print $2;'}" % ppa_file).split("\n")
         for package in packages:
             if package in cache:
@@ -98,7 +95,6 @@ class PPA_Browser():
                                 self.model.append((pkg, False, "<b>%s</b>\n%s" % (pkg.name, candidate.version)))
                             break
 
-        treeview.show()
         self.window.show_all()
 
     def datafunction_checkbox(self, column, cell, model, iter, data):
@@ -124,11 +120,18 @@ class PPA_Browser():
         self.install_button.set_sensitive(len(self.packages_to_install) > 0)
 
     def install (self, button):
-        self.apt.set_finished_callback(self.exit)
-        self.apt.install_packages(self.packages_to_install)
+        apt = mintcommon.APT(self.window)
+        apt.set_finished_callback(self.exit)
+        apt.install_packages(self.packages_to_install)
 
     def exit(self, transaction=None, exit_state=None):
-        self.window.hide()
+        self.apt = None
+        self.model = None
+        self.window.destroy()
+        self.install_button.destroy()
+
+        self.packages_to_install = []
+        self.packages_installed_from_ppa = []
         if self.is_standalone:
             sys.exit(0)
 
