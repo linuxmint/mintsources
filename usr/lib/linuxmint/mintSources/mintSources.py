@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import signal
 import subprocess
 import sys
 import configparser
@@ -58,6 +59,12 @@ def idle(func):
     def wrapper(*args):
         GObject.idle_add(func, *args)
     return wrapper
+
+def signal_handler(signum, _):
+    print("")
+    sys.exit(128 + signum)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 def remove_repository_via_cli(line, codename, forceYes):
     if line.startswith("ppa:"):
@@ -129,29 +136,30 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         if use_ppas != "true":
             print(_("Adding PPAs is not supported"))
             sys.exit(1)
-        user, sep, ppa_name = line.split(":")[1].partition("/")
+        user, dummy, ppa_name = line.split(":")[1].partition("/")
         ppa_name = ppa_name or "ppa"
         try:
             ppa_info = get_ppa_info_from_lp(user, ppa_name, codename)
-        except Exception as detail:
-            print (_("Cannot add PPA: '%s'.") % detail)
+        except PPAException as detail:
+            print(_("Cannot add PPA: %s") % detail.value)
             sys.exit(1)
 
         if "private" in ppa_info and ppa_info["private"]:
             print(_("Adding private PPAs is not supported currently"))
             sys.exit(1)
 
-        print(_("You are about to add the following PPA:"))
+        print(_("You are about to add the following PPA:") + "\n")
         if ppa_info["description"] is not None:
-            print(" %s" % (ppa_info["description"]))
-        print(_(" More info: %s") % str(ppa_info["web_link"]))
+            print("%s\n" % (ppa_info["description"]))
+        print(_("More info: %s") % ppa_info["web_link"])
 
-        if sys.stdin.isatty():
-            if not(forceYes):
+
+        if not forceYes:
+            print("")
+            if sys.stdin.isatty():
                 print(_("Press Enter to continue or Ctrl+C to cancel"))
                 sys.stdin.readline()
-        else:
-            if not(forceYes):
+            else:
                 print(_("Unable to prompt for response.  Please run with -y"))
                 sys.exit(1)
 
@@ -168,7 +176,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             text_file.write("%s\n" % deb_line)
             text_file.write("%s%s\n" % ("" if sources_enabled else "# ", debsrc_line))
 
-    elif line.startswith("deb ") | line.startswith("http"):
+    elif line.startswith("deb ") or line.startswith("http"):
         line = expand_http_line(line, codename)
         if repo_malformed(line):
             print(_("Malformed input, repository not added."))
@@ -223,32 +231,36 @@ def repo_exists(line):
                             return True
     return False
 
+def retrieve_ppa_url(url):
+    try:
+        data = requests.get(url, timeout=10)
+    except requests.exceptions.ConnectTimeout:
+        raise PPAException(_("Connection timed out, check your connection or try again later."))
+    except requests.exceptions.SSLError:
+        raise PPAException(_("Failed to establish a secure connection."))
+    except Exception as e:
+        raise PPAException(_("Failed to download the PPA: %s." % e))
+    return data
+
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
-    DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
-    # maintained until 2015
-    LAUNCHPAD_PPA_API = 'https://launchpad.net/api/1.0/~%s/+archive/%s'
-    # Specify to use the system default SSL store; change to a different path
-    # to test with custom certificates.
-    LAUNCHPAD_PPA_CERT = "/etc/ssl/certs/ca-certificates.crt"
+    try:
+        data = retrieve_ppa_url(f"https://launchpad.net/api/1.0/~{owner_name}/+archive/{ppa_name}")
+    except PPAException as e:
+        raise PPAException(e.value)
 
-    lp_url = LAUNCHPAD_PPA_API % (owner_name, ppa_name)
-
-    data = requests.get(lp_url)
     if not data.ok:
-        raise PPAException(_("No valid PPA of this name was found."))
+        raise PPAException(_("No supported PPA of this name was found."))
     try:
         json_data = data.json()
-    except pycurl.error as e:
-        raise PPAException(_("No valid PPA of this name was found."))
-
+    except json.decoder.JSONDecodeError:
+        raise PPAException(_("No supported PPA of this name was found."))
     # Make sure the PPA supports our base release
-    repo_url = "http://ppa.launchpad.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename)
     try:
-        if (urlopen(repo_url).getcode() == 404):
-            raise PPAException(_("This PPA does not support %s") % base_codename)
-    except Exception as e:
-        print (e)
-        raise PPAException(_("This PPA does not support %s") % base_codename)
+        data = retrieve_ppa_url(f"http://ppa.launchpad.net/{owner_name}/{ppa_name}/ubuntu/dists/{base_codename}")
+    except PPAException as e:
+        raise PPAException(e.value)
+    if not data.ok:
+        raise PPAException(_("This PPA does not support this version of Linux Mint"))
 
     return json_data
 
