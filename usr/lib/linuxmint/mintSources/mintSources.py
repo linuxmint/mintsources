@@ -361,7 +361,7 @@ class Repository():
             content.remove(line)
 
         # If the file no longer contains any "deb" instances, delete it as well
-        if not next((s for s in content if "deb" in s or "deb-src" in s), None):
+        if not next((s for s in content if "deb " in s or "deb-src " in s), None):
             os.unlink(self.file)
         else:
             with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
