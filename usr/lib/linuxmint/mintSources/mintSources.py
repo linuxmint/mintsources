@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import apt_pkg
 import os
 import subprocess
 import sys
@@ -1278,18 +1279,33 @@ class Application(object):
             if (iter != None):
                 repository = model.get_value(iter, 0)
                 ppa_name = model.get_value(iter, 2)
-                if repository.selected and repository.line.startswith("deb http://ppa.launchpad.net"):
-                    line = repository.line.split()[1].replace("http://ppa.launchpad.net/", "")
-                    if line.endswith("/ubuntu"):
-                        line = line[:-7]
-                        ppa_owner, ppa_name = line.split("/")
-                        architecture = subprocess.getoutput("dpkg --print-architecture")
-                        ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, self.config["general"]["base_codename"], architecture)
-                        if os.path.exists(ppa_file):
-                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s &" % (self.config["general"]["base_codename"], ppa_owner, ppa_name))
-                        else:
-                            print ("%s not found!" % ppa_file)
-                            self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
+                if repository.selected and repository.line.startswith("deb "):
+                    line = repository.line.split()
+                    idx = 0
+                    for i, item in enumerate(line):
+                        if "://" in item:
+                            idx = i
+                            break
+                    line = line[idx:]
+                    apt_pkg.init_config()
+                    lists = apt_pkg.config.find_dir("Dir::State::lists")
+                    path_part_a = apt_pkg.uri_to_filename(line[0])
+                    path_part_b = "_".join(["dists", line[1], line[2], "binary"])
+                    ppa_info = line[0].split("/")
+                    ppa_file_stub = os.path.join(lists, f"{path_part_a}_{path_part_b}-%s_Packages")
+                    # try both architectures because we cannot know which the
+                    # PPA provides without parsing the Release file
+                    ppa_file = ppa_file_stub % "amd64"
+                    if not os.path.exists(ppa_file):
+                        ppa_file = ppa_file_stub % "i386"
+                    if os.path.exists(ppa_file):
+                        self._main_window.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
+                        Gdk.flush()
+                        subprocess.run(["/usr/lib/linuxmint/mintSources/ppa_browser.py", ppa_file, ppa_info[3], ppa_info[4]])
+                        self._main_window.get_window().set_cursor(None)
+                    else:
+                        print ("%s not found!" % ppa_file)
+                        self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
         except Exception as detail:
             print (detail)
 
