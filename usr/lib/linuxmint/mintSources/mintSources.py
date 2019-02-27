@@ -1039,7 +1039,14 @@ class Application(object):
         os.system("/usr/lib/linuxmint/mintSources/foreign_packages.py downgrade &")
 
     def fix_purge(self, widget):
-        os.system("aptitude purge ~c -y")
+        output = subprocess.run("dpkg -l | grep '^rc' | awk '{print $2}'",
+            stdout=subprocess.PIPE, shell=True).stdout.decode().split("\n")
+        if output == ['']:
+            print("No residual configuration found")
+        else:
+            command = ["/usr/bin/apt-get", "purge", "-y"]
+            command.extend(output)
+            subprocess.run(command)
         image = Gtk.Image()
         image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)
