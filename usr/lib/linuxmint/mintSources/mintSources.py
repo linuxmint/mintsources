@@ -1,33 +1,32 @@
 #!/usr/bin/python3
 
+import configparser
+import datetime
+import gettext
+import json
 import os
+import re
+import shutil
+import signal
 import subprocess
 import sys
-import configparser
-import aptsources.distro
-import aptsources.distinfo
-from aptsources.sourceslist import SourcesList
-import gettext
+import tempfile
 import threading
-import pycurl
+from glob import glob
 from io import BytesIO
-from CountryInformation import CountryInformation
-import re
-import json
-import datetime
-from urllib.request import urlopen
-import requests
 from optparse import OptionParser
-import locale
-import mintcommon.aptdaemon
-import glob
-import apt_pkg
-import shutil
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('GdkX11', '3.0') # Needed to get xid
 gi.require_version('XApp', '1.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf, GdkX11, GObject, Pango, XApp
+from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango, XApp
+
+import mintcommon.aptdaemon
+import requests
+from aptsources.sourceslist import SourcesList
+
+import apt_pkg
+import pycurl
+from CountryInformation import CountryInformation
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
@@ -39,7 +38,6 @@ additional_repositories_file = "/etc/apt/sources.list.d/additional-repositories.
 # i18n
 APP = 'mintsources'
 LOCALE_DIR = "/usr/share/linuxmint/locale"
-locale.bindtextdomain(APP, LOCALE_DIR)
 gettext.bindtextdomain(APP, LOCALE_DIR)
 gettext.textdomain(APP)
 _ = gettext.gettext
@@ -161,8 +159,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         deb_line = expand_http_line(deb_line, codename)
         debsrc_line = 'deb-src' + deb_line[3:]
 
-        # Add the key if not in keyring
-        add_new_key(ppa_info["signing_key_fingerprint"])
+        add_apt_key(ppa_info)
 
         # Add the PPA
         sources_enabled = os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list")
@@ -182,19 +179,22 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
                 f.write("%s\n" % line)
 
-def add_new_key(key):
-    # """ Add the key if not in keyring """
-    # keys = subprocess.run(["apt-key","--quiet", "adv","--with-colons", "--batch",\
-    #     "--fixed-list-mode", "--list-keys"], stdout=subprocess.PIPE,
-    #         stderr=subprocess.DEVNULL).stdout.decode().split(":")
-    # if not key in keys:
-    #     add_key_remote(key)
-    add_key_remote(key)
+def add_apt_key(arg):
+    """ Retrieves a repository signing key from either launchpad for PPAs or Ubuntu's keyserver.
 
-def add_key_remote(key):
+        For PPA keys the parameter must be the return value from get_ppa_info_from_lp(),
+        for other keys pass the key's fingerprint
+    """
+    apt_key = AddAptKey()
     try:
-        subprocess.run(["apt-key", "adv", "--keyserver", "hkps://keyserver.ubuntu.com:443", "--recv-keys", key], check=True)
-    except subprocess.CalledProcessError:
+        if isinstance(arg, dict):
+            apt_key.add_ppa_key(arg)
+        elif isinstance(arg, str):
+            apt_key.add_key(arg)
+        else:
+            raise Exception("Bad argument")
+    except Exception as e:
+        print("add_apt_key error:", e)
         return False
     return True
 
@@ -225,32 +225,36 @@ def repo_exists(line):
                             return True
     return False
 
+def retrieve_ppa_url(url):
+    try:
+        data = requests.get(url, timeout=10)
+    except requests.exceptions.ConnectTimeout:
+        raise PPAException(_("Connection timed out, check your connection or try again later."))
+    except requests.exceptions.SSLError:
+        raise PPAException(_("Failed to establish a secure connection."))
+    except Exception as e:
+        raise PPAException(_("Failed to download the PPA: %s." % e))
+    return data
+
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
-    DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
-    # maintained until 2015
-    LAUNCHPAD_PPA_API = 'https://launchpad.net/api/1.0/~%s/+archive/%s'
-    # Specify to use the system default SSL store; change to a different path
-    # to test with custom certificates.
-    LAUNCHPAD_PPA_CERT = "/etc/ssl/certs/ca-certificates.crt"
+    try:
+        data = retrieve_ppa_url(f"https://launchpad.net/api/devel/~{owner_name}/+archive/{ppa_name}")
+    except PPAException as e:
+        raise PPAException(e.value)
 
-    lp_url = LAUNCHPAD_PPA_API % (owner_name, ppa_name)
-
-    data = requests.get(lp_url)
     if not data.ok:
-        raise PPAException(_("No valid PPA of this name was found."))
+        raise PPAException(_("No supported PPA of this name was found."))
     try:
         json_data = data.json()
-    except pycurl.error as e:
-        raise PPAException(_("No valid PPA of this name was found."))
-
+    except json.decoder.JSONDecodeError:
+        raise PPAException(_("No supported PPA of this name was found."))
     # Make sure the PPA supports our base release
-    repo_url = "http://ppa.launchpad.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename)
     try:
-        if (urlopen(repo_url).getcode() == 404):
-            raise PPAException(_("This PPA does not support %s") % base_codename)
-    except Exception as e:
-        print (e)
-        raise PPAException(_("This PPA does not support %s") % base_codename)
+        data = retrieve_ppa_url(f"http://ppa.launchpad.net/{owner_name}/{ppa_name}/ubuntu/dists/{base_codename}")
+    except PPAException as e:
+        raise PPAException(e.value)
+    if not data.ok:
+        raise PPAException(_("This PPA does not support this version of Linux Mint"))
 
     return json_data
 
@@ -290,6 +294,93 @@ def expand_http_line(line, distro_codename):
         areas = "main"
     line = "deb %s %s %s" % ( repo, distro_codename, areas )
     return line
+
+class AddAptKey(object):
+    """ Class for retrieving a repository signing key and adding it to apt. """
+
+    def __init__(self):
+        apt_pkg.init_config()
+        self.tmpdir = tempfile.mkdtemp()
+        self.apt_trustedparts = apt_pkg.config.find_dir("Dir::Etc::trustedparts")
+
+    def __del__(self):
+        shutil.rmtree(self.tmpdir)
+
+    def gpg_cmd(self, data, args):
+        cmd = ["gpg", "-q", "--homedir", self.tmpdir, "--no-default-keyring", "--no-options", "--import", "--import-options"]
+        cmd.extend(args)
+        return subprocess.run(cmd, input=data, stdout=subprocess.PIPE, check=True).stdout
+
+    def retrieve_key_from_lp(self, ppa_info):
+        """ Retrieves they key for a PPA directly from launchpad.net """
+        signing_key_fingerprint = ppa_info["signing_key_fingerprint"]
+        try:
+            # double check that the signing key is a v4 fingerprint (160bit)
+            if not len(signing_key_fingerprint) >= 160/8:
+                raise Exception("Fingerprint not in the expected format")
+        except TypeError:
+            raise Exception("Fingerprint not found in PPA info")
+
+        return json.loads(retrieve_ppa_url(f"{ppa_info['self_link']}?ws.op=getSigningKeyData").text)
+
+    def minimize_key(self, key):
+        """ Use gpg to remove all signatures from the key except the most recent self-signature on each user ID to return the smallest key possible. """
+        try:
+            return self.gpg_cmd(key.encode(), ["import-minimal,import-export"])
+        except subprocess.CalledProcessError:
+            return False
+
+    def get_fingerprints(self, key):
+        """ Returns a list of fingerprints found in the given key (incl. sub-keys) """
+        try:
+            output = self.gpg_cmd(key, ["show-only", "--fingerprint", "--batch", "--with-colons"])
+            return [fp.split(":")[9] for fp in output.decode().splitlines() if fp.startswith("fpr:")]
+        except:
+            raise Exception("Error trying to retrieve fingerprints from key.")
+
+    def verify_fingerprint(self, key, expected_fingerprint):
+        """ Extracts all fingerprints from 'key' and compares the first one to 'expected_fingerprint' """
+        fingerprints = self.get_fingerprints(key)
+        # Ubuntu are exiting when the key has a sub-key.
+        # This may be launchpad specific, e.g. the WineHQ key has a sub-key,
+        # so we're only checking that we match the main key's fingerprint.
+        # Unfortunately we also have to support key ids, not just full fingerprints
+        if expected_fingerprint != fingerprints[0][-(len(expected_fingerprint)):]:
+            return False
+        return True
+
+    def add_ppa_key(self, ppa_info):
+        """ Retrieve the signing key corresponding to 'ppa_info' and add it. """
+        armored_key = self.retrieve_key_from_lp(ppa_info)
+        if not armored_key:
+            raise Exception("Failed to retrieve key from launchpad.net")
+        self.write_keyfile(armored_key, ppa_info["signing_key_fingerprint"])
+
+    def add_key(self, fingerprint):
+        """ Retrieve  key matching the fingerprint from Ubuntu's keyserver via HTTPS and add it. """
+        url = f"https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&exact=on&search=0x{fingerprint}"
+        armored_key = requests.get(url).text
+        if not "-----BEGIN PGP PUBLIC KEY BLOCK-----" in armored_key:
+            raise Exception("Failed to retrieve key from keyserver")
+        else:
+            self.write_keyfile(armored_key, fingerprint)
+
+    def write_keyfile(self, armored_key, fingerprint):
+        """ Save key stripped of external sigs to /etc/apt/trusted.gpg.d/{fingerprint}.gpg """
+        minimal_key = self.minimize_key(armored_key)
+        if not minimal_key:
+            raise Exception("GPG failed to return the minimized key.")
+
+        if not self.verify_fingerprint(minimal_key, fingerprint):
+            raise Exception(f"Received key with unexpected fingerprint.")
+
+        filename = os.path.join(self.apt_trustedparts, encode(fingerprint) + ".gpg")
+        # Remove existing key with same fingerprint
+        if os.path.exists(filename):
+            os.remove(filename)
+        # Write new key
+        with open(filename, "wb") as f:
+            f.write(minimal_key)
 
 class CurlCallback:
     def __init__(self):
@@ -1149,12 +1240,12 @@ class Application(object):
         image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
         fingerprint = self.show_entry_dialog(self._main_window, _("Please enter the fingerprint of the public key you want to download from keyserver.ubuntu.com:"), "", image)
         if fingerprint is not None:
-            add_key_remote(fingerprint)
+            add_apt_key(fingerprint)
             self.load_keys()
             self.enable_reload_button()
 
-    def add_new_key(self, key):
-        add_new_key(key)
+    def add_new_key(self, ppa_info):
+        add_apt_key(ppa_info)
         self.load_keys()
 
     def remove_key(self, widget):
@@ -1191,7 +1282,7 @@ class Application(object):
                 ppa_name = ppa_name or "ppa"
                 ppa_info = get_ppa_info_from_lp(user, ppa_name, self.config["general"]["base_codename"])
             except Exception as error_msg:
-                self.show_error_dialog(self._main_window, error_msg)
+                self.show_error_dialog(self._main_window, str(error_msg))
                 return
 
             image = Gtk.Image()
@@ -1204,8 +1295,8 @@ class Application(object):
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
 
-                # Add the key if not in keyring
-                self.add_new_key(ppa_info["signing_key_fingerprint"])
+                # Add the signing key
+                self.add_new_key(ppa_info)
 
                 # Add the PPA in sources.list.d
                 sources_enabled = self.builder.get_object("source_code_switch").get_active()
@@ -1229,7 +1320,6 @@ class Application(object):
                 add_to_ui(debsrc_line, sources_enabled)
 
                 self.enable_reload_button()
-
 
     def format_string(self, text):
         if text is None:
