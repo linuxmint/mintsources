@@ -21,6 +21,8 @@ from optparse import OptionParser
 import locale
 import mintcommon.aptdaemon
 import glob
+import apt_pkg
+import shutil
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0') # Needed to get xid
@@ -1045,7 +1047,10 @@ class Application(object):
         self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)
 
     def fix_mergelist(self, widget):
-        os.system("rm /var/lib/apt/lists/* -vrf")
+        apt_pkg.init_config()
+        path = apt_pkg.config.find_dir("Dir::State::lists")
+        if os.path.exists(path):
+            shutil.rmtree(path)
         image = Gtk.Image()
         image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
