@@ -5,7 +5,7 @@ import apt
 import gettext
 import tempfile
 import subprocess
-import mintcommon
+import mintcommon.aptdaemon
 import platform
 import locale
 import gi
@@ -73,7 +73,7 @@ class PPA_Browser():
         col.set_sort_column_id(2)
 
         cache = apt.Cache()
-        self.apt = mintcommon.APT(self.window)
+        self.apt = mintcommon.aptdaemon.APT(self.window)
 
         packages = subprocess.getoutput("grep 'Package:' %s | sort | awk {'print $2;'}" % ppa_file).split("\n")
         for package in packages:
