@@ -1183,7 +1183,7 @@ class Application(object):
                     key = r.search(message).group(1)
                     key = re.sub(r"\s", "", key)
                     # get key from keyserver
-                    success = add_key_remote(key)
+                    success = add_apt_key(key)
                     if not success:
                         raise ValueError(f"Retrieving key {key} failed")
                     repository.added = True
