@@ -413,7 +413,6 @@ class Repository():
                             release = ""
                         elif element in self.base_mirror_names:
                             name = self.base_name
-                            break
                         else:
                             name = element.split("/")[0]
                             subparts = name.split(".")
