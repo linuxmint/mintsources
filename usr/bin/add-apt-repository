@@ -1,38 +1,36 @@
 #!/usr/bin/python3
 
-import os, sys
 import gettext
-from optparse import OptionParser
+import os
+import sys
+from argparse import ArgumentParser
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
-if os.geteuid() != 0 and sys.argv[1] not in ("-h", "--help"):
+parser = ArgumentParser()
+parser.add_argument("-y", "--yes", dest="forceYes", action="store_true",
+    help=_("automatically confirm all prompts"), default=False)
+parser.add_argument("-r", "--remove", dest="remove", action="store_true",
+    help=_("remove the specified repository"), default=False)
+parser.add_argument(dest='repository', nargs='+',
+                    help=_("the repository/PPA identifier"))
+
+if len(sys.argv[1:]) == 0:
+    parser.print_help()
+    parser.exit()
+
+args = parser.parse_args()
+if os.geteuid() != 0:
     print(_("Error: must run as root"))
-    sys.exit(1)
-
-usage = "usage: %prog [options] repository"
-parser = OptionParser(usage=usage)
-parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
-    help="force yes on all confirmation questions", default=False)
-parser.add_option("-r", "--remove", dest="remove", action="store_true",
-    help="Remove the specified repository", default=False)
-
-(options, args) = parser.parse_args()
-
-if (len(args) == 0):
-    print(_("Error: need a repository as argument"))
-    sys.exit(1)
+    parser.exit(1)
 
 # Call mintSources script with exec instead of system so that the exit status
 # is returned to the caller
-mintsources = "/usr/lib/linuxmint/mintSources/mintSources.py"
+command = ["/usr/lib/linuxmint/mintSources/mintSources.py", "add-apt-repository"]
+if args.forceYes:
+    command.append("-y")
+if args.remove:
+    command.append("-r")
+command.append(" ".join(args.repository))
 
-yes_arg="-?"
-if options.forceYes:
-    yes_arg="-y"
-
-remove_arg="-?"
-if options.remove:
-    remove_arg="-r"
-
-os.execl(mintsources, mintsources, "add-apt-repository", yes_arg, remove_arg, args[0])
+os.execv(command[0], command)
