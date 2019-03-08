@@ -60,6 +60,12 @@ def idle(func):
     return wrapper
 
 def remove_repository_via_cli(line, codename, forceYes):
+    def fail_and_exit(detail=None):
+        print(_("Failed to remove repository"))
+        if detail:
+            print(detail)
+        sys.exit(1)
+
     if line.startswith("ppa:"):
         user, sep, ppa_name = line.split(":")[1].partition("/")
         ppa_name = ppa_name or "ppa"
@@ -80,10 +86,11 @@ def remove_repository_via_cli(line, codename, forceYes):
                     sys.exit(1)
 
         except KeyboardInterrupt as detail:
-            print (_("Cancelling..."))
+            print(_("Cancelling..."))
             sys.exit(1)
         except Exception as detail:
-            print (_("Cannot get info about PPA: '%s'.") % detail)
+            print(_("Cannot get info about PPA: '%s'.") % detail)
+            sys.exit(1)
 
         (deb_line, file) = expand_ppa_line(line.strip(), codename)
         deb_line = expand_http_line(deb_line, codename) + "\n"
@@ -103,16 +110,21 @@ def remove_repository_via_cli(line, codename, forceYes):
             if not next((s for s in content if "deb " in s), None):
                 os.unlink(file)
         except IOError as detail:
-            print (_("failed to remove PPA: '%s'") % detail)
+            print(_("failed to remove PPA: '%s'") % detail)
+            sys.exit(1)
 
     elif line.startswith("deb ") | line.startswith("http"):
-        # Remove the repository from sources.list.d
+        # Remove the repository from additional_repositories_file
+        if not os.path.isfile(additional_repositories_file):
+            fail_and_exit()
         try:
             with open(additional_repositories_file, "r", encoding="utf-8", errors="ignore") as readfile:
                 content = readfile.readlines()
                 line = "%s\n" % expand_http_line(line, codename)
                 if line in content:
                     content.remove(line)
+                else:
+                    fail_and_exit()
             with open(additional_repositories_file, "w", encoding="utf-8", errors="ignore") as writefile:
                 writefile.writelines(content)
 
@@ -120,8 +132,9 @@ def remove_repository_via_cli(line, codename, forceYes):
             if not next((s for s in content if "deb " in s), None):
                 os.unlink(additional_repositories_file)
         except IOError as detail:
-            print (_("failed to remove repository: '%s'") % detail)
-
+            fail_and_exit(detail)
+    else:
+        fail_and_exit()
 
 def add_repository_via_cli(line, codename, forceYes, use_ppas):
 
