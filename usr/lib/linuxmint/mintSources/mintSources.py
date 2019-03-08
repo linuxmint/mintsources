@@ -120,9 +120,11 @@ def remove_repository_via_cli(line, codename, forceYes):
         try:
             with open(additional_repositories_file, "r", encoding="utf-8", errors="ignore") as readfile:
                 content = readfile.readlines()
-                line = "%s\n" % expand_http_line(line, codename)
+                line = f"{expand_http_line(line, codename)}\n"
                 if line in content:
                     content.remove(line)
+                elif f"# {line}" in content:
+                    content.remove(f"# {line}")
                 else:
                     fail_and_exit()
             with open(additional_repositories_file, "w", encoding="utf-8", errors="ignore") as writefile:
