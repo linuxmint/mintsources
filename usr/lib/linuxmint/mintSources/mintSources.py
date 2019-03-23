@@ -1184,6 +1184,11 @@ class Application(object):
 
         line = self.show_entry_dialog(self._main_window, _("Please enter the name of the PPA you want to add:"), start_line, image)
         if line:
+            # If the user pasted the launchpad URL, parse that into a ppa: line
+            if line.startswith("https://launchpad.net/"):
+                match = re.match(r'https://launchpad.net/~(\S+)/\+archive/ubuntu/(\S+)', line.split("?", 1)[0])
+                if match:
+                    line = f"ppa:{match.group(1)}/{match.group(2)}"
             try:
                 if not line.startswith("ppa:") or line == default_line:
                     raise ValueError(_("The name of the PPA you entered isn't formatted correctly."))
