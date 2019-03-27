@@ -1724,16 +1724,24 @@ if __name__ == "__main__":
         print ("Please check your LSB information with \"lsb_release -a\".")
         sys.exit(1)
 
-    if len(args) > 1 and (args[0] == "add-apt-repository"):
-        ppa_line = args[1]
-        lsb_codename = subprocess.getoutput("lsb_release -sc")
-        config_parser = configparser.RawConfigParser()
-        config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
-        codename = config_parser.get("general", "base_codename")
-        use_ppas = config_parser.get("general", "use_ppas")
-        if options.remove:
-            remove_repository_via_cli(ppa_line, codename, options.forceYes)
-        else:
-            add_repository_via_cli(ppa_line, codename, options.forceYes, use_ppas)
+    args = sys.argv[1:]
+    if len(args) > 1:
+        if args[0] == "add-apt-repository":
+            ppa_line = next((arg for arg in args[1:] if not arg.startswith("-")), None)
+            if not ppa_line:
+                sys.exit(1)
+            config_parser = configparser.RawConfigParser()
+            config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
+            codename = config_parser.get("general", "base_codename")
+            use_ppas = config_parser.get("general", "use_ppas")
+            if "-r" in args:
+                remove_repository_via_cli(ppa_line, codename, "-y" in args)
+            else:
+                add_repository_via_cli(ppa_line, codename, "-y" in args, use_ppas)
+        elif args[0] == "--add-key":
+            if add_apt_key(args[1]):
+                print("Key successfully added.")
+            else:
+                sys.exit(1)
     else:
         Application().run()
