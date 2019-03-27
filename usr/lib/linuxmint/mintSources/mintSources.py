@@ -1175,14 +1175,14 @@ class Application(object):
         image = Gtk.Image()
         image.set_from_icon_name("process-stop-symbolic", Gtk.IconSize.DIALOG)
         start_line = ""
-        default_line = "ppa:username/ppa"
+        default_line = "ppa:ppa-owner/ppa-name"
         clipboard_text = self.get_clipboard_text("ppa")
         if clipboard_text != None:
             start_line = clipboard_text
         else:
             start_line = default_line
 
-        line = self.show_entry_dialog(self._main_window, _("Please enter the name of the PPA you want to add:"), start_line, image)
+        line = self.show_entry_dialog(self._main_window, _("Please specify the PPA you want to add either in the following format or by copy & pasting the launchpad.net URL:"), start_line, image)
         if line:
             # If the user pasted the launchpad URL, parse that into a ppa: line
             if line.startswith("https://launchpad.net/"):
@@ -1445,9 +1445,7 @@ class Application(object):
                               Gtk.MessageType.QUESTION,
                               Gtk.ButtonsType.OK_CANCEL,
                               message)
-
-        d.set_markup(message)
-        if image is not None:
+        if image:
             image.show()
             d.set_image(image)
 
@@ -1456,7 +1454,7 @@ class Application(object):
         entry.set_margin_start(6)
         entry.set_margin_end(6)
         entry.show()
-        d.vbox.pack_end(entry, False, False, 0)
+        d.get_content_area().pack_end(entry, False, False, 0)
         entry.connect('activate', lambda _: d.response(Gtk.ResponseType.OK))
         d.set_default_response(Gtk.ResponseType.OK)
 
