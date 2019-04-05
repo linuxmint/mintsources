@@ -18,7 +18,6 @@ Depends: python3-apt,
          gir1.2-pango-1.0,
          gir1.2-vte-2.91,
          gir1.2-xapp-1.0,
-         dash,
          iso-flag-png,
          lsb-release
 Replaces: software-properties-common (<< 1),

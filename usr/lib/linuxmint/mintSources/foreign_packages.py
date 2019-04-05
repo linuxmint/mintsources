@@ -175,7 +175,7 @@ class Foreign_Browser():
         if self.downgrade_mode:
             self.builder.get_object("stack1").set_visible_child_name("vte")
             terminal = Vte.Terminal()
-            terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], ["/bin/dash"], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
+            terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], [os.environ["SHELL"]], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
             terminal.feed_child("apt-get install %s\n" % " ".join(foreign_packages), -1)
             terminal.show()
             self.builder.get_object("box_vte").add(terminal)
