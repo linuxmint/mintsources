@@ -347,7 +347,7 @@ class AddAptKey(object):
         # Unfortunately we also have to support key ids, not just full fingerprints
         if expected_fingerprint != fingerprints[0][-(len(expected_fingerprint)):]:
             return False
-        return True
+        return fingerprints[0]
 
     def add_ppa_key(self, ppa_info):
         """ Retrieve the signing key corresponding to 'ppa_info' and add it. """
@@ -371,7 +371,8 @@ class AddAptKey(object):
         if not minimal_key:
             raise Exception("GPG failed to return the minimized key.")
 
-        if not self.verify_fingerprint(minimal_key, fingerprint):
+        fingerprint = self.verify_fingerprint(minimal_key, fingerprint)
+        if not fingerprint:
             raise Exception(f"Received key with unexpected fingerprint.")
 
         filename = os.path.join(self.apt_trustedparts, encode(fingerprint) + ".gpg")
