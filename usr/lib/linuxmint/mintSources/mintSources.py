@@ -311,7 +311,8 @@ class AddAptKey(object):
         cmd.extend(args)
         return subprocess.run(cmd, input=data, stdout=subprocess.PIPE, check=True).stdout
 
-    def retrieve_key_from_lp(self, ppa_info):
+    @staticmethod
+    def retrieve_key_from_lp(ppa_info):
         """ Retrieves they key for a PPA directly from launchpad.net """
         signing_key_fingerprint = ppa_info["signing_key_fingerprint"]
         try:
