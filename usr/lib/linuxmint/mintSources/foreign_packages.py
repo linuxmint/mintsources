@@ -88,6 +88,12 @@ class Foreign_Browser():
         self.apt = mintcommon.aptdaemon.APT(self.window)
 
         cache = apt.Cache()
+
+        # python-apt doesn't give us a constant for this value
+        # it's "required" in English, but it could be anything in
+        # other languages
+        required_priority = cache['dpkg'].installed.priority
+
         for key in cache.keys():
             pkg = cache[key]
             if (pkg.is_installed):
@@ -123,7 +129,7 @@ class Foreign_Browser():
                                 self.model.set_value(iter, PKG_SORT_NAME, "%s %s" % (best_version.source_name, pkg.name))
                                 break
                     else:
-                        if best_version is None:
+                        if best_version is None and pkg.essential == False and pkg.installed.priority != required_priority:
                             iter = self.model.insert_before(None, None)
                             self.model.set_value(iter, PKG_ID, "%s" % (pkg.name))
                             self.model.set_value(iter, PKG_CHECKED, False)
