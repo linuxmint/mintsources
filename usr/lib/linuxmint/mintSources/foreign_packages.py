@@ -100,12 +100,34 @@ class Foreign_Browser():
                 candidate_version = pkg.candidate.version
                 installed_version = pkg.installed.version
 
-                if not pkg.candidate.downloadable:
-                    # The candidate is not downloadable...
-                    # See if there's a version that is...
+                if not self.downgrade_mode:
+                    # remove mode
+                    # Find packages which aren't downloadable
+                    if not pkg.candidate.downloadable:
+                        downloadable = False
+                        for version in pkg.versions:
+                            if version.downloadable:
+                                downloadable = True
+                        if not downloadable and pkg.essential == False and pkg.installed.priority != required_priority:
+                            iter = self.model.insert_before(None, None)
+                            self.model.set_value(iter, PKG_ID, "%s" % (pkg.name))
+                            self.model.set_value(iter, PKG_CHECKED, False)
+                            self.model.set_value(iter, PKG_NAME, "<b>%s</b>" % pkg.name)
+                            self.model.set_value(iter, PKG_INSTALLED_VERSION, installed_version)
+                            self.model.set_value(iter, PKG_REPO_VERSION, "")
+                            self.model.set_value(iter, PKG_SORT_NAME, "%s" % (pkg.name))
+                else:
+                    # downgrade mode
+                    # Find packages which candidate isn't available
                     best_version = None
-                    for version in pkg.versions:
-                        if version.downloadable:
+                    if not pkg.candidate.downloadable:
+                        # foreign packages which installed version doesn't exist in the repositories
+                        for version in pkg.versions:
+                            if not version.downloadable:
+                                continue
+                            if version.version == installed_version:
+                                continue
+
                             if best_version is None:
                                 best_version = version
                             else:
@@ -116,27 +138,29 @@ class Foreign_Browser():
                                     return_code = subprocess.call(["dpkg", "--compare-versions", version.version, "gt", best_version.version])
                                     if return_code == 0:
                                         best_version = version
+                    elif candidate_version == installed_version:
+                        # packages which installed version isn't the one available from the highest priority repo
+                        # typical example is an ubuntu version installed despite a inferior 700 version being available
+                        best_version = None
+                        for version in pkg.versions:
+                            if not version.downloadable:
+                                continue
+                            if version.version == installed_version:
+                                continue
+                            if version.policy_priority > 500:
+                                if best_version is None or version.policy_priority > best_version.policy_priority:
+                                    best_version = version
 
-                    if self.downgrade_mode:
-                        if best_version is not None:
-                            for origin in best_version.origins:
-                                iter = self.model.insert_before(None, None)
-                                self.model.set_value(iter, PKG_ID, "%s=%s" % (pkg.name, best_version.version))
-                                self.model.set_value(iter, PKG_CHECKED, False)
-                                self.model.set_value(iter, PKG_NAME, "<b>%s</b>" % pkg.name)
-                                self.model.set_value(iter, PKG_INSTALLED_VERSION, installed_version)
-                                self.model.set_value(iter, PKG_REPO_VERSION, "%s (%s)" % (best_version.version, origin.archive))
-                                self.model.set_value(iter, PKG_SORT_NAME, "%s %s" % (best_version.source_name, pkg.name))
-                                break
-                    else:
-                        if best_version is None and pkg.essential == False and pkg.installed.priority != required_priority:
+                    if best_version is not None:
+                        for origin in best_version.origins:
                             iter = self.model.insert_before(None, None)
-                            self.model.set_value(iter, PKG_ID, "%s" % (pkg.name))
+                            self.model.set_value(iter, PKG_ID, "%s=%s" % (pkg.name, best_version.version))
                             self.model.set_value(iter, PKG_CHECKED, False)
                             self.model.set_value(iter, PKG_NAME, "<b>%s</b>" % pkg.name)
                             self.model.set_value(iter, PKG_INSTALLED_VERSION, installed_version)
-                            self.model.set_value(iter, PKG_REPO_VERSION, "")
-                            self.model.set_value(iter, PKG_SORT_NAME, "%s" % (pkg.name))
+                            self.model.set_value(iter, PKG_REPO_VERSION, "%s (%s)" % (best_version.version, origin.archive))
+                            self.model.set_value(iter, PKG_SORT_NAME, "%s %s" % (best_version.source_name, pkg.name))
+                            break
 
         treeview.show()
         treeview.connect("row-activated", self.treeview_row_activated)
@@ -181,7 +205,7 @@ class Foreign_Browser():
         if self.downgrade_mode:
             self.builder.get_object("stack1").set_visible_child_name("vte")
             terminal = Vte.Terminal()
-            terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], [os.environ["SHELL"]], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
+            terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], ["/bin/dash"], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
             terminal.feed_child("apt-get install %s\n" % " ".join(foreign_packages), -1)
             terminal.show()
             self.builder.get_object("box_vte").add(terminal)
