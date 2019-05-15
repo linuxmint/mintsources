@@ -17,7 +17,6 @@ import json
 import datetime
 from urllib.request import urlopen
 import requests
-from optparse import OptionParser
 import locale
 import mintcommon.aptdaemon
 import glob
@@ -1706,17 +1705,6 @@ class Application(object):
             return None
 
 if __name__ == "__main__":
-    usage = "usage: %prog [options] [repository]"
-    parser = OptionParser(usage=usage)
-    #add a dummy option which can be easily ignored
-    parser.add_option("-?", dest="ignore", action="store_true", default=False)
-    parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
-        help="force yes on all confirmation questions", default=False)
-    parser.add_option("-r", "--remove", dest="remove", action="store_true",
-        help="Remove the specified repository", default=False)
-
-    (options, args) = parser.parse_args()
-
     lsb_codename = subprocess.getoutput("lsb_release -sc")
     config_dir = "/usr/share/mintsources/%s" % lsb_codename
     if not os.path.exists(config_dir):
@@ -1729,16 +1717,18 @@ if __name__ == "__main__":
         print ("Please check your LSB information with \"lsb_release -a\".")
         sys.exit(1)
 
-    if len(args) > 1 and (args[0] == "add-apt-repository"):
-        ppa_line = args[1]
-        lsb_codename = subprocess.getoutput("lsb_release -sc")
+    args = sys.argv[1:]
+    if len(args) > 1 and args[0] == "add-apt-repository":
+        ppa_line = next((arg for arg in args[1:] if not arg.startswith("-")), None)
+        if not ppa_line:
+            sys.exit(1)
         config_parser = configparser.RawConfigParser()
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
         codename = config_parser.get("general", "base_codename")
         use_ppas = config_parser.get("general", "use_ppas")
-        if options.remove:
-            remove_repository_via_cli(ppa_line, codename, options.forceYes)
+        if "-r" in args:
+            remove_repository_via_cli(ppa_line, codename, "-y" in args)
         else:
-            add_repository_via_cli(ppa_line, codename, options.forceYes, use_ppas)
+            add_repository_via_cli(ppa_line, codename, "-y" in args, use_ppas)
     else:
         Application().run()
