@@ -9,6 +9,7 @@ import aptsources.distro
 import aptsources.distinfo
 from aptsources.sourceslist import SourcesList
 import gettext
+import tempfile
 import threading
 import pycurl
 from io import BytesIO
@@ -26,6 +27,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('XApp', '1.0')
 from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango, XApp
+
+import apt_pkg
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
@@ -197,7 +200,7 @@ def add_new_key(key):
     #         stderr=subprocess.DEVNULL).stdout.decode().split(":")
     # if not key in keys:
     #     add_key_remote(key)
-    add_key_remote(key)
+    return add_key_remote(key)
 
 def add_key_remote(key):
     try:
@@ -964,6 +967,7 @@ class Application(object):
         self.builder.get_object("button_mergelist").connect("clicked", self.fix_mergelist)
         self.builder.get_object("button_purge").connect("clicked", self.fix_purge)
         self.builder.get_object("button_duplicates").connect("clicked", self.remove_duplicates)
+        self.builder.get_object("button_fix_missing_keys").connect("clicked", self.fix_missing_keys)
         self.builder.get_object("button_remove_foreign").connect("clicked", self.remove_foreign)
         self.builder.get_object("button_downgrade_foreign").connect("clicked", self.downgrade_foreign)
 
@@ -1123,6 +1127,139 @@ class Application(object):
             self.refresh_repository_model()
         else:
             self.show_confirmation_dialog(self._main_window, _("No duplicate entries were found."), image, affirmation=True)
+
+    def fix_missing_keys(self, widget):
+        image = Gtk.Image()
+        image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
+
+        #get paths from apt
+        apt_pkg.init()
+        trusted = apt_pkg.config.find_file("Dir::Etc::trusted")
+        trustedparts = apt_pkg.config.find_dir("Dir::Etc::trustedparts")
+        lists = apt_pkg.config.find_dir("Dir::State::lists")
+        if not os.path.isfile(trusted) or not os.path.isdir(trustedparts) or not os.path.isdir(lists):
+            self.show_confirmation_dialog(self._main_window,
+                _("Error with your APT configuration, you may have to reload the cache first."),
+                image, affirmation=True)
+            return
+
+        self._main_window.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
+        Gdk.flush()
+
+        cmd_stub = ["gpg", "--no-default-keyring", "--no-options"]
+        keyrings = [trusted] + glob.glob(f"{trustedparts}*.gpg")
+        for keyring in keyrings:
+            cmd_stub.extend(["--keyring", keyring])
+
+        # build repository list
+        class RepositoryInfo():
+            def __init__(self, path, uri):
+                self.path = path
+                self.uri = uri
+                self.added = False
+                self.missing = False
+
+        repositories = []
+        tempdir = None
+        apt_source_list = apt_pkg.SourceList()
+        apt_source_list.read_main_list()
+        for metaindex in apt_source_list.list:
+            # can't seem to get the metaindex filename from apt_pkg so rebuild it:
+            filename = apt_pkg.uri_to_filename(f"{metaindex.uri}dists/{metaindex.dist}/")
+            path = os.path.join(lists, filename + "InRelease")
+            if not os.path.isfile(path):
+                path = os.path.join(lists, filename + "Release")
+                if not os.path.isfile(path):
+                    path = None
+            if not path:
+                print(f"W: Release file missing for {metaindex.uri}, trying to retrieve")
+                data = requests.get(f"{metaindex.uri}dists/{metaindex.dist}/InRelease")
+                data_gpg = None
+                if not data.ok:
+                    data = requests.get(f"{metaindex.uri}dists/{metaindex.dist}/Release")
+                    data_gpg = requests.get(f"{metaindex.uri}dists/{metaindex.dist}/Release.gpg")
+                if data.ok and (not data_gpg or data_gpg.ok):
+                    if not tempdir:
+                        tempdir = tempfile.TemporaryDirectory(prefix="mintsources-")
+                    filename_stub = apt_pkg.uri_to_filename(f"{metaindex.uri}dists/{metaindex.dist}/")
+                    if data_gpg:
+                        path = os.path.join(tempdir.name, filename_stub + "Release")
+                        with open(path + ".gpg", "w") as f:
+                            f.write(data_gpg.text)
+                    else:
+                        path = os.path.join(tempdir.name, filename_stub + "InRelease")
+                    with open(path, "w") as f:
+                        f.write(data.text)
+            if path:
+                repositories.append(RepositoryInfo(path, metaindex.uri))
+            else:
+                print(f"E: Could not retrieve release file for {metaindex.uri}", file=sys.stderr)
+
+        r = re.compile(r"^gpg\:\s+using \S+ key (.+)$", re.MULTILINE | re.IGNORECASE)
+        # try to verify all repository lists using gpg
+        for repository in repositories:
+            if repository.path.endswith("_InRelease"):
+                command = cmd_stub + (["--verify", repository.path])
+            else:
+                command = cmd_stub + (["--verify", repository.path + ".gpg", repository.path])
+            result = subprocess.run(command, stderr=subprocess.PIPE, env={"LC_ALL": "C"})
+            if result.returncode == 2:
+                # missing key
+                repository.missing = True
+                message = result.stderr.decode()
+                try:
+                    # parse gpg output for key id or fingerprint
+                    key = r.search(message).group(1)
+                    key = re.sub(r"\s", "", key)
+                    # get key from keyserver
+                    success = add_new_key(key)
+                    if not success:
+                        raise ValueError(f"Retrieving key {key} failed")
+                    repository.added = True
+                except (AttributeError, IndexError):
+                    print(f"E: Could not identify the key in the output:\n\n{message}", file=sys.stderr)
+                    continue
+                except ValueError as e:
+                    print(f"E: {e}", file=sys.stderr)
+                    continue
+
+        if tempdir:
+            tempdir.cleanup()
+
+        self._main_window.get_window().set_cursor(None)
+
+        keys_added = [x.uri for x in repositories if x.added]
+        keys_missing = [x.uri for x in repositories if (x.missing and not x.added)]
+        keys_missing_count = len(keys_missing)
+        keys_added_count = len(keys_added)
+        if keys_missing_count or keys_added_count:
+            if not keys_missing_count:
+                msg_info = _("All missing keys were successfully added.")
+            else:
+                msg_info = _("Not all missing keys could be found.")
+            msg_log = ""
+            if keys_added:
+                msg_repos_added = _("Keys were added for the following repositories:")
+                # repo_list = "\n".join([f' - <a href="{uri}">{uri}</a>' for uri in keys_added])
+                repo_list = "\n".join([f' - {uri}' for uri in keys_added])
+                msg_log = f"{msg_repos_added}\n{repo_list}\n"
+            if keys_missing:
+                msg_repos_missing = _("Keys are still missing for the following repositories:")
+                msg_action = _("Add the remaining missing key(s) manually or remove the corresponding repositories or PPAs.")
+                # repo_list = "\n".join([f' - <a href="{uri}">{uri}</a>' for uri in keys_missing])
+                repo_list = "\n".join([f' - {uri}' for uri in keys_missing])
+                if keys_added:
+                    msg_log += "\n"
+                msg_log = f"{msg_log}{msg_repos_missing}\n{repo_list}\n\n{msg_action}\n"
+
+            msg = f"{msg_info}\n\n{msg_log}"
+            if keys_added:
+                msg += "\n%s" % _("Please reload the cache.")
+                self.load_keys()
+                self.enable_reload_button()
+            self.show_confirmation_dialog(self._main_window, msg, image, affirmation=True)
+        else:
+            self.show_confirmation_dialog(self._main_window, _("No missing keys were found."), image, affirmation=True)
 
     def load_keys(self):
         self.keys = []
