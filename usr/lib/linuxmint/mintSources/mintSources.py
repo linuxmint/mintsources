@@ -1,34 +1,32 @@
 #!/usr/bin/python3
-
+import configparser
+import datetime
+import gettext
+import glob
+import json
+import locale
 import os
+import pycurl
+import re
+import requests
+import shutil
 import signal
 import subprocess
 import sys
-import configparser
-import aptsources.distro
-import aptsources.distinfo
-from aptsources.sourceslist import SourcesList
-import gettext
 import tempfile
 import threading
-import pycurl
-from io import BytesIO
-from CountryInformation import CountryInformation
-import re
-import json
-import datetime
-import requests
-import locale
-import mintcommon.aptdaemon
-import glob
-import apt_pkg
-import shutil
+
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('XApp', '1.0')
 from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango, XApp
 
+from aptsources.sourceslist import SourcesList
+from io import BytesIO
+from CountryInformation import CountryInformation
+
 import apt_pkg
+import mintcommon.aptdaemon
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
