@@ -97,6 +97,8 @@ def remove_repository_via_cli(line, codename, forceYes):
                 for line in (deb_line, debsrc_line):
                     if line in content:
                         content.remove(line)
+                    elif f"# {line}" in content:
+                        content.remove(f"# {line}")
             with open(file, "w", encoding="utf-8", errors="ignore") as writefile:
                 writefile.writelines(content)
 
@@ -114,6 +116,8 @@ def remove_repository_via_cli(line, codename, forceYes):
                 line = "%s\n" % expand_http_line(line, codename)
                 if line in content:
                     content.remove(line)
+                elif f"# {line}" in content:
+                    content.remove(f"# {line}")
             with open(additional_repositories_file, "w", encoding="utf-8", errors="ignore") as writefile:
                 writefile.writelines(content)
 
