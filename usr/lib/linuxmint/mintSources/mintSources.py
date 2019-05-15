@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import signal
 import subprocess
 import sys
 import configparser
@@ -15,7 +16,6 @@ from CountryInformation import CountryInformation
 import re
 import json
 import datetime
-from urllib.request import urlopen
 import requests
 import locale
 import mintcommon.aptdaemon
@@ -58,6 +58,12 @@ def idle(func):
     def wrapper(*args):
         GObject.idle_add(func, *args)
     return wrapper
+
+def signal_handler(signum, _):
+    print("")
+    sys.exit(128 + signum)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 def remove_repository_via_cli(line, codename, forceYes):
     if line.startswith("ppa:"):
@@ -107,7 +113,7 @@ def remove_repository_via_cli(line, codename, forceYes):
         except IOError as detail:
             print (_("failed to remove PPA: '%s'") % detail)
 
-    elif line.startswith("deb ") | line.startswith("http"):
+    elif line.startswith("deb ") or line.startswith("http"):
         # Remove the repository from sources.list.d
         try:
             with open(additional_repositories_file, "r", encoding="utf-8", errors="ignore") as readfile:
@@ -227,31 +233,35 @@ def repo_exists(line):
                             return True
     return False
 
+def retrieve_ppa_url(url):
+    try:
+        data = requests.get(url, timeout=10)
+    except requests.exceptions.ConnectTimeout:
+        raise PPAException(_("Connection timed out, check your connection or try again later."))
+    except requests.exceptions.SSLError:
+        raise PPAException(_("Failed to establish a secure connection."))
+    except Exception as e:
+        raise PPAException(_("Failed to download the PPA: %s." % e))
+    return data
+
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
-    DEFAULT_KEYSERVER = "hkp://keyserver.ubuntu.com:80/"
-    # maintained until 2015
-    LAUNCHPAD_PPA_API = 'https://launchpad.net/api/1.0/~%s/+archive/%s'
-    # Specify to use the system default SSL store; change to a different path
-    # to test with custom certificates.
-    LAUNCHPAD_PPA_CERT = "/etc/ssl/certs/ca-certificates.crt"
-
-    lp_url = LAUNCHPAD_PPA_API % (owner_name, ppa_name)
-
-    data = requests.get(lp_url)
+    try:
+        data = retrieve_ppa_url(f"https://launchpad.net/api/1.0/~{owner_name}/+archive/{ppa_name}")
+    except PPAException as e:
+        raise PPAException(e.value)
     if not data.ok:
-        raise PPAException(_("No valid PPA of this name was found."))
+        raise PPAException(_("No supported PPA of this name was found."))
     try:
         json_data = data.json()
-    except pycurl.error as e:
-        raise PPAException(_("No valid PPA of this name was found."))
+    except json.decoder.JSONDecodeError:
+        raise PPAException(_("No supported PPA of this name was found."))
 
     # Make sure the PPA supports our base release
-    repo_url = "http://ppa.launchpad.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename)
     try:
-        if (urlopen(repo_url).getcode() == 404):
-            raise PPAException(_("This PPA does not support %s") % base_codename)
-    except Exception as e:
-        print (e)
+        data = retrieve_ppa_url(f"http://ppa.launchpad.net/{owner_name}/{ppa_name}/ubuntu/dists/{base_codename}")
+    except PPAException as e:
+        raise PPAException(e.value)
+    if not data.ok:
         raise PPAException(_("This PPA does not support %s") % base_codename)
 
     return json_data
@@ -689,7 +699,7 @@ class MirrorSelectionDialog(object):
 
         # Try to find out where we're located...
         try:
-            lookup = str(urlopen('http://geoip.ubuntu.com/lookup').read())
+            lookup = requests.get('http://geoip.ubuntu.com/lookup').text
             cur_country_code = re.search('<CountryCode>(.*)</CountryCode>', lookup).group(1)
             if cur_country_code == 'None': cur_country_code = None
         except Exception as detail:
