@@ -1173,16 +1173,21 @@ class Application(object):
     def add_ppa(self, widget):
         image = Gtk.Image()
         image.set_from_icon_name("process-stop-symbolic", Gtk.IconSize.DIALOG)
-        start_line = ""
-        default_line = "ppa:username/ppa"
+        default_line = "ppa:ppa-owner/ppa-name"
+        start_line = default_line
         clipboard_text = self.get_clipboard_text("ppa")
-        if clipboard_text != None:
+        if clipboard_text is None:
+            clipboard_text = self.get_clipboard_text("https")
+        if clipboard_text is not None:
             start_line = clipboard_text
-        else:
-            start_line = default_line
 
-        line = self.show_entry_dialog(self._main_window, _("Please enter the name of the PPA you want to add:"), start_line, image)
+        line = self.show_entry_dialog(self._main_window, _("Please enter the name or the URL of the PPA you want to add:"), start_line, image)
         if line:
+            # If the user pasted the launchpad URL, parse that into a ppa: line
+            if line.startswith("https://launchpad.net/"):
+                match = re.match(r'https://launchpad.net/~(\S+)/\+archive/ubuntu/(\S+)', line.split("?", 1)[0])
+                if match:
+                    line = f"ppa:{match.group(1)}/{match.group(2)}"
             try:
                 if not line.startswith("ppa:") or line == default_line:
                     raise ValueError(_("The name of the PPA you entered isn't formatted correctly."))
@@ -1371,7 +1376,6 @@ class Application(object):
                               Gtk.MessageType.INFO,
                               Gtk.ButtonsType.OK,
                               message)
-        d.set_markup(message)
         if image is not None:
             image.show()
             d.set_image(image)
@@ -1400,7 +1404,7 @@ class Application(object):
                        (_("Cancel"), Gtk.ResponseType.REJECT,
                        _("OK"), Gtk.ResponseType.ACCEPT))
         d.set_size_request(550, 400)
-        d.vbox.pack_start(s, True, True, 0)
+        d.get_content_area().pack_start(s, True, True, 0)
         d.set_title("")
         s.show()
         s.add(t)
@@ -1420,7 +1424,6 @@ class Application(object):
                               Gtk.ButtonsType.OK,
                               message)
 
-        d.set_markup(message)
         if image is not None:
             image.show()
             d.set_image(image)
@@ -1440,7 +1443,6 @@ class Application(object):
                               Gtk.ButtonsType.OK_CANCEL,
                               message)
 
-        d.set_markup(message)
         if image is not None:
             image.show()
             d.set_image(image)
@@ -1450,7 +1452,7 @@ class Application(object):
         entry.set_margin_start(6)
         entry.set_margin_end(6)
         entry.show()
-        d.vbox.pack_end(entry, False, False, 0)
+        d.get_content_area().pack_end(entry, False, False, 0)
         entry.connect('activate', lambda _: d.response(Gtk.ResponseType.OK))
         d.set_default_response(Gtk.ResponseType.OK)
 
