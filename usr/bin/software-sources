@@ -2,7 +2,6 @@
 
 import os
 import subprocess
-import sys
 
 if os.getuid() != 0:
     subprocess.run(["pkexec", "/usr/bin/mintsources"])

@@ -25,9 +25,8 @@ import apt_pkg
 import shutil
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('GdkX11', '3.0') # Needed to get xid
 gi.require_version('XApp', '1.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf, GdkX11, GObject, Pango, XApp
+from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango, XApp
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
@@ -282,7 +281,7 @@ def expand_http_line(line, distro_codename):
       apt-add-repository 'deb http://packages.medibuntu.org/ base_codename free non-free'
     """
     if not line.startswith("http"):
-      return line
+        return line
     repo = line.split()[0]
     try:
         areas = line.split(" ",1)[1]

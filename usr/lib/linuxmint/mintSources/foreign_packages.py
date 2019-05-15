@@ -1,17 +1,17 @@
 #!/usr/bin/python3
-import os
-import sys
-import apt
 import gettext
-import tempfile
+import os
 import subprocess
-import mintcommon.aptdaemon
-import gi
+import sys
 import locale
 
+import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Vte', '2.91')
 from gi.repository import Gtk, Vte, GLib
+
+import apt
+import mintcommon.aptdaemon
 
 # i18n
 APP = 'mintsources'

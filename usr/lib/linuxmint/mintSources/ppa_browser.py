@@ -1,17 +1,17 @@
 #!/usr/bin/python3
-import os
-import sys
-import apt
 import gettext
-import tempfile
-import subprocess
-import mintcommon.aptdaemon
-import platform
 import locale
+import os
+import platform
+import subprocess
+import sys
+
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('GdkX11', '3.0') # Needed to get xid
-from gi.repository import Gtk, GdkX11
+from gi.repository import Gtk
+
+import apt
+import mintcommon.aptdaemon
 
 # i18n
 APP = 'mintsources'
@@ -24,7 +24,7 @@ _ = gettext.gettext
 class PPA_Browser():
 
     def __init__(self, base_codename, ppa_owner, ppa_name):
-        if platform.machine() == "X86_64":
+        if platform.machine() == "x86_64":
             architecture = "amd64"
         else:
             architecture = "i386"
