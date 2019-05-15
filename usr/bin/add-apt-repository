@@ -6,10 +6,6 @@ from optparse import OptionParser
 
 gettext.install("mintsources", "/usr/share/linuxmint/locale")
 
-if os.geteuid() != 0 and sys.argv[1] not in ("-h", "--help"):
-    print(_("Error: must run as root"))
-    sys.exit(1)
-
 usage = "usage: %prog [options] repository"
 parser = OptionParser(usage=usage)
 parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
@@ -19,7 +15,11 @@ parser.add_option("-r", "--remove", dest="remove", action="store_true",
 
 (options, args) = parser.parse_args()
 
-if (len(args) == 0):
+if os.geteuid() != 0:
+    print(_("Error: must run as root"))
+    sys.exit(1)
+
+if len(args) == 0:
     print(_("Error: need a repository as argument"))
     sys.exit(1)
 
