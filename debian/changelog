@@ -1,3 +1,53 @@
+mintsources (1.8.5) tina; urgency=medium
+
+  [ gm10 ]
+  * Label local repositories as "Local Repository" (#136)
+  * Fix Gtk transient parent error in import key dialog (#142)
+  * Fix missing icons (#144)
+
+  [ monsta ]
+  * remove excessive trailing slash from deb.debian.org (#145)
+
+  [ gm10 ]
+  * Fix repository validation and manipulation (#132)
+  * Fix parsed repository name not showing for newly added repos (#143)
+  * Fix issues with adding PPAs (#141)
+  * small stuff: fix indent, remove unnecessary variable (#152)
+  * Disable PPA open button when PPA isn't enabled (#149)
+
+  [ Clement Lefebvre ]
+  * Fix missing icons
+
+  [ gm10 ]
+  * Repository.modify_source_file() - fix missing spaces in condition (#154)
+  * Switch to mintcommon v2 (#147)
+
+  [ Clement Lefebvre ]
+  * Fix generate_desktop_files
+
+  [ gm10 ]
+  * Remove unnecessary break statement (#160)
+  * Fix MergeList refactored, query path from apt instead of hardcoding and use native functions instead of an external process (#158)
+  * Remove and Downgrade foreign packages use subprocess
+  * Use default shell instead of /bin/dash, don't depend on dash (#169)
+
+  [ Clement Lefebvre ]
+  * Foreign packages: Filter out essential/required packages
+  * Foreign packages: List packages which should be pinned and aren't
+  * Clean up imports and fix ppa_browser arch detection along the way
+  * Fix repo_malformed and repo_exists to support file:/ repositories
+  * Support adding a PPA in GUI via the launchpad URL
+  * add-apt-repository: Fix call with no arguments
+  * CLI: Also remove commented repos when removing
+  * Drop OptionParser and usage message, drop unnecessary lsb_release call
+  * Improve PPA retrieval error handling (including Ctrl+C), add timeout, drop urllib
+  * Remove duplicate repositories: Refresh treeviews and remove empty lists
+  * New Maintenance option: Add missing keys
+  * Reorganize imports
+  * l10n: Update POT
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sun, 30 Jun 2019 15:33:25 +0200
+
 mintsources (1.8.4) tessa; urgency=medium
 
   [ gm10 ]
