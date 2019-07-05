@@ -1,3 +1,9 @@
+mintsources (1.8.6) tina; urgency=medium
+
+  * Add support for tina
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 05 Jul 2019 13:23:21 +0200
+
 mintsources (1.8.5) tina; urgency=medium
 
   [ gm10 ]
