@@ -1,3 +1,9 @@
+mintsources (1.8.7) tina; urgency=medium
+
+  * MergeList: Don't delete the list directory itself
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 23 Jul 2019 13:41:51 +0200
+
 mintsources (1.8.6) tina; urgency=medium
 
   * Add support for tina
