@@ -1069,10 +1069,7 @@ class Application(object):
         self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)
 
     def fix_mergelist(self, widget):
-        apt_pkg.init_config()
-        path = apt_pkg.config.find_dir("Dir::State::lists")
-        if os.path.exists(path):
-            shutil.rmtree(path)
+        os.system("rm /var/lib/apt/lists/* -vrf")
         image = Gtk.Image()
         image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
         self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
