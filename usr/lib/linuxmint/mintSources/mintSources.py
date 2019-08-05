@@ -103,8 +103,8 @@ def remove_repository_via_cli(line, codename, forceYes):
                 for line in (deb_line, debsrc_line):
                     if line in content:
                         content.remove(line)
-                    elif f"# {line}" in content:
-                        content.remove(f"# {line}")
+                    elif "# %s" % line in content:
+                        content.remove("# %s" % line)
             with open(file, "w", encoding="utf-8", errors="ignore") as writefile:
                 writefile.writelines(content)
 
@@ -122,8 +122,8 @@ def remove_repository_via_cli(line, codename, forceYes):
                 line = "%s\n" % expand_http_line(line, codename)
                 if line in content:
                     content.remove(line)
-                elif f"# {line}" in content:
-                    content.remove(f"# {line}")
+                elif "# %s" % line in content:
+                    content.remove("# %s" % line)
             with open(additional_repositories_file, "w", encoding="utf-8", errors="ignore") as writefile:
                 writefile.writelines(content)
 
@@ -247,7 +247,7 @@ def retrieve_ppa_url(url):
 
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
     try:
-        data = retrieve_ppa_url(f"https://launchpad.net/api/1.0/~{owner_name}/+archive/{ppa_name}")
+        data = retrieve_ppa_url("https://launchpad.net/api/1.0/~%s/+archive/%s" % (owner_name, ppa_name))
     except PPAException as e:
         raise PPAException(e.value)
     if not data.ok:
@@ -259,7 +259,7 @@ def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
 
     # Make sure the PPA supports our base release
     try:
-        data = retrieve_ppa_url(f"http://ppa.launchpad.net/{owner_name}/{ppa_name}/ubuntu/dists/{base_codename}")
+        data = retrieve_ppa_url("http://ppa.launchpad.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename))
     except PPAException as e:
         raise PPAException(e.value)
     if not data.ok:
@@ -1105,7 +1105,7 @@ class Application(object):
                             found_duplicates = True
                             found_duplicates_in_this_file = True
                 if found_duplicates_in_this_file:
-                    print(f"Found duplicates in {listfile}, rewriting it.")
+                    print("Found duplicates in %s, rewriting it." % listfile)
                     if not lines:
                         os.unlink(listfile)
                     else:
@@ -1142,7 +1142,7 @@ class Application(object):
         Gdk.flush()
 
         cmd_stub = ["gpg", "--no-default-keyring", "--no-options"]
-        keyrings = [trusted] + glob.glob(f"{trustedparts}*.gpg")
+        keyrings = [trusted] + glob.glob("%s*.gpg" % trustedparts)
         for keyring in keyrings:
             cmd_stub.extend(["--keyring", keyring])
 
@@ -1160,23 +1160,23 @@ class Application(object):
         apt_source_list.read_main_list()
         for metaindex in apt_source_list.list:
             # can't seem to get the metaindex filename from apt_pkg so rebuild it:
-            filename = apt_pkg.uri_to_filename(f"{metaindex.uri}dists/{metaindex.dist}/")
+            filename = apt_pkg.uri_to_filename("%sdists/%s/" % (metaindex.uri, metaindex.dist))
             path = os.path.join(lists, filename + "InRelease")
             if not os.path.isfile(path):
                 path = os.path.join(lists, filename + "Release")
                 if not os.path.isfile(path):
                     path = None
             if not path:
-                print(f"W: Release file missing for {metaindex.uri}, trying to retrieve")
-                data = requests.get(f"{metaindex.uri}dists/{metaindex.dist}/InRelease")
+                print("W: Release file missing for %s, trying to retrieve" % metaindex.uri)
+                data = requests.get("%sdists/%s/InRelease" % (metaindex.uri, metaindex.dist))
                 data_gpg = None
                 if not data.ok:
-                    data = requests.get(f"{metaindex.uri}dists/{metaindex.dist}/Release")
-                    data_gpg = requests.get(f"{metaindex.uri}dists/{metaindex.dist}/Release.gpg")
+                    data = requests.get("%sdists/%s/Release" % (metaindex.uri, metaindex.dist))
+                    data_gpg = requests.get("%sdists/%s/Release.gpg" % (metaindex.uri, metaindex.dist))
                 if data.ok and (not data_gpg or data_gpg.ok):
                     if not tempdir:
                         tempdir = tempfile.TemporaryDirectory(prefix="mintsources-")
-                    filename_stub = apt_pkg.uri_to_filename(f"{metaindex.uri}dists/{metaindex.dist}/")
+                    filename_stub = apt_pkg.uri_to_filename("%sdists/%s/" % (metaindex.uri, metaindex.dist))
                     if data_gpg:
                         path = os.path.join(tempdir.name, filename_stub + "Release")
                         with open(path + ".gpg", "w") as f:
@@ -1188,7 +1188,7 @@ class Application(object):
             if path:
                 repositories.append(RepositoryInfo(path, metaindex.uri))
             else:
-                print(f"E: Could not retrieve release file for {metaindex.uri}", file=sys.stderr)
+                print("E: Could not retrieve release file for %s" % metaindex.uri, file=sys.stderr)
 
         r = re.compile(r"^gpg\:\s+using \S+ key (.+)$", re.MULTILINE | re.IGNORECASE)
         # try to verify all repository lists using gpg
@@ -1209,13 +1209,13 @@ class Application(object):
                     # get key from keyserver
                     success = add_new_key(key)
                     if not success:
-                        raise ValueError(f"Retrieving key {key} failed")
+                        raise ValueError("Retrieving key %s failed" % key)
                     repository.added = True
                 except (AttributeError, IndexError):
-                    print(f"E: Could not identify the key in the output:\n\n{message}", file=sys.stderr)
+                    print("E: Could not identify the key in the output:\n\n%s" % message, file=sys.stderr)
                     continue
                 except ValueError as e:
-                    print(f"E: {e}", file=sys.stderr)
+                    print("E: %s" % str(e), file=sys.stderr)
                     continue
 
         if tempdir:
@@ -1235,19 +1235,17 @@ class Application(object):
             msg_log = ""
             if keys_added:
                 msg_repos_added = _("Keys were added for the following repositories:")
-                # repo_list = "\n".join([f' - <a href="{uri}">{uri}</a>' for uri in keys_added])
-                repo_list = "\n".join([f' - {uri}' for uri in keys_added])
-                msg_log = f"{msg_repos_added}\n{repo_list}\n"
+                repo_list = "\n".join([' - %s' % uri for uri in keys_added])
+                msg_log = "%s\n%s\n" % (msg_repos_added, repo_list)
             if keys_missing:
                 msg_repos_missing = _("Keys are still missing for the following repositories:")
                 msg_action = _("Add the remaining missing key(s) manually or remove the corresponding repositories or PPAs.")
-                # repo_list = "\n".join([f' - <a href="{uri}">{uri}</a>' for uri in keys_missing])
-                repo_list = "\n".join([f' - {uri}' for uri in keys_missing])
+                repo_list = "\n".join([' - %s' % uri for uri in keys_missing])
                 if keys_added:
                     msg_log += "\n"
-                msg_log = f"{msg_log}{msg_repos_missing}\n{repo_list}\n\n{msg_action}\n"
+                msg_log = "%s%s\n%s\n\n%s\n" % (msg_log, msg_repos_missing, repo_list, msg_action)
 
-            msg = f"{msg_info}\n\n{msg_log}"
+            msg = "%s\n\n%s" % (msg_info, msg_log)
             if keys_added:
                 msg += "\n%s" % _("Please reload the cache.")
                 self.load_keys()
@@ -1347,7 +1345,7 @@ class Application(object):
             if line.startswith("https://launchpad.net/"):
                 match = re.match(r'https://launchpad.net/~(\S+)/\+archive/ubuntu/(\S+)', line.split("?", 1)[0])
                 if match:
-                    line = f"ppa:{match.group(1)}/{match.group(2)}"
+                    line = "ppa:%s/%s" % (match.group(1), match.group(2))
             try:
                 if not line.startswith("ppa:") or line == default_line:
                     raise ValueError(_("The name of the PPA you entered isn't formatted correctly."))
