@@ -517,6 +517,7 @@ class MirrorSelectionDialog(object):
 
         r = Gtk.CellRendererPixbuf()
         col = Gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_FLAG_COLUMN)
+        col.set_cell_data_func(r, self.data_func_surface)
         self._treeview.append_column(col)
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_TOOLTIP_COLUMN)
 
@@ -537,6 +538,11 @@ class MirrorSelectionDialog(object):
 
         with open('/usr/lib/linuxmint/mintSources/countries.json', encoding="utf-8", errors="ignore") as data_file:
             self.countries = json.load(data_file)
+
+    def data_func_surface(self, column, cell, model, iter_, *args):
+        pixbuf = model.get_value(iter_, MirrorSelectionDialog.MIRROR_COUNTRY_FLAG_COLUMN)
+        surface = Gdk.cairo_surface_create_from_pixbuf(pixbuf, self._application.scale)
+        cell.set_property("surface", surface)
 
     def _row_activated(self, treeview, path, view_column):
         self._dialog.response(Gtk.ResponseType.APPLY)
@@ -561,10 +567,11 @@ class MirrorSelectionDialog(object):
             tooltip = country_name
             if mirror.name != mirror.url:
                 tooltip = "%s: %s" % (country_name, mirror.name)
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(flag, -1, FLAG_SIZE * self._application.scale)
             self._mirrors_model.append((
                 mirror,
                 mirror.url,
-                GdkPixbuf.Pixbuf.new_from_file_at_size(flag, -1, FLAG_SIZE),
+                pixbuf,
                 0,
                 None,
                 tooltip,
@@ -809,6 +816,8 @@ class Application(object):
         self._main_window.set_title(_("Software Sources"))
 
         self._main_window.set_icon_name("software-sources")
+
+        self.scale = self._main_window.get_scale_factor()
 
         self._official_repositories_page = self.builder.get_object("official_repositories_page")
 
@@ -1845,11 +1854,13 @@ class Application(object):
                     base_flag_path = flag
                 break
 
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(mint_flag_path, -1, FLAG_SIZE)
-        self.builder.get_object("image_mirror").set_from_pixbuf(pixbuf)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(mint_flag_path, -1, FLAG_SIZE * self.scale)
+        surface = Gdk.cairo_surface_create_from_pixbuf(pixbuf, self.scale)
+        self.builder.get_object("image_mirror").set_from_surface(surface)
 
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(base_flag_path, -1, FLAG_SIZE)
-        self.builder.get_object("image_base_mirror").set_from_pixbuf(pixbuf)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(base_flag_path, -1, FLAG_SIZE * self.scale)
+        surface = Gdk.cairo_surface_create_from_pixbuf(pixbuf, self.scale)
+        self.builder.get_object("image_base_mirror").set_from_surface(surface)
 
     def get_clipboard_text(self, source_type):
         clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
