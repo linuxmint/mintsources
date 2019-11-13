@@ -1,3 +1,9 @@
+mintsources (1.8.9) tricia; urgency=medium
+
+  * Fix flags in HiDPI
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 13 Nov 2019 12:58:01 +0100
+
 mintsources (1.8.8) tina; urgency=medium
 
   * Remove Python 3.6 code
