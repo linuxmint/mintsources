@@ -1,3 +1,9 @@
+mintsources (1.9.0) tricia; urgency=medium
+
+  * Add support for 19.3
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 27 Nov 2019 16:37:59 +0000
+
 mintsources (1.8.9) tricia; urgency=medium
 
   * Fix flags in HiDPI
