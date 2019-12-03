@@ -592,9 +592,6 @@ class MirrorSelectionDialog(object):
             return None
 
     def check_mirror_up_to_date(self, url):
-        if (self.default_mirror_age is None or self.default_mirror_age < 2):
-            # If the default server was updated recently, the age is irrelevant (it would measure the time between now and the last update)
-            return True
         mirror_timestamp = self.get_url_last_modified(url)
         if mirror_timestamp is None:
             print ("Error: Can't find the age of %s !!" % url)
@@ -607,6 +604,15 @@ class MirrorSelectionDialog(object):
         else:
             # Age is fine :)
             return True
+
+    def check_mint_mirror_up_to_date(self, url):
+        if (self.default_mirror_age is None or self.default_mirror_age < 2):
+            # If the default server was updated recently, the age is irrelevant (it would measure the time between now and the last update)
+            return True
+        return self.check_mirror_up_to_date(url)
+
+    def check_base_mirror_up_to_date(self, url):
+        return self.check_mirror_up_to_date(url)
 
     @run_async
     def _all_speed_tests(self):
@@ -650,11 +656,16 @@ class MirrorSelectionDialog(object):
     def _speed_test(self, iter, url):
         download_speed = 0
         try:
+            up_to_date = False
+
             if self.is_base:
-                test_url = "%s/dists/%s/main/binary-amd64/Packages.gz" % (url, self.codename)
+                test_url = "%s/dists/%s-updates/main/binary-amd64/Packages.gz" % (url, self.codename)
+                up_to_date = self.check_base_mirror_up_to_date("%s/ls-lR.gz" % url)
             else:
                 test_url = "%s/dists/%s/main/Contents-amd64.gz" % (url, self.codename)
-            if (self.is_base or self.check_mirror_up_to_date("%s/db/version" % url)):
+                up_to_date = self.check_mint_mirror_up_to_date("%s/db/version" % url)
+
+            if up_to_date:
                 c = pycurl.Curl()
                 buff = BytesIO()
                 c.setopt(pycurl.URL, test_url)
@@ -766,7 +777,12 @@ class MirrorSelectionDialog(object):
         # Try to find the age of the Mint archive
         self.default_mirror_age = None
         self.default_mirror_date = None
-        mirror_timestamp = self.get_url_last_modified("%s/db/version" % self.default_mirror)
+
+        if self.is_base:
+            mirror_timestamp = self.get_url_last_modified("%s/ls-lR.gz" % self.default_mirror)
+        else:
+            mirror_timestamp = self.get_url_last_modified("%s/db/version" % self.default_mirror)
+
         if mirror_timestamp is not None:
             self.default_mirror_date = datetime.datetime.fromtimestamp(mirror_timestamp)
             now = datetime.datetime.now()
