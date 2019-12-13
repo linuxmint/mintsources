@@ -1,3 +1,10 @@
+mintsources (1.9.1) tricia; urgency=medium
+
+  [ Michael Webster ]
+  * mintSources.py: Add an age check for base mirrors, with a 14 day (#186)
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 13 Dec 2019 10:31:54 +0000
+
 mintsources (1.9.0) tricia; urgency=medium
 
   * Add support for 19.3
