@@ -820,8 +820,6 @@ class Application(object):
         self._interface_loaded = False
         self._currently_applying_sources = False
 
-        self.infobar_visible = False
-
         self.lsb_codename = subprocess.getoutput("lsb_release -sc")
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintsources.glade"
@@ -830,6 +828,8 @@ class Application(object):
         self.builder.set_translation_domain("mintsources")
         self.builder.add_from_file(glade_file)
         self._main_window = self.builder.get_object("main_window")
+        self._info_box = self.builder.get_object("box_infobar")
+        self._info_revealer = self.builder.get_object("info_revealer")
 
         self._main_window.set_title(_("Software Sources"))
 
@@ -1707,27 +1707,28 @@ class Application(object):
 
 
     def enable_reload_button(self):
-        if not self.infobar_visible:
-            self.infobar_visible = True
-            infobar = Gtk.InfoBar()
-            infobar.set_message_type(Gtk.MessageType.INFO)
-            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            image = Gtk.Image.new_from_icon_name("dialog-information-symbolic", Gtk.IconSize.LARGE_TOOLBAR)
-            box.pack_start(image, False, False, 0)
-            info_label = Gtk.Label()
-            infobar_message = "<b>%s</b>\n%s" % (_("Your configuration changed"), _("Click OK to update your APT cache"))
-            info_label.set_markup(infobar_message)
-            box.pack_start(info_label, False, False, 0)
-            infobar.get_content_area().pack_start(box, False, False, 0)
-            infobar.add_button(_("OK"), Gtk.ResponseType.OK)
-            infobar.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
-            infobar.connect("response", self._on_infobar_response)
-            self.builder.get_object("box_infobar").pack_start(infobar, True, True, 5)
-            infobar.show_all()
+        if not self._info_revealer.get_reveal_child():
+            if self._info_box.get_children() == []:
+                infobar = Gtk.InfoBar()
+                infobar.set_message_type(Gtk.MessageType.INFO)
+                box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                image = Gtk.Image.new_from_icon_name("dialog-information-symbolic", Gtk.IconSize.LARGE_TOOLBAR)
+                box.pack_start(image, False, False, 0)
+                info_label = Gtk.Label()
+                infobar_message = "<b>%s</b>\n%s" % (_("Your configuration changed"), _("Click OK to update your APT cache"))
+                info_label.set_markup(infobar_message)
+                box.pack_start(info_label, False, False, 0)
+                infobar.get_content_area().pack_start(box, False, False, 0)
+                infobar.add_button(_("OK"), Gtk.ResponseType.OK)
+                infobar.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+                infobar.connect("response", self._on_infobar_response)
+                infobar.show_all()
+                self._info_box.pack_start(infobar, True, True, 0)
+
+            self._info_revealer.set_reveal_child(True)
 
     def _on_infobar_response(self, infobar, response_id):
-        infobar.destroy()
-        self.infobar_visible = False
+        self._info_revealer.set_reveal_child(False)
 
         if response_id == Gtk.ResponseType.OK:
             self.apt.update_cache()
