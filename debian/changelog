@@ -1,3 +1,15 @@
+mintsources (1.9.2) tricia; urgency=medium
+
+  [ Michael Webster ]
+  * Don't allow the infobar to push the rest of the view content down.
+
+  [ Vincent Vermeulen ]
+  * add missing dependency: python3-gi-cairo
+  * allow for window controls on the left
+  * apt-add-repository: allow deb options
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 15 Jan 2020 14:34:13 +0000
+
 mintsources (1.9.1) tricia; urgency=medium
 
   [ Michael Webster ]
