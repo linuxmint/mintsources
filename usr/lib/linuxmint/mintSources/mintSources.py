@@ -1079,7 +1079,7 @@ class Application(object):
                             mirror = Mirror(country_code, url, name)
                             mirror_list.append(mirror)
         if path.endswith("Debian.mirrors"):
-            mirror = Mirror("WD", "http://deb.debian.org/debian", "http://deb.debian.org/debian/")
+            mirror = Mirror("WD", "https://deb.debian.org/debian", "https://deb.debian.org/debian/")
             mirror_list.append(mirror)
         return mirror_list
 
