@@ -1,3 +1,9 @@
+mintsources (1.9.3) debbie; urgency=medium
+
+  * Add support for LMDE 4 Debbie
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 21 Jan 2020 09:55:52 +0000
+
 mintsources (1.9.2) tricia; urgency=medium
 
   [ Michael Webster ]
