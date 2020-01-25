@@ -208,7 +208,7 @@ def add_key_remote(key):
     return True
 
 def repo_malformed(line):
-    r = re.compile(r'(?:deb|deb-src)\s+(?:\[[^\]]+\])?\s+\w+:/\S+?/?\s+\S+')
+    r = re.compile(r'(?:deb|deb-src)\s+(?:\[[^\]]+\]\s+)?\w+:/\S+?/?\s+\S+')
     match_line = r.match(line)
     if not match_line:
         return True
