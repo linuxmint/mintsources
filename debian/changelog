@@ -1,3 +1,10 @@
+mintsources (1.9.5) debbie; urgency=medium
+
+  [ Vincent Vermeulen ]
+  * fix repo check RE
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 04 Feb 2020 15:33:53 +0000
+
 mintsources (1.9.4) debbie; urgency=medium
 
   * Switch Debian repo to https
