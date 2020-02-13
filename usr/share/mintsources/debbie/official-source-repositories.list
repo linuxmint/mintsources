@@ -5,4 +5,3 @@ deb-src $basemirror/ $basecodename-updates main contrib non-free
 deb-src http://security.debian.org/ $basecodename/updates main contrib non-free
 
 deb-src $basemirror/ $basecodename-backports main contrib non-free
-deb-src http://www.deb-multimedia.org $basecodename main non-free
