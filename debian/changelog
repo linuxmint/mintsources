@@ -1,3 +1,9 @@
+mintsources (1.9.6) debbie; urgency=medium
+
+  * LMDE 4: Add backports repository
+
+ -- Clement Lefebvre <root@linuxmint.com>  Thu, 13 Feb 2020 10:44:40 +0000
+
 mintsources (1.9.5) debbie; urgency=medium
 
   [ Vincent Vermeulen ]
