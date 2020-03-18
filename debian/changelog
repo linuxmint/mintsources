@@ -1,3 +1,9 @@
+mintsources (1.9.8) debbie; urgency=medium
+
+  * Fix regression in VTE in LMDE 4
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 18 Mar 2020 16:05:34 +0000
+
 mintsources (1.9.7) debbie; urgency=medium
 
   * LMDE 4: Remove deb-multimedia
