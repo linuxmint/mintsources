@@ -206,7 +206,14 @@ class Foreign_Browser():
             self.builder.get_object("stack1").set_visible_child_name("vte")
             terminal = Vte.Terminal()
             terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], ["/bin/dash"], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
-            terminal.feed_child("apt-get install %s\n" % " ".join(foreign_packages), -1)
+            cmd = "apt-get install %s\n" % " ".join(foreign_packages)
+            # try/catch VTE call due to regressions and obscure documentation
+            try:
+                # Mint 19.x
+                terminal.feed_child(cmd, -1)
+            except:
+                # LMDE 4
+                terminal.feed_child(cmd.encode("UTF-8"))
             terminal.show()
             self.builder.get_object("box_vte").add(terminal)
             self.builder.get_object("box_vte").show_all()
