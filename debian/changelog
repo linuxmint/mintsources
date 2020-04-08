@@ -1,3 +1,13 @@
+mintsources (1.9.9) ulyana; urgency=medium
+
+  [ Michael Webster ]
+  * debian/control: Update build dep to python3.
+
+  [ Clement Lefebvre ]
+  * Add support for Mint 20
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 08 Apr 2020 16:44:28 +0100
+
 mintsources (1.9.8) debbie; urgency=medium
 
   * Fix regression in VTE in LMDE 4
