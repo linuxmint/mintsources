@@ -19,7 +19,7 @@ import threading
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('XApp', '1.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango, XApp
+from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject, Pango, XApp
 
 from aptsources.sourceslist import SourcesList
 from io import BytesIO
@@ -344,7 +344,7 @@ class Key():
         subprocess.call(["apt-key", "del", self.pub])
 
     def get_name(self):
-        return "%s\n<small>    %s</small>" % (GObject.markup_escape_text(self.uid), GObject.markup_escape_text(self.pub))
+        return "%s\n<small>    %s</small>" % (GLib.markup_escape_text(self.uid), GLib.markup_escape_text(self.pub))
 
 class Mirror():
     def __init__(self, country_code, url, name):
@@ -453,7 +453,7 @@ class ComponentSwitchBox(Gtk.Box):
         self.component = component
         self.window_object = window
         Gtk.Box.__init__(self)
-        label = Gtk.Label(self.component.description)
+        label = Gtk.Label(label=self.component.description)
         self.pack_start(label, False, False, 0)
         self.switch = Gtk.Switch()
         self.pack_end(self.switch, False, False, 0)
