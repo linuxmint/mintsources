@@ -1,3 +1,14 @@
+mintsources (2.0.0) ulyana; urgency=medium
+
+  [ JosephMcc ]
+  * Move the update cache infobar to the bottom
+  * Fix a couple new deprecation warnings
+
+  [ Clement Lefebvre ]
+  * l10n: Generate files
+
+ -- Clement Lefebvre <root@linuxmint.com>  Thu, 14 May 2020 08:47:30 +0100
+
 mintsources (1.9.9) ulyana; urgency=medium
 
   [ Michael Webster ]
