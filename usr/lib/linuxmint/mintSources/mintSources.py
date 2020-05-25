@@ -566,7 +566,7 @@ class MirrorSelectionDialog(object):
                 flag = FLAG_PATH % '_generic'
             tooltip = country_name
             if mirror.name != mirror.url:
-                tooltip = "%s: %s" % (country_name, mirror.name)
+                tooltip = "%s: %s" % (country_name, mirror.url)
             pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(flag, -1, FLAG_SIZE * self._application.scale)
             self._mirrors_model.append((
                 mirror,
