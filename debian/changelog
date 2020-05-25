@@ -1,3 +1,14 @@
+mintsources (2.0.1) ulyana; urgency=medium
+
+  [ Vincent Vermeulen ]
+  * Show URL in tooltip for main mirrors
+  * Rename URL column to Mirror
+
+  [ Clement Lefebvre ]
+  * l10n: Update POT
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 25 May 2020 14:57:16 +0100
+
 mintsources (2.0.0) ulyana; urgency=medium
 
   [ JosephMcc ]
