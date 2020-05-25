@@ -522,7 +522,7 @@ class MirrorSelectionDialog(object):
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_TOOLTIP_COLUMN)
 
         r = Gtk.CellRendererText()
-        col = Gtk.TreeViewColumn(_("URL"), r, text = MirrorSelectionDialog.MIRROR_NAME_COLUMN)
+        col = Gtk.TreeViewColumn(_("Mirror"), r, text = MirrorSelectionDialog.MIRROR_NAME_COLUMN)
         self._treeview.append_column(col)
         col.set_sort_column_id(MirrorSelectionDialog.MIRROR_NAME_COLUMN)
 
