@@ -22,9 +22,7 @@ Depends: python3-apt,
          iso-flag-png,
          lsb-release
 Replaces: software-properties-common (<< 1),
-          software-properties-gtk (<< 1),
-          python-software-properties (<< 1),
-          python3-software-properties (<< 1),
+          software-properties-gtk (<< 1)
 Description: Software Sources configuration tool
  Configure the sources for installable software and updates.
 
@@ -35,18 +33,6 @@ Description: Transitional package
  This package is obsolete and replaced with mintsources.
 
 Package: software-properties-gtk
-Architecture: all
-Depends: mintsources
-Description: Transitional package
- This package is obsolete and replaced with mintsources.
-
-Package: python-software-properties
-Architecture: all
-Depends: mintsources
-Description: Transitional package
- This package is obsolete and replaced with mintsources.
-
-Package: python3-software-properties
 Architecture: all
 Depends: mintsources
 Description: Transitional package
