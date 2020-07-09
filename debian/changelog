@@ -1,3 +1,9 @@
+mintsources (2.0.2-fix1) ulyana; urgency=medium
+
+  * Don't crash when a package has no candidate
+
+ -- Clement Lefebvre <root@linuxmint.com>  Thu, 09 Jul 2020 21:07:38 +0100
+
 mintsources (2.0.2) ulyana; urgency=medium
 
   * Don't provide python-software-properties
