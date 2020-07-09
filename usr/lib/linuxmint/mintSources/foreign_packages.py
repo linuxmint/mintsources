@@ -97,13 +97,12 @@ class Foreign_Browser():
         for key in cache.keys():
             pkg = cache[key]
             if (pkg.is_installed):
-                candidate_version = pkg.candidate.version
                 installed_version = pkg.installed.version
 
                 if not self.downgrade_mode:
                     # remove mode
                     # Find packages which aren't downloadable
-                    if not pkg.candidate.downloadable:
+                    if (pkg.candidate == None) or (not pkg.candidate.downloadable):
                         downloadable = False
                         for version in pkg.versions:
                             if version.downloadable:
@@ -120,6 +119,8 @@ class Foreign_Browser():
                     # downgrade mode
                     # Find packages which candidate isn't available
                     best_version = None
+                    if pkg.candidate == None:
+                        continue
                     if not pkg.candidate.downloadable:
                         # foreign packages which installed version doesn't exist in the repositories
                         for version in pkg.versions:
@@ -138,7 +139,7 @@ class Foreign_Browser():
                                     return_code = subprocess.call(["dpkg", "--compare-versions", version.version, "gt", best_version.version])
                                     if return_code == 0:
                                         best_version = version
-                    elif candidate_version == installed_version:
+                    elif pkg.candidate.version == installed_version:
                         # packages which installed version isn't the one available from the highest priority repo
                         # typical example is an ubuntu version installed despite a inferior 700 version being available
                         best_version = None
