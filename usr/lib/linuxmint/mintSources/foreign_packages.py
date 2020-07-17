@@ -3,12 +3,13 @@ import gettext
 import os
 import subprocess
 import sys
+import threading
 import locale
 
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Vte', '2.91')
-from gi.repository import Gtk, Vte, GLib
+from gi.repository import Gtk, Vte, GLib, GObject
 
 import apt
 import mintcommon.aptdaemon
@@ -22,6 +23,81 @@ gettext.textdomain(APP)
 _ = gettext.gettext
 
 (PKG_ID, PKG_CHECKED, PKG_NAME, PKG_INSTALLED_VERSION, PKG_REPO_VERSION, PKG_SORT_NAME) = range(6)
+
+# Used as a decorator to run things in the background
+def run_async(func):
+    def wrapper(*args, **kwargs):
+        thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+        thread.daemon = True
+        thread.start()
+        return thread
+    return wrapper
+
+# Used as a decorator to run things in the main loop, from another thread
+def idle(func):
+    def wrapper(*args):
+        GObject.idle_add(func, *args)
+    return wrapper
+
+# Returns a tuple containing two lists
+# The first list is a list of orphaned packages (packages which have no origin)
+# The second list is a list of packages which version is not the official version (this does not
+# include packages which simply aren't up to date)
+def get_foreign_packages(find_orphans=True, find_downgradable_packages=True):
+    orphan_packages = []
+    downgradable_packages = []
+
+    cache = apt.Cache()
+
+    # python-apt doesn't give us a constant for this value
+    # it's "required" in English, but it could be anything in
+    # other languages
+    required_priority = cache['dpkg'].installed.priority
+
+    for key in cache.keys():
+        pkg = cache[key]
+        if (pkg.is_installed):
+            installed_version = pkg.installed.version
+
+            # Find packages which aren't downloadable
+            if (pkg.candidate == None) or (not pkg.candidate.downloadable):
+                if find_orphans:
+                    downloadable = False
+                    for version in pkg.versions:
+                        if version.downloadable:
+                            downloadable = True
+                    if not downloadable:
+                        orphan_packages.append([pkg, installed_version])
+            if (pkg.candidate != None):
+                if find_downgradable_packages:
+                    best_version = None
+                    archive = None
+                    for version in pkg.versions:
+                        if not version.downloadable:
+                            continue
+                        for origin in version.origins:
+                            if origin.origin != None and origin.origin.lower() in ("ubuntu", "canonical", "linuxmint"):
+                                if best_version is None:
+                                    best_version = version
+                                    archive = origin.archive
+                                else:
+                                    if version.policy_priority > best_version.policy_priority:
+                                        best_version = version
+                                        archive = origin.archive
+                                    elif version.policy_priority == best_version.policy_priority:
+                                        # same priorities, compare version
+                                        return_code = subprocess.call(["dpkg", "--compare-versions", version.version, "gt", best_version.version])
+                                        if return_code == 0:
+                                            best_version = version
+                                            archive = origin.archive
+
+                    if best_version != None and installed_version != best_version and pkg.candidate.version != best_version.version:
+                        if  pkg.essential == False and pkg.installed.priority != required_priority:
+                            downgradable_packages.append([pkg, installed_version, best_version, archive])
+                        else:
+                            print("Skipping foreign package %s (cannot be removed by aptdaemon, because it's required or essential)." % pkg.name)
+
+    return (orphan_packages, downgradable_packages)
 
 class Foreign_Browser():
 
@@ -87,85 +163,52 @@ class Foreign_Browser():
 
         self.apt = mintcommon.aptdaemon.APT(self.window)
 
-        cache = apt.Cache()
-
-        # python-apt doesn't give us a constant for this value
-        # it's "required" in English, but it could be anything in
-        # other languages
-        required_priority = cache['dpkg'].installed.priority
-
-        for key in cache.keys():
-            pkg = cache[key]
-            if (pkg.is_installed):
-                installed_version = pkg.installed.version
-
-                if not self.downgrade_mode:
-                    # remove mode
-                    # Find packages which aren't downloadable
-                    if (pkg.candidate == None) or (not pkg.candidate.downloadable):
-                        downloadable = False
-                        for version in pkg.versions:
-                            if version.downloadable:
-                                downloadable = True
-                        if not downloadable and pkg.essential == False and pkg.installed.priority != required_priority:
-                            iter = self.model.insert_before(None, None)
-                            self.model.set_value(iter, PKG_ID, "%s" % (pkg.name))
-                            self.model.set_value(iter, PKG_CHECKED, False)
-                            self.model.set_value(iter, PKG_NAME, "<b>%s</b>" % pkg.name)
-                            self.model.set_value(iter, PKG_INSTALLED_VERSION, installed_version)
-                            self.model.set_value(iter, PKG_REPO_VERSION, "")
-                            self.model.set_value(iter, PKG_SORT_NAME, "%s" % (pkg.name))
-                else:
-                    # downgrade mode
-                    # Find packages which candidate isn't available
-                    best_version = None
-                    if pkg.candidate == None:
-                        continue
-                    if not pkg.candidate.downloadable:
-                        # foreign packages which installed version doesn't exist in the repositories
-                        for version in pkg.versions:
-                            if not version.downloadable:
-                                continue
-                            if version.version == installed_version:
-                                continue
-
-                            if best_version is None:
-                                best_version = version
-                            else:
-                                if version.policy_priority > best_version.policy_priority:
-                                    best_version = version
-                                elif version.policy_priority == best_version.policy_priority:
-                                    # same priorities, compare version
-                                    return_code = subprocess.call(["dpkg", "--compare-versions", version.version, "gt", best_version.version])
-                                    if return_code == 0:
-                                        best_version = version
-                    elif pkg.candidate.version == installed_version:
-                        # packages which installed version isn't the one available from the highest priority repo
-                        # typical example is an ubuntu version installed despite a inferior 700 version being available
-                        best_version = None
-                        for version in pkg.versions:
-                            if not version.downloadable:
-                                continue
-                            if version.version == installed_version:
-                                continue
-                            if version.policy_priority > 500:
-                                if best_version is None or version.policy_priority > best_version.policy_priority:
-                                    best_version = version
-
-                    if best_version is not None:
-                        for origin in best_version.origins:
-                            iter = self.model.insert_before(None, None)
-                            self.model.set_value(iter, PKG_ID, "%s=%s" % (pkg.name, best_version.version))
-                            self.model.set_value(iter, PKG_CHECKED, False)
-                            self.model.set_value(iter, PKG_NAME, "<b>%s</b>" % pkg.name)
-                            self.model.set_value(iter, PKG_INSTALLED_VERSION, installed_version)
-                            self.model.set_value(iter, PKG_REPO_VERSION, "%s (%s)" % (best_version.version, origin.archive))
-                            self.model.set_value(iter, PKG_SORT_NAME, "%s %s" % (best_version.source_name, pkg.name))
-                            break
+        self.builder.get_object("stack1").set_visible_child_name("spin_page")
+        self.builder.get_object("spinner").set_size_request(32, 32)
+        self.builder.get_object("spinner").start()
+        self.load_foreign_packages()
 
         treeview.show()
         treeview.connect("row-activated", self.treeview_row_activated)
         self.window.show_all()
+
+    @run_async
+    def load_foreign_packages(self):
+        if self.downgrade_mode:
+            (orphans, foreigns) = get_foreign_packages(find_orphans=False, find_downgradable_packages=True)
+        else:
+            (orphans, foreigns) = get_foreign_packages(find_orphans=True, find_downgradable_packages=False)
+        self.update_ui(orphans, foreigns)
+
+    @idle
+    def update_ui(self, orphans, foreigns):
+        if self.downgrade_mode:
+            # downgrade mode
+            # Find packages which candidate isn't available
+            for foreign in foreigns:
+                (pkg, installed_version, best_version, archive) = foreign
+                iter = self.model.insert_before(None, None)
+                self.model.set_value(iter, PKG_ID, "%s=%s" % (pkg.name, best_version.version))
+                self.model.set_value(iter, PKG_CHECKED, False)
+                self.model.set_value(iter, PKG_NAME, "<b>%s</b>" % pkg.name)
+                self.model.set_value(iter, PKG_INSTALLED_VERSION, installed_version)
+                self.model.set_value(iter, PKG_REPO_VERSION, "%s (%s)" % (best_version.version, archive))
+                self.model.set_value(iter, PKG_SORT_NAME, "%s %s" % (best_version.source_name, pkg.name))
+        else:
+            # remove mode
+            # Find packages which aren't downloadable
+            for orphan in orphans:
+                (pkg, installed_version) = orphan
+                iter = self.model.insert_before(None, None)
+                self.model.set_value(iter, PKG_ID, "%s" % (pkg.name))
+                self.model.set_value(iter, PKG_CHECKED, False)
+                self.model.set_value(iter, PKG_NAME, "<b>%s</b>" % pkg.name)
+                self.model.set_value(iter, PKG_INSTALLED_VERSION, installed_version)
+                self.model.set_value(iter, PKG_REPO_VERSION, "")
+                self.model.set_value(iter, PKG_SORT_NAME, "%s" % (pkg.name))
+
+        self.builder.get_object("spinner").stop()
+        self.builder.get_object("stack1").set_visible_child_name("main_page")
 
     def datafunction_checkbox(self, column, cell, model, iter, data):
         cell.set_property("activatable", True)
