@@ -1,3 +1,9 @@
+mintsources (2.0.4) ulyana; urgency=medium
+
+  * Foreign packages: Find packages more accurately
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 17 Jul 2020 23:32:29 +0100
+
 mintsources (2.0.3) ulyana; urgency=medium
 
   * Don't crash when a package has no candidate
