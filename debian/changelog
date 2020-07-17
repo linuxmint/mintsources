@@ -1,3 +1,14 @@
+mintsources (2.0.0.1) tricia; urgency=medium
+
+  [ Vincent Vermeulen ]
+  * Show URL in tooltip for main mirrors
+
+  [ Clement Lefebvre ]
+  * Don't crash when a package has no candidate
+  * Foreign packages: Find packages more accurately
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 17 Jul 2020 23:36:37 +0100
+
 mintsources (2.0.0) ulyana; urgency=medium
 
   [ JosephMcc ]
