@@ -92,10 +92,7 @@ def get_foreign_packages(find_orphans=True, find_downgradable_packages=True):
                                             archive = origin.archive
 
                     if best_version != None and installed_version != best_version and pkg.candidate.version != best_version.version:
-                        if  pkg.essential == False and pkg.installed.priority != required_priority:
-                            downgradable_packages.append([pkg, installed_version, best_version, archive])
-                        else:
-                            print("Skipping foreign package %s (cannot be removed by aptdaemon, because it's required or essential)." % pkg.name)
+                        downgradable_packages.append([pkg, installed_version, best_version, archive])
 
     return (orphan_packages, downgradable_packages)
 
