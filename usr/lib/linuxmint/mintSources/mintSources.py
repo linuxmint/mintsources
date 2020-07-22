@@ -202,7 +202,10 @@ def add_new_key(key):
 
 def add_key_remote(key):
     try:
-        subprocess.run(["apt-key", "adv", "--keyserver", "hkps://keyserver.ubuntu.com:443", "--recv-keys", key], check=True)
+        proxy = []
+        if (os.environ.get('http_proxy') != ""):
+            proxy=["--keyserver-options", "http-proxy=%s" % os.environ.get('http_proxy')]
+        subprocess.run(["apt-key", "adv", "--keyserver", "hkps://keyserver.ubuntu.com:443"] + proxy + ["--recv-keys", key], check=True)
     except subprocess.CalledProcessError:
         return False
     return True
