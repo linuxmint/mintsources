@@ -213,7 +213,6 @@ def add_key_remote(key):
                 #     print "Not a real URL"
                 # is unclear to me about the fault message
                 proxy=["--keyserver-options", "http-proxy=%s" % os.environ.get('http_proxy')]
-                
         subprocess.run(["apt-key", "adv", "--keyserver", "hkps://keyserver.ubuntu.com:443"] + proxy + ["--recv-keys", key], check=True)
     except subprocess.CalledProcessError:
         return False
