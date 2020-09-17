@@ -202,7 +202,18 @@ def add_new_key(key):
 
 def add_key_remote(key):
     try:
-        subprocess.run(["apt-key", "adv", "--keyserver", "hkps://keyserver.ubuntu.com:443", "--recv-keys", key], check=True)
+        proxy = []
+        if os.environ.get('http_proxy') is not None:
+            if os.environ.get('http_proxy') != "":
+                # might be an good idea to check the environment variable content for url only ....
+                # simple way could be
+                # try:
+                #     urllib.urlopen(url)
+                # except IOError:
+                #     print "Not a real URL"
+                # is unclear to me about the fault message
+                proxy=["--keyserver-options", "http-proxy=%s" % os.environ.get('http_proxy')]
+        subprocess.run(["apt-key", "adv", "--keyserver", "hkps://keyserver.ubuntu.com:443"] + proxy + ["--recv-keys", key], check=True)
     except subprocess.CalledProcessError:
         return False
     return True
