@@ -1,3 +1,13 @@
+mintsources (2.0.6) ulyssa; urgency=medium
+
+  [ elschman ]
+  * Update mintSources.py (#209)
+
+  [ FedeX4AIT ]
+  * Update control
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 30 Nov 2020 16:08:46 +0000
+
 mintsources (2.0.5) ulyana; urgency=medium
 
   * Allow downgrade of critical packages
