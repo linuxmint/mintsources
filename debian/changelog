@@ -1,3 +1,9 @@
+mintsources (2.0.7) ulyssa; urgency=medium
+
+  * Add support for Mint 20.1 Ulyssa
+
+ -- Clement Lefebvre <root@linuxmint.com>  Thu, 03 Dec 2020 12:17:10 +0000
+
 mintsources (2.0.6) ulyssa; urgency=medium
 
   [ elschman ]
