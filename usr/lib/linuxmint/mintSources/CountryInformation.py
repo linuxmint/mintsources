@@ -31,8 +31,7 @@ class CountryInformation(object):
     fname = "/usr/share/xml/iso-codes/iso_3166.xml"
     if os.path.exists(fname):
       et = ElementTree(file=fname)
-      it = et.getiterator('iso_3166_entry')
-      for elm in it:
+      for elm in et.iter('iso_3166_entry'):
         if "common_name" in elm.attrib:
           descr = elm.attrib["common_name"]
         else:
