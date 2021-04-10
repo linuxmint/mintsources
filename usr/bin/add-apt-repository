@@ -1,38 +1,45 @@
 #!/usr/bin/python3
 
-import os, sys
+import argparse
+import os
+import sys
 import gettext
-from optparse import OptionParser
 
-gettext.install("mintsources", "/usr/share/linuxmint/locale")
+if __name__ == '__main__':
 
-usage = "usage: %prog [options] repository"
-parser = OptionParser(usage=usage)
-parser.add_option("-y", "--yes", dest="forceYes", action="store_true",
-    help="force yes on all confirmation questions", default=False)
-parser.add_option("-r", "--remove", dest="remove", action="store_true",
-    help="Remove the specified repository", default=False)
+    gettext.bindtextdomain("mintsources", "/usr/share/linuxmint/locale")
+    gettext.textdomain("mintsources")
+    _ = gettext.gettext
 
-(options, args) = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--yes', '-y', action="store_true",
+        help="force yes on all confirmation questions")
+    parser.add_argument(
+        '--remove', '-r', action="store_true",
+        help="Remove the specified repository")
+    parser.add_argument('repository')
 
-if os.geteuid() != 0:
-    print(_("Error: must run as root"))
-    sys.exit(1)
+    args = parser.parse_args()
 
-if len(args) == 0:
-    print(_("Error: need a repository as argument"))
-    sys.exit(1)
+    if os.geteuid() != 0:
+        print(_("Error: must run as root"))
+        sys.exit(1)
 
-# Call mintSources script with exec instead of system so that the exit status
-# is returned to the caller
-mintsources = "/usr/lib/linuxmint/mintSources/mintSources.py"
+    # Call mintSources script with exec instead of system so that the exit
+    # status is returned to the caller
+    mintsources = "/usr/lib/linuxmint/mintSources/mintSources.py"
 
-yes_arg="-?"
-if options.forceYes:
-    yes_arg="-y"
+    if args.yes:
+        yes_arg = "-y"
+    else:
+        yes_arg = "-?"
 
-remove_arg="-?"
-if options.remove:
-    remove_arg="-r"
+    if args.remove:
+        remove_arg = "-r"
+    else:
+        remove_arg = "-?"
 
-os.execl(mintsources, mintsources, "add-apt-repository", yes_arg, remove_arg, args[0])
+    os.execl(
+        mintsources, mintsources, "add-apt-repository",
+        yes_arg, remove_arg, args.repository)
