@@ -1,3 +1,13 @@
+mintsources (2.0.8) uma; urgency=medium
+
+  [ Christophe ]
+  * Remove deprecated call to getiterator (Python 3.9 compatibility)
+
+  [ Clement Lefebvre ]
+  * Add support for Mint 20.2 Uma
+
+ -- Clement Lefebvre <root@linuxmint.com>  Thu, 03 Jun 2021 12:23:10 +0100
+
 mintsources (2.0.7) ulyssa; urgency=medium
 
   * Add support for Mint 20.1 Ulyssa
