@@ -1128,7 +1128,7 @@ class Application(object):
 
         # Now parse other sources and remove any duplicates
         found_duplicates = False
-        for listfile in ["/etc/apt/sources.list"] + glob.glob("/etc/apt/sources.list.d/*.list"):
+        for listfile in glob.glob("/etc/apt/sources.list") + glob.glob("/etc/apt/sources.list.d/*.list"):
             if not listfile.startswith("/etc/apt/sources.list.d/official"):
                 with open(listfile, encoding="utf-8", errors="ignore") as f:
                     lines = []
