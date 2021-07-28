@@ -1,3 +1,10 @@
+mintsources (2.0.9) uma; urgency=medium
+
+  [ Vincent Vermeulen ]
+  * Fix FileNotFoundError
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 28 Jul 2021 10:57:28 +0100
+
 mintsources (2.0.8) uma; urgency=medium
 
   [ Christophe ]
