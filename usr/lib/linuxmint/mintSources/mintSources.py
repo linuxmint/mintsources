@@ -740,6 +740,7 @@ class MirrorSelectionDialog(object):
         self.local_country_code = cur_country_code or os.environ.get('LANG', 'US').split('.')[0].split('_')[-1]  # fallback to LANG location or 'US'
 
         self.bordering_countries = []
+        self.network_neighbors = []
         self.subregion = []
         self.region = []
         self.local_country = self.get_country(self.local_country_code)
@@ -753,10 +754,13 @@ class MirrorSelectionDialog(object):
                         self.region.append(country_code)
                 if country["cca3"] in self.local_country["borders"]:
                     self.bordering_countries.append(country_code)
+                elif country["cca3"] in self.local_country["networkNeighbors"]:
+                    self.network_neighbors.append(country_code)
 
         self.worldwide_mirrors = []
         self.local_mirrors = []
         self.bordering_mirrors = []
+        self.network_neighbors_mirrors = []
         self.subregional_mirrors = []
         self.regional_mirrors = []
         self.official_mirrors = []
@@ -770,6 +774,8 @@ class MirrorSelectionDialog(object):
                 self.local_mirrors.append(mirror)
             elif mirror.country_code in self.bordering_countries:
                 self.bordering_mirrors.append(mirror)
+            elif mirror.country_code in self.network_neighbors:
+                self.network_neighbors_mirrors.append(mirror)
             elif mirror.country_code in self.subregion:
                 self.subregional_mirrors.append(mirror)
             elif mirror.country_code in self.region:
@@ -781,14 +787,11 @@ class MirrorSelectionDialog(object):
 
         self.worldwide_mirrors = sorted(self.worldwide_mirrors, key=lambda x: x.country_code)
         self.bordering_mirrors = sorted(self.bordering_mirrors, key=lambda x: x.country_code)
+        self.network_neighbors_mirrors = sorted(self.network_neighbors_mirrors, key=lambda x: x.country_code)
         self.subregional_mirrors = sorted(self.subregional_mirrors, key=lambda x: x.country_code)
         self.regional_mirrors = sorted(self.regional_mirrors, key=lambda x: x.country_code)
 
-        self.visible_mirrors = self.worldwide_mirrors + self.local_mirrors + self.bordering_mirrors + self.subregional_mirrors + self.regional_mirrors + self.official_mirrors
-
-        if self.local_country_code in ["IL"]:
-            # For some countries, geographical proximity doesn't equate to faster mirrors.
-            self.visible_mirrors = self.visible_mirrors + self.other_mirrors
+        self.visible_mirrors = self.worldwide_mirrors + self.local_mirrors + self.bordering_mirrors + self.network_neighbors_mirrors + self.subregional_mirrors + self.regional_mirrors + self.official_mirrors
 
         if len(self.visible_mirrors) < 2:
             # We failed to identify the continent/country, let's show all mirrors
