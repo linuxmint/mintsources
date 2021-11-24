@@ -1682,17 +1682,17 @@ class Application(object):
 
     def select_new_mirror(self, widget):
         url = self.mirror_selection_dialog.run(self.mirrors, self.config, False)
-        if url is not None:
+        if url is not None and self.selected_mirror != url:
             self.selected_mirror = url
             self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
-        self.apply_official_sources()
+            self.apply_official_sources()
 
     def select_new_base_mirror(self, widget):
         url = self.mirror_selection_dialog.run(self.base_mirrors, self.config, True)
-        if url is not None:
+        if url is not None and self.selected_base_mirror != url:
             self.selected_base_mirror = url
             self.builder.get_object("label_base_mirror_name").set_text(self.selected_base_mirror)
-        self.apply_official_sources()
+            self.apply_official_sources()
 
     def run(self):
         self._main_window.show_all()
