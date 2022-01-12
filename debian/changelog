@@ -1,3 +1,9 @@
+mintsources (2.1.1) elsie; urgency=medium
+
+  * Add support for LMDE 5 Elsie
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 12 Jan 2022 14:32:07 +0000
+
 mintsources (2.1.0) una; urgency=medium
 
   [ Rafael Oliveira ]
