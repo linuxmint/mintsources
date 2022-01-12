@@ -2,6 +2,6 @@ deb $mirror $codename main upstream import backport $optionalcomponents
 
 deb $basemirror/ $basecodename main contrib non-free
 deb $basemirror/ $basecodename-updates main contrib non-free
-deb http://security.debian.org/ $basecodename/updates main contrib non-free
+deb http://security.debian.org/ $basecodename-security main contrib non-free
 
 deb $basemirror/ $basecodename-backports main contrib non-free
