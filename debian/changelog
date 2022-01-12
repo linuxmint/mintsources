@@ -1,3 +1,9 @@
+mintsources (2.1.2) elsie; urgency=medium
+
+  * LMDE 5: Fix security URL
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 12 Jan 2022 15:34:47 +0000
+
 mintsources (2.1.1) elsie; urgency=medium
 
   * Add support for LMDE 5 Elsie
