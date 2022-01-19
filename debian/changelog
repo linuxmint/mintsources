@@ -1,3 +1,9 @@
+mintsources (2.1.4) elsie; urgency=medium
+
+  * LMDE 5: Add missing space in some public keys
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 19 Jan 2022 17:43:05 +0000
+
 mintsources (2.1.3) elsie; urgency=medium
 
   * LMDE 5: Add older keys
