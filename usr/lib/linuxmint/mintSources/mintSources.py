@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import argparse
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -29,6 +30,13 @@ import apt_pkg
 import mintcommon.aptdaemon
 
 BUTTON_LABEL_MAX_LENGTH = 30
+
+# Used when launched by synaptic (via software-properties-gtk).
+# The return code tells synaptic to refresh the cache if sources have changed
+# If we try to refresh ourselves in this scenario, apt.Cache gets stuck waiting
+# for synaptic to exit...
+disable_refresh = False
+sources_changed = False
 
 FLAG_PATH = "/usr/share/iso-flag-png/%s.png"
 FLAG_SIZE = 16
@@ -829,6 +837,16 @@ class MirrorSelectionDialog(object):
 
 class Application(object):
     def __init__(self):
+        parser = argparse.ArgumentParser(description="Software sources for Linux Mint")
+        parser.add_argument("-n", "--no-update", action="store_true", help="Disable cache refresh prompting")
+        args = parser.parse_known_args()
+
+        try:
+            known_args = args[0]
+            global disable_refresh
+            disable_refresh = known_args.no_update
+        except (AttributeError, IndexError) as e:
+            print(e)
 
         # Prevent settings from being saved until the interface is fully loaded
         self._interface_loaded = False
@@ -1721,6 +1739,11 @@ class Application(object):
 
 
     def enable_reload_button(self):
+        if disable_refresh:
+            global sources_changed
+            sources_changed = True
+            return
+
         if not self._info_revealer.get_reveal_child():
             if self._info_box.get_children() == []:
                 infobar = Gtk.InfoBar()
@@ -1931,3 +1954,5 @@ if __name__ == "__main__":
             add_repository_via_cli(ppa_line, codename, "-y" in args, use_ppas)
     else:
         Application().run()
+
+    exit(1 if sources_changed else 0)
