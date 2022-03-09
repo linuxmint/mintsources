@@ -1,3 +1,10 @@
+mintsources (2.1.6) elsie; urgency=medium
+
+  [ Michael Webster ]
+  * Add a cl argument to disable cache refresh, and use a return code to notify a calling program whether or not any sources changed.
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 09 Mar 2022 14:56:57 +0000
+
 mintsources (2.1.5) elsie; urgency=medium
 
   * LMDE 5: Fix security URL in for deb-src repository
