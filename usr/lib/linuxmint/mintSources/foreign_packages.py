@@ -76,7 +76,7 @@ def get_foreign_packages(find_orphans=True, find_downgradable_packages=True):
                         if not version.downloadable:
                             continue
                         for origin in version.origins:
-                            if origin.origin != None and origin.origin.lower() in ("ubuntu", "canonical", "linuxmint"):
+                            if origin.origin != None and origin.origin.lower() in ("ubuntu", "canonical", "debian", "linuxmint"):
                                 if best_version is None:
                                     best_version = version
                                     archive = origin.archive
