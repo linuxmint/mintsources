@@ -1,3 +1,10 @@
+mintsources (2.1.7) vanessa; urgency=medium
+
+  * Fix foreign package detection in LMDE
+  * Add support for Linux Mint 21 Vanessa
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 19 Apr 2022 10:27:10 +0100
+
 mintsources (2.1.6) elsie; urgency=medium
 
   [ Michael Webster ]
