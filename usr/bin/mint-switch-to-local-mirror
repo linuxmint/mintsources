@@ -55,7 +55,7 @@ class MirrorManager():
             self.countries = json.load(data_file)
 
         try:
-            lookup = str(urllibrequest.urlopen('http://geoip.ubuntu.com/lookup', timeout=20).read())
+            lookup = str(urllibrequest.urlopen('https://geoip.ubuntu.com/lookup', timeout=20).read())
             local_country_code = re.search('<CountryCode>(.*)</CountryCode>', lookup).group(1)
             if local_country_code == 'None':
                 local_country_code = None
