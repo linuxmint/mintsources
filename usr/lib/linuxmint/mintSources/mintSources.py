@@ -739,7 +739,7 @@ class MirrorSelectionDialog(object):
 
         # Try to find out where we're located...
         try:
-            lookup = requests.get('http://geoip.ubuntu.com/lookup').text
+            lookup = requests.get('https://geoip.ubuntu.com/lookup').text
             cur_country_code = re.search('<CountryCode>(.*)</CountryCode>', lookup).group(1)
             if cur_country_code == 'None': cur_country_code = None
         except Exception as detail:
