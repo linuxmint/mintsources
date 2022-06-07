@@ -959,6 +959,7 @@ class Application(object):
         self._repository_treeview.set_model(self._repository_model)
         self._repository_treeview.set_headers_clickable(True)
         repo_selection = self._repository_treeview.get_selection()
+        repo_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         repo_selection.connect("changed", self.repo_selected)
 
         self._repository_model.set_sort_column_id(2, Gtk.SortType.ASCENDING)
@@ -1519,8 +1520,9 @@ class Application(object):
             print (detail)
 
     def repo_selected(self, selection):
-        self.builder.get_object("button_repository_edit").set_sensitive(True)
-        self.builder.get_object("button_repository_remove").set_sensitive(True)
+        selection_count = selection.count_selected_rows()
+        self.builder.get_object("button_repository_edit").set_sensitive(selection_count == 1)
+        self.builder.get_object("button_repository_remove").set_sensitive(selection_count >= 1)
 
     def add_repository(self, widget):
         image = Gtk.Image()
@@ -1554,20 +1556,23 @@ class Application(object):
 
     def edit_repository(self, widget):
         selection = self._repository_treeview.get_selection()
-        (model, iter) = selection.get_selected()
-        if (iter != None):
-            repository = model.get(iter, 0)[0]
-            url = self.show_entry_dialog(self._main_window, _("Edit the URL of the repository"), repository.line)
-            if url is not None:
-                repository.edit(url)
-                model.set_value(iter, 2, repository.get_repository_name())
+        (model, indexes) = selection.get_selected_rows()
+        iter = model.get_iter(indexes[0])
+        repository = model.get(iter, 0)[0]
+        url = self.show_entry_dialog(self._main_window, _("Edit the URL of the repository"), repository.line)
+        if url is not None:
+            repository.edit(url)
+            model.set_value(iter, 2, repository.get_repository_name())
 
     def remove_repository(self, widget):
-        selection = self._repository_treeview.get_selection()
-        (model, iter) = selection.get_selected()
-        if (iter != None):
-            repository = model.get(iter, 0)[0]
-            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this repository?"), yes_no=True)):
+        if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove the selected repositories?"), yes_no=True)):
+            selection = self._repository_treeview.get_selection()
+            (model, indexes) = selection.get_selected_rows()
+            iters = []
+            for index in indexes:
+                iters.append(model.get_iter(index))
+            for iter in iters:
+                repository = model.get(iter, 0)[0]
                 model.remove(iter)
                 repository.delete()
                 self.repositories.remove(repository)
