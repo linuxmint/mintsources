@@ -935,6 +935,7 @@ class Application(object):
         self._ppa_treeview.set_headers_clickable(True)
         self._ppa_treeview.connect("row-activated", self.on_ppa_treeview_doubleclick)
         selection = self._ppa_treeview.get_selection()
+        selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         selection.connect("changed", self.ppa_selected)
 
         self._ppa_model.set_sort_column_id(2, Gtk.SortType.ASCENDING)
@@ -1461,38 +1462,43 @@ class Application(object):
 
     def edit_ppa(self, widget):
         selection = self._ppa_treeview.get_selection()
-        (model, iter) = selection.get_selected()
-        if (iter != None):
-            repository = model.get(iter, 0)[0]
-            url = self.show_entry_dialog(self._main_window, _("Edit the URL of the PPA"), repository.line)
-            if url is not None:
-                repository.edit(url)
-                model.set_value(iter, 2, repository.get_ppa_name())
+        (model, indexes) = selection.get_selected_rows()
+        iter = model.get_iter(indexes[0])
+        repository = model.get(iter, 0)[0]
+        url = self.show_entry_dialog(self._main_window, _("Edit the URL of the PPA"), repository.line)
+        if url is not None:
+            repository.edit(url)
+            model.set_value(iter, 2, repository.get_ppa_name())
 
     def remove_ppa(self, widget):
-        selection = self._ppa_treeview.get_selection()
-        (model, iter) = selection.get_selected()
-        if (iter != None):
-            repository = model.get(iter, 0)[0]
-            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this PPA?"), yes_no=True)):
+        if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove the selected PPAs?"), yes_no=True)):
+            selection = self._ppa_treeview.get_selection()
+            (model, indexes) = selection.get_selected_rows()
+            iters = []
+            for index in indexes:
+                iters.append(model.get_iter(index))
+            for iter in iters:
+                repository = model.get(iter, 0)[0]
                 model.remove(iter)
                 repository.delete()
                 self.ppas.remove(repository)
 
     def ppa_selected(self, selection):
-        self.builder.get_object("button_ppa_edit").set_sensitive(True)
-        self.builder.get_object("button_ppa_remove").set_sensitive(True)
+        selection_count = selection.count_selected_rows()
+        self.builder.get_object("button_ppa_edit").set_sensitive(selection_count == 1)
+        self.builder.get_object("button_ppa_remove").set_sensitive(selection_count >= 1)
 
-        try:
-            self.builder.get_object("button_ppa_examine").set_sensitive(False)
-            (model, iter) = selection.get_selected()
-            if (iter != None):
+        self.builder.get_object("button_ppa_examine").set_sensitive(False)
+        if (selection_count == 1):
+            try:
+                (model, indexes) = selection.get_selected_rows()
+                iter = model.get_iter(indexes[0])
                 repository = model.get_value(iter, 0)
                 ppa_name = model.get_value(iter, 2)
                 if repository.selected and repository.line.startswith("deb http://ppa.launchpad.net"):
                     self.builder.get_object("button_ppa_examine").set_sensitive(True)
-        except Exception as detail:
-            print (detail)
+            except Exception as detail:
+                print (detail)
 
     def on_ppa_treeview_doubleclick(self, treeview, path, column):
         self.examine_ppa(None)
@@ -1500,22 +1506,22 @@ class Application(object):
     def examine_ppa(self, widget):
         try:
             selection = self._ppa_treeview.get_selection()
-            (model, iter) = selection.get_selected()
-            if (iter != None):
-                repository = model.get_value(iter, 0)
-                ppa_name = model.get_value(iter, 2)
-                if repository.selected and repository.line.startswith("deb http://ppa.launchpad.net"):
-                    line = repository.line.split()[1].replace("http://ppa.launchpad.net/", "")
-                    if line.endswith("/ubuntu"):
-                        line = line[:-7]
-                        ppa_owner, ppa_name = line.split("/")
-                        architecture = subprocess.getoutput("dpkg --print-architecture")
-                        ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, self.config["general"]["base_codename"], architecture)
-                        if os.path.exists(ppa_file):
-                            os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s &" % (self.config["general"]["base_codename"], ppa_owner, ppa_name))
-                        else:
-                            print ("%s not found!" % ppa_file)
-                            self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
+            (model, indexes) = selection.get_selected_rows()
+            iter = model.get_iter(indexes[0])
+            repository = model.get_value(iter, 0)
+            ppa_name = model.get_value(iter, 2)
+            if repository.selected and repository.line.startswith("deb http://ppa.launchpad.net"):
+                line = repository.line.split()[1].replace("http://ppa.launchpad.net/", "")
+                if line.endswith("/ubuntu"):
+                    line = line[:-7]
+                    ppa_owner, ppa_name = line.split("/")
+                    architecture = subprocess.getoutput("dpkg --print-architecture")
+                    ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, self.config["general"]["base_codename"], architecture)
+                    if os.path.exists(ppa_file):
+                        os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s &" % (self.config["general"]["base_codename"], ppa_owner, ppa_name))
+                    else:
+                        print ("%s not found!" % ppa_file)
+                        self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
         except Exception as detail:
             print (detail)
 
