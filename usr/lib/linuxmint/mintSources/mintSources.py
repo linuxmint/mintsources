@@ -984,6 +984,7 @@ class Application(object):
         self._keys_treeview.set_model(self._keys_model)
         self._keys_treeview.set_headers_clickable(True)
         keys_selection = self._keys_treeview.get_selection()
+        keys_selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         keys_selection.connect("changed", self.key_selected)
 
         self._keys_model.set_sort_column_id(1, Gtk.SortType.ASCENDING)
@@ -1376,18 +1377,22 @@ class Application(object):
         self.load_keys()
 
     def remove_key(self, widget):
-        selection = self._keys_treeview.get_selection()
-        (model, iter) = selection.get_selected()
-        if (iter != None):
-            key = model.get(iter, 0)[0]
-            image = Gtk.Image()
-            image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
-            if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove this key?"), image, yes_no=True)):
+        image = Gtk.Image()
+        image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
+        if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove the selected keys?"), image, yes_no=True)):
+            selection = self._keys_treeview.get_selection()
+            (model, indexes) = selection.get_selected_rows()
+            iters = []
+            for index in indexes:
+                iters.append(model.get_iter(index))
+            for iter in iters:
+                key = model.get(iter, 0)[0]
                 key.delete()
-                self.load_keys()
+            self.load_keys()
 
     def key_selected(self, selection):
-        self.builder.get_object("button_keys_remove").set_sensitive(True)
+        selection_count = selection.count_selected_rows()
+        self.builder.get_object("button_keys_remove").set_sensitive(selection_count >= 1)
 
     def add_ppa(self, widget):
         image = Gtk.Image()
