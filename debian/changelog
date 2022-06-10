@@ -1,3 +1,23 @@
+mintsources (2.1.8) vanessa; urgency=medium
+
+  [ Vincent Vermeulen ]
+  * Update mint-switch-to-local-mirror
+  * Update mintSources.py
+
+  [ Clement Lefebvre ]
+  * UI: Use package-x-generic-symbolic for all repository types
+
+  [ 63BeetleSmurf ]
+  * Add multi select functionality to repositories treeview.
+  * Add multi select functionality to ppa treeview.
+  * Add multi select functionality to keys treeview.
+
+  [ Clement Lefebvre ]
+  * l10n: Generate files
+  * l10n: Update POT
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 10 Jun 2022 11:18:33 +0200
+
 mintsources (2.1.7) vanessa; urgency=medium
 
   * Fix foreign package detection in LMDE
