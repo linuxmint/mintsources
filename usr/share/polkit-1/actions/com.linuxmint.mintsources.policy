@@ -41,8 +41,9 @@
 <message xml:lang="hu">Szoftverforrások</message>
 <message xml:lang="ia">Fontes de software</message>
 <message xml:lang="id">Sumber Perangkat Lunak</message>
+<message xml:lang="ie">Orígines de programmas</message>
 <message xml:lang="is">Hugbúnaðarupptök</message>
-<message xml:lang="it">Origini Software</message>
+<message xml:lang="it">Origini software</message>
 <message xml:lang="ja">ソフトウェアソース</message>
 <message xml:lang="kab">Iɣbula n iseɣẓanen</message>
 <message xml:lang="kk">БҚ қайнар көздері</message>
@@ -50,6 +51,7 @@
 <message xml:lang="ko">소프트웨어 소스</message>
 <message xml:lang="ku">Çavkaniyên Bernameyan</message>
 <message xml:lang="ky">Программа булактары</message>
+<message xml:lang="la">Fontes Softwaris</message>
 <message xml:lang="lt">Programinės įrangos saugyklos</message>
 <message xml:lang="lv">Programmatūras avoti</message>
 <message xml:lang="ml">സോഫ്റ്റ്‌വെയര്‍ സ്രോതസ്സുകള്‍</message>
@@ -74,7 +76,7 @@
 <message xml:lang="sl">Programski viri</message>
 <message xml:lang="sq">Burimet e programeve</message>
 <message xml:lang="sr">Извори програма</message>
-<message xml:lang="sr@latin">Извори програма</message>
+<message xml:lang="sr@latin">Izvori softvera</message>
 <message xml:lang="sv">Programkällor</message>
 <message xml:lang="ta">மென்பொருள் மூலங்கள்</message>
 <message xml:lang="tg">Манбаъҳои нармафзор</message>
