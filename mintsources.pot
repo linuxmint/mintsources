@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-06-10 11:17+0200\n"
+"POT-Creation-Date: 2022-06-22 12:00+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -269,7 +269,7 @@ msgid "Cancel"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintSources.py:1357
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:18
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:17
 msgid "Open"
 msgstr ""
 
@@ -361,7 +361,7 @@ msgid ""
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/foreign_packages.py:122
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:17
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:16
 msgid "Remove"
 msgstr ""
 
@@ -415,103 +415,99 @@ msgid ""
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:8
-msgid "page1"
-msgstr ""
-
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:9
 msgid "Mirrors"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:10
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:9
 msgid "Optional Sources"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:11
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:10
 msgid "Source code repositories"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:12
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:11
 msgid "Debug symbols"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:13
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:12
 msgid "Restore the default settings"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:14
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:13
 msgid "Official Repositories"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:15
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:14
 msgid "Add"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:16
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:15
 msgid "Edit"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:19
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:18
 msgid "PPAs"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:20
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:19
 msgid "Additional Repositories"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:21
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:20
 msgid "Import"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:22
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:21
 msgid "Download"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:23
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:22
 msgid "Authentication Keys"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:24
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:23
 msgid "Fix MergeList problems"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:25
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:24
 msgid "Purge residual configuration"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:26
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:25
 msgid "Remove duplicate entries"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:27
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:26
 msgid "Add missing keys"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:28
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:27
 msgid "Remove foreign packages"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:29
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:28
 msgid "Downgrade foreign packages"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:30
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:29
 msgid "Maintenance"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:31
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:30
 msgid "Select Mirror"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:32
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:31
 msgid "Apply"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:33
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:32
 msgid ""
 "This PPA provides the following packages. Please select the ones you want to "
 "install."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:34
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:33
 msgid "Install"
 msgstr ""
