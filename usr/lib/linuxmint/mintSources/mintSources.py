@@ -74,7 +74,7 @@ def signal_handler(signum, _):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-def remove_repository_via_cli(line, codename, forceYes):
+def remove_ppa(line, codename, forceYes):
     if line.startswith("ppa:"):
         user, sep, ppa_name = line.split(":")[1].partition("/")
         ppa_name = ppa_name or "ppa"
@@ -142,7 +142,7 @@ def remove_repository_via_cli(line, codename, forceYes):
             print (_("failed to remove repository: '%s'") % detail)
 
 
-def add_repository_via_cli(line, codename, forceYes, use_ppas):
+def add_ppa(line, codename, forceYes, use_ppas):
 
     if line.startswith("ppa:"):
         if use_ppas != "true":
@@ -1953,9 +1953,9 @@ if __name__ == "__main__":
         codename = config_parser.get("general", "base_codename")
         use_ppas = config_parser.get("general", "use_ppas")
         if "-r" in args:
-            remove_repository_via_cli(ppa_line, codename, "-y" in args)
+            remove_ppa(ppa_line, codename, "-y" in args)
         else:
-            add_repository_via_cli(ppa_line, codename, "-y" in args, use_ppas)
+            add_ppa(ppa_line, codename, "-y" in args, use_ppas)
     else:
         Application().run()
 
