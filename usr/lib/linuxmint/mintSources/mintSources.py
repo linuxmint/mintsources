@@ -179,7 +179,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
         debsrc_line = 'deb-src' + deb_line[3:]
 
         # Add the key if not in keyring
-        add_new_key(ppa_info["signing_key_fingerprint"])
+        add_remote_key(ppa_info["signing_key_fingerprint"])
 
         # Add the PPA
         sources_enabled = os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list")
@@ -199,16 +199,7 @@ def add_repository_via_cli(line, codename, forceYes, use_ppas):
             with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
                 f.write("%s\n" % line)
 
-def add_new_key(key):
-    # """ Add the key if not in keyring """
-    # keys = subprocess.run(["apt-key","--quiet", "adv","--with-colons", "--batch",\
-    #     "--fixed-list-mode", "--list-keys"], stdout=subprocess.PIPE,
-    #         stderr=subprocess.DEVNULL).stdout.decode().split(":")
-    # if not key in keys:
-    #     add_key_remote(key)
-    return add_key_remote(key)
-
-def add_key_remote(key):
+def add_remote_key(key):
     try:
         proxy = []
         if os.environ.get('http_proxy') is not None:
@@ -1269,7 +1260,7 @@ class Application(object):
                     key = r.search(message).group(1)
                     key = re.sub(r"\s", "", key)
                     # get key from keyserver
-                    success = add_new_key(key)
+                    success = add_remote_key(key)
                     if not success:
                         raise ValueError("Retrieving key %s failed" % key)
                     repository.added = True
@@ -1368,13 +1359,9 @@ class Application(object):
         image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
         fingerprint = self.show_entry_dialog(self._main_window, _("Please enter the fingerprint of the public key you want to download from keyserver.ubuntu.com:"), "", image)
         if fingerprint is not None:
-            add_key_remote(fingerprint)
+            add_remote_key(fingerprint)
             self.load_keys()
             self.enable_reload_button()
-
-    def add_new_key(self, key):
-        add_new_key(key)
-        self.load_keys()
 
     def remove_key(self, widget):
         image = Gtk.Image()
@@ -1433,7 +1420,8 @@ class Application(object):
                 debsrc_line = 'deb-src' + deb_line[3:]
 
                 # Add the key if not in keyring
-                self.add_new_key(ppa_info["signing_key_fingerprint"])
+                add_remote_key(ppa_info["signing_key_fingerprint"])
+                self.load_keys()
 
                 # Add the PPA in sources.list.d
                 sources_enabled = self.builder.get_object("source_code_switch").get_active()
