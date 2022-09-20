@@ -1,3 +1,12 @@
+mintsources (2.1.10) vanessa; urgency=medium
+
+  * Refactor add_remote_key() refs
+  * Refactor add/remove_ppa()
+  * Fix deprecations in Gtk Message dialogs
+  * Rework key handling
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 20 Sep 2022 13:15:33 +0100
+
 mintsources (2.1.9) vanessa; urgency=medium
 
   * l10n: Update POT
