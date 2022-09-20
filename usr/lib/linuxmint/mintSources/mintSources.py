@@ -100,25 +100,11 @@ def remove_ppa(line, codename, forceYes):
         except Exception as detail:
             print (_("Cannot get info about PPA: '%s'.") % detail)
 
-        (deb_line, file) = expand_ppa_line(line.strip(), codename)
-        deb_line = expand_http_line(deb_line, codename) + "\n"
-        debsrc_line = 'deb-src' + deb_line[3:] + "\n"
-
         # Remove the PPA from sources.list.d
+        (deb_line, file, key_path) = expand_ppa_line(line.strip(), codename)
         try:
-            with open(file, "r", encoding="utf-8", errors="ignore") as readfile:
-                content = readfile.readlines()
-                for line in (deb_line, debsrc_line):
-                    if line in content:
-                        content.remove(line)
-                    elif "# %s" % line in content:
-                        content.remove("# %s" % line)
-            with open(file, "w", encoding="utf-8", errors="ignore") as writefile:
-                writefile.writelines(content)
-
-            # If file no longer contains any "deb" instances, delete it as well
-            if not next((s for s in content if "deb " in s), None):
-                os.unlink(file)
+            os.unlink(file)
+            os.unlink(key_path)
         except IOError as detail:
             print (_("failed to remove PPA: '%s'") % detail)
 
@@ -174,12 +160,12 @@ def add_ppa(line, codename, forceYes, use_ppas):
                 print(_("Unable to prompt for response.  Please run with -y"))
                 sys.exit(1)
 
-        (deb_line, file) = expand_ppa_line(line.strip(), codename)
+        (deb_line, file, key_path) = expand_ppa_line(line.strip(), codename)
         deb_line = expand_http_line(deb_line, codename)
         debsrc_line = 'deb-src' + deb_line[3:]
 
         # Add the key if not in keyring
-        add_remote_key(ppa_info["signing_key_fingerprint"])
+        add_remote_key(ppa_info["signing_key_fingerprint"], path=key_path)
 
         # Add the PPA
         sources_enabled = os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list")
@@ -199,20 +185,31 @@ def add_ppa(line, codename, forceYes, use_ppas):
             with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
                 f.write("%s\n" % line)
 
-def add_remote_key(key):
+def add_remote_key(fingerprint, path=None):
     try:
-        proxy = []
-        if os.environ.get('http_proxy') is not None:
-            if os.environ.get('http_proxy') != "":
-                # might be an good idea to check the environment variable content for url only ....
-                # simple way could be
-                # try:
-                #     urllib.urlopen(url)
-                # except IOError:
-                #     print "Not a real URL"
-                # is unclear to me about the fault message
-                proxy=["--keyserver-options", "http-proxy=%s" % os.environ.get('http_proxy')]
-        subprocess.run(["apt-key", "adv", "--keyserver", "hkps://keyserver.ubuntu.com:443"] + proxy + ["--recv-keys", key], check=True)
+        os.system("mkdir -p /etc/apt/keyrings")
+        keyring = f"/etc/apt/keyrings/{fingerprint}.keyring"
+        tmp_keyring = f"{keyring}~"
+        key = f"/etc/apt/keyrings/{fingerprint}.gpg"
+        trusted_key = f"/etc/apt/trusted.gpg.d/{fingerprint}.gpg"
+        keyserver = "hkps://keyserver.ubuntu.com:443"
+        proxy = os.environ.get('http_proxy')
+        if proxy is not None and proxy != "":
+            cmd = ["gpg", "--yes", "--honor-http-proxy", "--no-default-keyring", "--keyring", keyring, "--keyserver", keyserver, "--recv-keys", fingerprint]
+        else:
+            cmd = ["gpg", "--yes", "--no-default-keyring", "--keyring", keyring, "--keyserver", keyserver, "--recv-keys", fingerprint]
+        # import keyring
+        subprocess.run(cmd, check=True)
+        # export key
+        subprocess.run(["gpg", "--yes", "--no-default-keyring", "--keyring", keyring, "--export", "-o", key], check=True)
+        # remove keyring
+        subprocess.run(["rm", "-f", keyring, tmp_keyring])
+        # Move the key to proper place
+        # path if given (for PPAs) or globally trusted in APT dir otherwise
+        if path == None:
+            subprocess.run(["mv", key, trusted_key])
+        else:
+            subprocess.run(["mv", key, path])
     except subprocess.CalledProcessError:
         return False
     return True
@@ -292,10 +289,11 @@ def expand_ppa_line(abrev, distro_codename):
         ppa_name = abrev.split("/")[1]
     except IndexError:
         ppa_name = "ppa"
-    sourceslistd = "/etc/apt/sources.list.d"
-    line = "deb http://ppa.launchpad.net/%s/%s/ubuntu %s main" % (ppa_owner, ppa_name, distro_codename)
-    filename = os.path.join(sourceslistd, "%s-%s-%s.list" % (encode(ppa_owner), encode(ppa_name), distro_codename))
-    return (line, filename)
+    ppa_id = "%s-%s-%s" % (encode(ppa_owner), encode(ppa_name), distro_codename)
+    source_path = f"/etc/apt/sources.list.d/{ppa_id}.list"
+    key_path = f"/etc/apt/keyrings/{ppa_id}.gpg"
+    line = f"deb [arch=amd64 signed-by={key_path}] https://ppa.launchpadcontent.net/{ppa_owner}/{ppa_name}/ubuntu {distro_codename} main"
+    return (line, source_path, key_path)
 
 def expand_http_line(line, distro_codename):
     """
@@ -406,16 +404,19 @@ class Repository():
         self.modify_source_file(None)
 
     def get_ppa_name(self):
-        elements = self.line.split(" ")
-        name = elements[1].replace("deb-src ", "")
-        name = name.replace("deb ", "")
-        name = name.replace("http://ppa.launchpad.net/", "")
-        name = name.replace("/ubuntu", "")
-        name = name.replace("/ppa", "")
-        if self.line.startswith("deb-src"):
-            suffix = _("Sources")
-            name = "%s (%s)" % (name, suffix)
-        return "<b>%s</b>\n%s\n%s" % (name, self.line, self.file)
+        name = self.line
+        for element in self.line.split():
+            if "http://" in element or "https://" in element:
+                name = element
+                name = name.replace("http://ppa.launchpad.net/", "")
+                name = name.replace("https://ppa.launchpadcontent.net/", "")
+                name = name.replace("/ubuntu", "")
+                name = name.replace("/ppa", "")
+                if self.line.startswith("deb-src"):
+                    suffix = _("Sources")
+                    name = "%s (%s)" % (name, suffix)
+                break
+        return "<b>%s</b>\n<small>%s</small>\n<small>%s</small>" % (name, self.line, self.file)
 
     def get_repository_name(self):
         line = self.line.strip()
@@ -1236,6 +1237,20 @@ class Application(object):
         r = re.compile(r"^gpg\:\s+using \S+ key (.+)$", re.MULTILINE | re.IGNORECASE)
         # try to verify all repository lists using gpg
         for repository in repositories:
+            # if the repository is "signed-by", just check that the key file is present
+            uri = repository.uri
+            if uri.endswith("/"):
+                uri = uri[:-1]
+            output = subprocess.getoutput(f"inxi -r | grep {uri}")
+            key_path = None
+            if "signed-by" in output:
+                key_path = output.split("signed-by=")[1].split("]")[0]
+                print(f"{uri} is signed by {key_path}")
+                if os.path.exists(key_path):
+                    print("  Key found.")
+                    continue
+                else:
+                    print("  Key is missing.")
             if repository.path.endswith("_InRelease"):
                 command = cmd_stub + (["--verify", repository.path])
             else:
@@ -1250,7 +1265,7 @@ class Application(object):
                     key = r.search(message).group(1)
                     key = re.sub(r"\s", "", key)
                     # get key from keyserver
-                    success = add_remote_key(key)
+                    success = add_remote_key(key, path=key_path)
                     if not success:
                         raise ValueError("Retrieving key %s failed" % key)
                     repository.added = True
@@ -1399,12 +1414,12 @@ class Application(object):
                 self.format_string(ppa_info["displayname"]),
                 self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
             if self.show_confirm_ppa_dialog(info_text):
-                (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
+                (deb_line, file, key_path) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
 
                 # Add the key if not in keyring
-                add_remote_key(ppa_info["signing_key_fingerprint"])
+                add_remote_key(ppa_info["signing_key_fingerprint"], path=key_path)
                 self.load_keys()
 
                 # Add the PPA in sources.list.d
@@ -1459,6 +1474,15 @@ class Application(object):
                 model.remove(iter)
                 repository.delete()
                 self.ppas.remove(repository)
+                # If the source path was deleted, also delete the key path
+                if not os.path.exists(repository.file):
+                    print(f"{repository.file} deleted")
+                    path = repository.file
+                    path = path.replace("/etc/apt/sources.list.d/", "/etc/apt/keyrings/")
+                    path = path.replace(".list", ".gpg")
+                    if os.path.exists(path):
+                        os.unlink(path)
+                        print(f"{path} deleted")
 
     def ppa_selected(self, selection):
         selection_count = selection.count_selected_rows()

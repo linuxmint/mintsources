@@ -21,6 +21,7 @@ Depends: python3-apt,
          gir1.2-vte-2.91,
          gir1.2-xapp-1.0,
          iso-flag-png,
+         inxi,
          lsb-release
 Replaces: software-properties-common (<< 1),
           software-properties-gtk (<< 1)
