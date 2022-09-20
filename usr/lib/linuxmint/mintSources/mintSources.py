@@ -482,7 +482,7 @@ class ComponentSwitchBox(Gtk.Box):
 
         if widget.get_active() and os.path.exists("/etc/linuxmint/info"):
             if self.component.name == "romeo":
-                if self.application.show_confirmation_dialog(self.application._main_window, _("Linux Mint uses Romeo to publish packages which are not tested. Once these packages are tested, they are then moved to the official repositories. Unless you are participating in beta-testing, you should not enable this repository. Are you sure you want to enable Romeo?"), yes_no=True):
+                if self.application.show_confirmation_dialog(_("Linux Mint uses Romeo to publish packages which are not tested. Once these packages are tested, they are then moved to the official repositories. Unless you are participating in beta-testing, you should not enable this repository. Are you sure you want to enable Romeo?"), yes_no=True):
                     self.component.selected = widget.get_active()
                     self.application.apply_official_sources()
                 else:
@@ -1117,15 +1117,11 @@ class Application(object):
 
     def fix_purge(self, widget):
         os.system("aptitude purge ~c -y")
-        image = Gtk.Image()
-        image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
-        self.show_confirmation_dialog(self._main_window, _("There is no more residual configuration on the system."), image, affirmation=True)
+        self.show_confirmation_dialog(_("There is no more residual configuration on the system."), affirmation=True)
 
     def fix_mergelist(self, widget):
         os.system("rm /var/lib/apt/lists/* -vrf")
-        image = Gtk.Image()
-        image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
-        self.show_confirmation_dialog(self._main_window, _("The problem was fixed. Please reload the cache."), image, affirmation=True)
+        self.show_confirmation_dialog(_("The problem was fixed. Please reload the cache."), affirmation=True)
         self.enable_reload_button()
 
     def remove_duplicates(self, widget):
@@ -1165,30 +1161,24 @@ class Application(object):
                         with open(listfile, 'w', encoding="utf-8", errors="ignore") as f:
                             for line in lines:
                                 f.write("%s\n" % line)
-        image = Gtk.Image()
-        image.set_from_icon_name("preferences-other-symbolic", Gtk.IconSize.DIALOG)
+
         if found_duplicates:
-            self.show_confirmation_dialog(self._main_window, _("Duplicate entries were removed. Please reload the cache."), image, affirmation=True)
+            self.show_confirmation_dialog(_("Duplicate entries were removed. Please reload the cache."), affirmation=True)
             self.enable_reload_button()
             self.read_source_lists()
             self.refresh_ppa_model()
             self.refresh_repository_model()
         else:
-            self.show_confirmation_dialog(self._main_window, _("No duplicate entries were found."), image, affirmation=True)
+            self.show_confirmation_dialog(_("No duplicate entries were found."), affirmation=True)
 
     def fix_missing_keys(self, widget):
-        image = Gtk.Image()
-        image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
-
         #get paths from apt
         apt_pkg.init()
         trusted = apt_pkg.config.find_file("Dir::Etc::trusted")
         trustedparts = apt_pkg.config.find_dir("Dir::Etc::trustedparts")
         lists = apt_pkg.config.find_dir("Dir::State::lists")
         if not os.path.isfile(trusted) or not os.path.isdir(trustedparts) or not os.path.isdir(lists):
-            self.show_confirmation_dialog(self._main_window,
-                _("Error with your APT configuration, you may have to reload the cache first."),
-                image, affirmation=True)
+            self.show_confirmation_dialog(_("Error with your APT configuration, you may have to reload the cache first."), affirmation=True)
             return
 
         self._main_window.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
@@ -1303,9 +1293,9 @@ class Application(object):
                 msg += "\n%s" % _("Please reload the cache.")
                 self.load_keys()
                 self.enable_reload_button()
-            self.show_confirmation_dialog(self._main_window, msg, image, affirmation=True)
+            self.show_confirmation_dialog(msg, affirmation=True)
         else:
-            self.show_confirmation_dialog(self._main_window, _("No missing keys were found."), image, affirmation=True)
+            self.show_confirmation_dialog(_("No missing keys were found."), affirmation=True)
 
     def load_keys(self):
         self.keys = []
@@ -1355,18 +1345,14 @@ class Application(object):
         dialog.destroy()
 
     def fetch_key(self, widget):
-        image = Gtk.Image()
-        image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
-        fingerprint = self.show_entry_dialog(self._main_window, _("Please enter the fingerprint of the public key you want to download from keyserver.ubuntu.com:"), "", image)
+        fingerprint = self.show_entry_dialog(_("Please enter the fingerprint of the public key you want to download from keyserver.ubuntu.com:"), "")
         if fingerprint is not None:
             add_remote_key(fingerprint)
             self.load_keys()
             self.enable_reload_button()
 
     def remove_key(self, widget):
-        image = Gtk.Image()
-        image.set_from_icon_name("dialog-password-symbolic", Gtk.IconSize.DIALOG)
-        if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove the selected keys?"), image, yes_no=True)):
+        if (self.show_confirmation_dialog(_("Are you sure you want to permanently remove the selected keys?"), yes_no=True)):
             selection = self._keys_treeview.get_selection()
             (model, indexes) = selection.get_selected_rows()
             iters = []
@@ -1382,8 +1368,6 @@ class Application(object):
         self.builder.get_object("button_keys_remove").set_sensitive(selection_count >= 1)
 
     def add_ppa(self, widget):
-        image = Gtk.Image()
-        image.set_from_icon_name("process-stop-symbolic", Gtk.IconSize.DIALOG)
         default_line = "ppa:ppa-owner/ppa-name"
         start_line = default_line
         clipboard_text = self.get_clipboard_text("ppa")
@@ -1392,7 +1376,7 @@ class Application(object):
         if clipboard_text is not None:
             start_line = clipboard_text
 
-        line = self.show_entry_dialog(self._main_window, _("Please enter the name or the URL of the PPA you want to add:"), start_line, image)
+        line = self.show_entry_dialog(_("Please enter the name or the URL of the PPA you want to add:"), start_line)
         if line:
             # If the user pasted the launchpad URL, parse that into a ppa: line
             if line.startswith("https://launchpad.net/"):
@@ -1406,7 +1390,7 @@ class Application(object):
                 ppa_name = ppa_name or "ppa"
                 ppa_info = get_ppa_info_from_lp(user, ppa_name, self.config["general"]["base_codename"])
             except Exception as error_msg:
-                self.show_error_dialog(self._main_window, error_msg)
+                self.show_error_dialog(error_msg)
                 return
 
             image = Gtk.Image()
@@ -1414,7 +1398,7 @@ class Application(object):
             info_text = "%s\n\n%s\n\n%s\n\n%s" % (line,
                 self.format_string(ppa_info["displayname"]),
                 self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
-            if self.show_confirm_ppa_dialog(self._main_window, info_text):
+            if self.show_confirm_ppa_dialog(info_text):
                 (deb_line, file) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
@@ -1458,13 +1442,13 @@ class Application(object):
         (model, indexes) = selection.get_selected_rows()
         iter = model.get_iter(indexes[0])
         repository = model.get(iter, 0)[0]
-        url = self.show_entry_dialog(self._main_window, _("Edit the URL of the PPA"), repository.line)
+        url = self.show_entry_dialog(_("Edit the URL of the PPA"), repository.line)
         if url is not None:
             repository.edit(url)
             model.set_value(iter, 2, repository.get_ppa_name())
 
     def remove_ppa(self, widget):
-        if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove the selected PPAs?"), yes_no=True)):
+        if (self.show_confirmation_dialog(_("Are you sure you want to permanently remove the selected PPAs?"), yes_no=True)):
             selection = self._ppa_treeview.get_selection()
             (model, indexes) = selection.get_selected_rows()
             iters = []
@@ -1514,7 +1498,7 @@ class Application(object):
                         os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s &" % (self.config["general"]["base_codename"], ppa_owner, ppa_name))
                     else:
                         print ("%s not found!" % ppa_file)
-                        self.show_error_dialog(self._main_window, _("The content of this PPA is not available. Please refresh the cache and try again."))
+                        self.show_error_dialog(_("The content of this PPA is not available. Please refresh the cache and try again."))
         except Exception as detail:
             print (detail)
 
@@ -1524,8 +1508,6 @@ class Application(object):
         self.builder.get_object("button_repository_remove").set_sensitive(selection_count >= 1)
 
     def add_repository(self, widget):
-        image = Gtk.Image()
-        image.set_from_icon_name("network-workgroup-symbolic", Gtk.IconSize.DIALOG)
         start_line = ""
         default_line = "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"]
         clipboard_text = self.get_clipboard_text("deb")
@@ -1534,12 +1516,12 @@ class Application(object):
         else:
             start_line = default_line
 
-        line = self.show_entry_dialog(self._main_window, _("Please enter the name of the repository you want to add:"), start_line, image)
+        line = self.show_entry_dialog(_("Please enter the name of the repository you want to add:"), start_line)
         if not line or line == default_line:
             return
         line = expand_http_line(line, self.config["general"]["base_codename"])
         if repo_malformed(line):
-            self.show_confirmation_dialog(self._main_window, _("Malformed input, repository not added."), image, affirmation=True)
+            self.show_confirmation_dialog(_("Malformed input, repository not added."), affirmation=True)
         else:
             if not repo_exists(line):
                 # Add the repository in sources.list.d
@@ -1551,20 +1533,20 @@ class Application(object):
                 tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
                 self.enable_reload_button()
             else:
-                self.show_confirmation_dialog(self._main_window, _("This repository is already configured, you cannot add it a second time."), image, affirmation=True)
+                self.show_confirmation_dialog(_("This repository is already configured, you cannot add it a second time."), affirmation=True)
 
     def edit_repository(self, widget):
         selection = self._repository_treeview.get_selection()
         (model, indexes) = selection.get_selected_rows()
         iter = model.get_iter(indexes[0])
         repository = model.get(iter, 0)[0]
-        url = self.show_entry_dialog(self._main_window, _("Edit the URL of the repository"), repository.line)
+        url = self.show_entry_dialog(_("Edit the URL of the repository"), repository.line)
         if url is not None:
             repository.edit(url)
             model.set_value(iter, 2, repository.get_repository_name())
 
     def remove_repository(self, widget):
-        if (self.show_confirmation_dialog(self._main_window, _("Are you sure you want to permanently remove the selected repositories?"), yes_no=True)):
+        if (self.show_confirmation_dialog(_("Are you sure you want to permanently remove the selected repositories?"), yes_no=True)):
             selection = self._repository_treeview.get_selection()
             (model, indexes) = selection.get_selected_rows()
             iters = []
@@ -1576,7 +1558,7 @@ class Application(object):
                 repository.delete()
                 self.repositories.remove(repository)
 
-    def show_confirmation_dialog(self, parent, message, image=None, affirmation=None, yes_no=False):
+    def show_confirmation_dialog(self, message, affirmation=None, yes_no=False):
         buttons = Gtk.ButtonsType.OK_CANCEL
         default_button = Gtk.ResponseType.OK
         confirmation_button = Gtk.ResponseType.OK
@@ -1586,20 +1568,17 @@ class Application(object):
             confirmation_button = Gtk.ResponseType.YES
 
         if affirmation is None:
-            d = Gtk.MessageDialog(parent,
-                              Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                              Gtk.MessageType.WARNING,
-                              buttons,
-                              message)
+            d = Gtk.MessageDialog(parent=self._main_window,
+                              message_type=Gtk.MessageType.WARNING,
+                              buttons=buttons,
+                              text=message,
+                              modal=True)
         else:
-            d = Gtk.MessageDialog(parent,
-                              Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                              Gtk.MessageType.INFO,
-                              Gtk.ButtonsType.OK,
-                              message)
-        if image is not None:
-            image.show()
-            d.set_image(image)
+            d = Gtk.MessageDialog(parent=self._main_window,
+                              message_type=Gtk.MessageType.INFO,
+                              buttons=Gtk.ButtonsType.OK,
+                              text=message,
+                              modal=True)
 
         d.set_default_response(default_button)
         r = d.run()
@@ -1609,7 +1588,7 @@ class Application(object):
         else:
             return False
 
-    def show_confirm_ppa_dialog(self, parent, message):
+    def show_confirm_ppa_dialog(self, message):
         b = Gtk.TextBuffer()
         b.set_text(message)
         t =  Gtk.TextView()
@@ -1620,7 +1599,7 @@ class Application(object):
         s.set_shadow_type(Gtk.ShadowType.OUT)
         default_button = Gtk.ResponseType.ACCEPT
         confirmation_button = Gtk.ResponseType.ACCEPT
-        d = Gtk.Dialog(None, parent,
+        d = Gtk.Dialog(None, self._main_window,
                        Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
                        (_("Cancel"), Gtk.ResponseType.REJECT,
                        _("OK"), Gtk.ResponseType.ACCEPT))
@@ -1638,17 +1617,12 @@ class Application(object):
         else:
             return False
 
-    def show_error_dialog(self, parent, message, image=None):
-        d = Gtk.MessageDialog(parent,
-                              Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                              Gtk.MessageType.ERROR,
-                              Gtk.ButtonsType.OK,
-                              message)
-
-        if image is not None:
-            image.show()
-            d.set_image(image)
-
+    def show_error_dialog(self, message):
+        d = Gtk.MessageDialog(parent=self._main_window,
+                              message_type=Gtk.MessageType.ERROR,
+                              buttons=Gtk.ButtonsType.OK,
+                              text=message,
+                              modal=True)
         d.set_default_response(Gtk.ResponseType.OK)
         r = d.run()
         d.destroy()
@@ -1657,17 +1631,12 @@ class Application(object):
         else:
             return False
 
-    def show_entry_dialog(self, parent, message, default='', image=None):
-        d = Gtk.MessageDialog(parent,
-                              Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                              Gtk.MessageType.QUESTION,
-                              Gtk.ButtonsType.OK_CANCEL,
-                              message)
-
-        if image is not None:
-            image.show()
-            d.set_image(image)
-
+    def show_entry_dialog(self, message, default=''):
+        d = Gtk.MessageDialog(parent=self._main_window,
+                              message_type=Gtk.MessageType.OTHER,
+                              buttons=Gtk.ButtonsType.OK_CANCEL,
+                              text=message,
+                              modal=True)
         entry = Gtk.Entry()
         entry.set_text(default)
         entry.set_margin_start(6)
