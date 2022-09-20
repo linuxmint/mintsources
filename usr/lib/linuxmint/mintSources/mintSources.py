@@ -266,7 +266,7 @@ def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
 
     # Make sure the PPA supports our base release
     try:
-        data = retrieve_ppa_url("http://ppa.launchpad.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename))
+        data = retrieve_ppa_url("https://ppa.launchpadcontent.net/%s/%s/ubuntu/dists/%s" % (owner_name, ppa_name, base_codename))
     except PPAException as e:
         raise PPAException(e.value)
     if not data.ok:
@@ -1071,7 +1071,7 @@ class Application(object):
                             selected = False
                         if line.startswith("deb"):
                             repository = Repository(self, line, source_file, selected, self.base_mirror_names, self.base_name)
-                            if "ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
+                            if "://ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
                                 self.ppas.append(repository)
                             else:
                                 self.repositories.append(repository)
@@ -1496,7 +1496,7 @@ class Application(object):
                 iter = model.get_iter(indexes[0])
                 repository = model.get_value(iter, 0)
                 ppa_name = model.get_value(iter, 2)
-                if repository.selected and repository.line.startswith("deb http://ppa.launchpad.net"):
+                if repository.selected and "://ppa.launchpad" in repository.line:
                     self.builder.get_object("button_ppa_examine").set_sensitive(True)
             except Exception as detail:
                 print (detail)
@@ -1506,23 +1506,31 @@ class Application(object):
 
     def examine_ppa(self, widget):
         try:
+            codename = self.config["general"]["base_codename"]
+            arch = subprocess.getoutput("dpkg --print-architecture")
             selection = self._ppa_treeview.get_selection()
             (model, indexes) = selection.get_selected_rows()
             iter = model.get_iter(indexes[0])
             repository = model.get_value(iter, 0)
             ppa_name = model.get_value(iter, 2)
-            if repository.selected and repository.line.startswith("deb http://ppa.launchpad.net"):
-                line = repository.line.split()[1].replace("http://ppa.launchpad.net/", "")
-                if line.endswith("/ubuntu"):
-                    line = line[:-7]
-                    ppa_owner, ppa_name = line.split("/")
-                    architecture = subprocess.getoutput("dpkg --print-architecture")
-                    ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, self.config["general"]["base_codename"], architecture)
-                    if os.path.exists(ppa_file):
-                        os.system("/usr/lib/linuxmint/mintSources/ppa_browser.py %s %s %s &" % (self.config["general"]["base_codename"], ppa_owner, ppa_name))
-                    else:
-                        print ("%s not found!" % ppa_file)
-                        self.show_error_dialog(_("The content of this PPA is not available. Please refresh the cache and try again."))
+            if repository.selected and "://ppa.launchpad" in repository.line:
+                elements = repository.line.split()
+                for element in repository.line.split():
+                    if element.startswith("http") and element.endswith("/ubuntu"):
+                        line = element
+                        line = line.replace("http://ppa.launchpad.net/", "")
+                        line = line.replace("https://ppa.launchpadcontent.net/", "")
+                        line = line[:-7]
+                        ppa_owner, ppa_name = line.split("/")
+                        ppa_file = f"/var/lib/apt/lists/ppa.launchpadcontent.net_{ppa_owner}_{ppa_name}_ubuntu_dists_{codename}_main_binary-{arch}_Packages"
+                        legacy_ppa_file = f"/var/lib/apt/lists/ppa.launchpad.net_{ppa_owner}_{ppa_name}_ubuntu_dists_{codename}_main_binary-{arch}_Packages"
+                        if os.path.exists(ppa_file):
+                            subprocess.Popen(["/usr/lib/linuxmint/mintSources/ppa_browser.py", codename, ppa_file, ppa_owner, ppa_name])
+                        elif os.path.exists(legacy_ppa_file):
+                            subprocess.Popen(["/usr/lib/linuxmint/mintSources/ppa_browser.py", codename, legacy_ppa_file, ppa_owner, ppa_name])
+                        else:
+                            print ("%s not found!" % ppa_file)
+                            self.show_error_dialog(_("The content of this PPA is not available. Please refresh the cache and try again."))
         except Exception as detail:
             print (detail)
 

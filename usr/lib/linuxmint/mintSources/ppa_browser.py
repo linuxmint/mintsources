@@ -23,14 +23,13 @@ _ = gettext.gettext
 
 class PPA_Browser():
 
-    def __init__(self, base_codename, ppa_owner, ppa_name):
+    def __init__(self, base_codename, ppa_file, ppa_owner, ppa_name):
         if platform.machine() == "x86_64":
             architecture = "amd64"
         else:
             architecture = "i386"
         ppa_origin = "LP-PPA-%s-%s" % (ppa_owner, ppa_name)
         ppa_origin_simple = "LP-PPA-%s" % (ppa_owner)
-        ppa_file = "/var/lib/apt/lists/ppa.launchpad.net_%s_%s_ubuntu_dists_%s_main_binary-%s_Packages" % (ppa_owner, ppa_name, base_codename, architecture)
 
         if not os.path.exists(ppa_file):
             print ("%s not found!" % ppa_file)
@@ -129,7 +128,8 @@ class PPA_Browser():
 
 if __name__ == "__main__":
     base_codename = sys.argv[1]
-    ppa_owner = sys.argv[2]
-    ppa_name = sys.argv[3]
-    ppa_browser = PPA_Browser(base_codename, ppa_owner, ppa_name)
+    ppa_file = sys.argv[2]
+    ppa_owner = sys.argv[3]
+    ppa_name = sys.argv[4]
+    ppa_browser = PPA_Browser(base_codename, ppa_file, ppa_owner, ppa_name)
     Gtk.main()
