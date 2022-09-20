@@ -1,3 +1,9 @@
+mintsources (2.1.11) vanessa; urgency=medium
+
+  * Fix PPA browser
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 20 Sep 2022 13:49:12 +0100
+
 mintsources (2.1.10) vanessa; urgency=medium
 
   * Refactor add_remote_key() refs
