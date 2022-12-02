@@ -1,3 +1,9 @@
+mintsources (2.2.0) vera; urgency=medium
+
+  * Add support for Linux Mint 21.1 Vera
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 02 Dec 2022 14:30:05 +0000
+
 mintsources (2.1.11) vanessa; urgency=medium
 
   * Fix PPA browser
