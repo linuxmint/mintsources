@@ -110,7 +110,7 @@ class PPA_Browser():
 
     def toggled (self, renderer, path):
         iter = self.model.get_iter(path)
-        if (iter != None):
+        if iter is not None:
             pkg = self.model.get_value(iter, 0)
             if pkg.name in self.packages_to_install:
                 self.packages_to_install.remove(pkg.name)

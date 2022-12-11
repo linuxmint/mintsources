@@ -60,7 +60,7 @@ def get_foreign_packages(find_orphans=True, find_downgradable_packages=True):
             installed_version = pkg.installed.version
 
             # Find packages which aren't downloadable
-            if (pkg.candidate == None) or (not pkg.candidate.downloadable):
+            if (pkg.candidate is None) or (not pkg.candidate.downloadable):
                 if find_orphans:
                     downloadable = False
                     for version in pkg.versions:
@@ -68,7 +68,7 @@ def get_foreign_packages(find_orphans=True, find_downgradable_packages=True):
                             downloadable = True
                     if not downloadable:
                         orphan_packages.append([pkg, installed_version])
-            if (pkg.candidate != None):
+            if pkg.candidate is not None:
                 if find_downgradable_packages:
                     best_version = None
                     archive = None
@@ -76,7 +76,7 @@ def get_foreign_packages(find_orphans=True, find_downgradable_packages=True):
                         if not version.downloadable:
                             continue
                         for origin in version.origins:
-                            if origin.origin != None and origin.origin.lower() in ("ubuntu", "canonical", "debian", "linuxmint"):
+                            if origin.origin is not None and origin.origin.lower() in ("ubuntu", "canonical", "debian", "linuxmint"):
                                 if best_version is None:
                                     best_version = version
                                     archive = origin.archive
@@ -91,7 +91,7 @@ def get_foreign_packages(find_orphans=True, find_downgradable_packages=True):
                                             best_version = version
                                             archive = origin.archive
 
-                    if best_version != None and installed_version != best_version and pkg.candidate.version != best_version.version:
+                    if best_version is not None and installed_version != best_version and pkg.candidate.version != best_version.version:
                         downgradable_packages.append([pkg, installed_version, best_version, archive])
 
     return (orphan_packages, downgradable_packages)
@@ -220,13 +220,13 @@ class Foreign_Browser():
 
     def toggled(self, renderer, path):
         iter = self.model.get_iter(path)
-        if (iter != None):
+        if iter is not None:
             checked = self.model.get_value(iter, PKG_CHECKED)
             self.model.set_value(iter, PKG_CHECKED, not(checked))
 
         iter = self.model.get_iter_first()
         num_selected = 0
-        while (iter != None):
+        while iter is not None:
             checked = self.model.get_value(iter, PKG_CHECKED)
             if (checked):
                 num_selected = num_selected + 1
@@ -239,7 +239,7 @@ class Foreign_Browser():
     def install (self, button):
         foreign_packages = []
         iter = self.model.get_iter_first()
-        while (iter != None):
+        while iter is not None:
             if (self.model.get_value(iter, PKG_CHECKED)):
                 foreign_packages.append(self.model.get_value(iter, PKG_ID))
             iter = self.model.iter_next(iter)
@@ -267,7 +267,7 @@ class Foreign_Browser():
 
     def select_all (self, button):
         iter = self.model.get_iter_first()
-        while (iter != None):
+        while iter is not None:
             pkg = self.model.set_value(iter, PKG_CHECKED, self.select_button_selects_all)
             iter = self.model.iter_next(iter)
         self.select_button_selects_all = not (self.select_button_selects_all)
