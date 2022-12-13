@@ -193,6 +193,9 @@ def add_remote_key(fingerprint, path=None):
         key = f"/etc/apt/keyrings/{fingerprint}.gpg"
         trusted_key = f"/etc/apt/trusted.gpg.d/{fingerprint}.gpg"
         keyserver = "hkps://keyserver.ubuntu.com:443"
+        # Run gpg --list-keys to initiate gpg folders in ~/.gnupg
+        # otherwise gpg commands fail when we import keys
+        subprocess.run(["gpg", "--list-keys"])
         proxy = os.environ.get('http_proxy')
         if proxy is not None and proxy != "":
             cmd = ["gpg", "--yes", "--honor-http-proxy", "--no-default-keyring", "--keyring", keyring, "--keyserver", keyserver, "--recv-keys", fingerprint]
@@ -1184,6 +1187,10 @@ class Application(object):
 
         self._main_window.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
         Gdk.flush()
+
+        # Run gpg --list-keys to initiate gpg folders in ~/.gnupg
+        # otherwise gpg commands fail when we import keys
+        subprocess.run(["gpg", "--list-keys"])
 
         cmd_stub = ["gpg", "--no-default-keyring", "--no-options"]
         keyrings = [trusted] + glob.glob("%s*.gpg" % trustedparts)
