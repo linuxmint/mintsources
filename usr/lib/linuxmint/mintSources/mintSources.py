@@ -1775,9 +1775,15 @@ class Application(object):
                 self._info_box.pack_start(infobar, True, True, 0)
 
             self._info_revealer.set_reveal_child(True)
+            self.builder.get_object("ppas_page").set_margin_bottom(50)
+            self.builder.get_object("additional_repositories_page").set_margin_bottom(50)
+            self.builder.get_object("authentication_keys_page").set_margin_bottom(50)
 
     def _on_infobar_response(self, infobar, response_id):
         self._info_revealer.set_reveal_child(False)
+        self.builder.get_object("ppas_page").set_margin_bottom(12)
+        self.builder.get_object("additional_repositories_page").set_margin_bottom(12)
+        self.builder.get_object("authentication_keys_page").set_margin_bottom(12)
 
         if response_id == Gtk.ResponseType.OK:
             self.apt.update_cache()
