@@ -209,7 +209,7 @@ def add_remote_key(fingerprint, path=None):
         subprocess.run(["rm", "-f", keyring, tmp_keyring])
         # Move the key to proper place
         # path if given (for PPAs) or globally trusted in APT dir otherwise
-        if path == None:
+        if path is None:
             subprocess.run(["mv", key, trusted_key])
         else:
             subprocess.run(["mv", key, path])
@@ -1550,7 +1550,7 @@ class Application(object):
         start_line = ""
         default_line = "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"]
         clipboard_text = self.get_clipboard_text("deb")
-        if clipboard_text != None:
+        if clipboard_text is not None:
             start_line = clipboard_text
         else:
             start_line = default_line
@@ -1702,14 +1702,14 @@ class Application(object):
 
     def ppa_toggled(self, renderer, path):
         iter = self._ppa_model.get_iter(path)
-        if (iter != None):
+        if iter is not None:
             repository = self._ppa_model.get_value(iter, 0)
             repository.switch()
             self.builder.get_object("button_ppa_examine").set_sensitive(repository.selected)
 
     def repository_toggled(self, renderer, path):
         iter = self._repository_model.get_iter(path)
-        if (iter != None):
+        if iter is not None:
             repository = self._repository_model.get_value(iter, 0)
             repository.switch()
 
