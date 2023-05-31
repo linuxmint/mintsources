@@ -1420,7 +1420,7 @@ class Application(object):
             info_text = "%s\n\n%s\n\n%s\n\n%s" % (line,
                 self.format_string(ppa_info["displayname"]),
                 self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
-            if self.show_confirm_ppa_dialog(info_text):
+            if self.show_confirm_ppa_dialog(ppa_info["displayname"], info_text):
                 (deb_line, file, key_path) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
                 deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
                 debsrc_line = 'deb-src' + deb_line[3:]
@@ -1627,7 +1627,7 @@ class Application(object):
         else:
             return False
 
-    def show_confirm_ppa_dialog(self, message):
+    def show_confirm_ppa_dialog(self, title, message):
         b = Gtk.TextBuffer()
         b.set_text(message)
         t =  Gtk.TextView()
@@ -1638,13 +1638,12 @@ class Application(object):
         s.set_shadow_type(Gtk.ShadowType.OUT)
         default_button = Gtk.ResponseType.ACCEPT
         confirmation_button = Gtk.ResponseType.ACCEPT
-        d = Gtk.Dialog(None, self._main_window,
-                       Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
-                       (_("Cancel"), Gtk.ResponseType.REJECT,
-                       _("OK"), Gtk.ResponseType.ACCEPT))
+        d = Gtk.Dialog(transient_for=self._main_window, modal=True, destroy_with_parent=True)
+        d.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT, Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
         d.set_size_request(550, 400)
-        d.get_content_area().pack_start(s, True, True, 0)
-        d.set_title("")
+        d.get_content_area().pack_start(s, True, True, 12)
+        d.set_border_width(12)
+        d.set_title(title)
         s.show()
         s.add(t)
         t.show()
