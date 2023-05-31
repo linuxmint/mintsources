@@ -2,7 +2,6 @@
 import gettext
 import locale
 import os
-import platform
 import subprocess
 import sys
 
@@ -24,10 +23,6 @@ _ = gettext.gettext
 class PPA_Browser():
 
     def __init__(self, base_codename, ppa_file, ppa_owner, ppa_name):
-        if platform.machine() == "x86_64":
-            architecture = "amd64"
-        else:
-            architecture = "i386"
         ppa_origin = "LP-PPA-%s-%s" % (ppa_owner, ppa_name)
         ppa_origin_simple = "LP-PPA-%s" % (ppa_owner)
 
