@@ -1,3 +1,15 @@
+mintsources (2.2.2) victoria; urgency=medium
+
+  [ hduelme ]
+  * replace equality None check with identity None check (#241)
+
+  [ Clement Lefebvre ]
+  * Remove unused variable
+  * PPA: Don't restrict architecture to amd64
+  * PPA Dialog: Add title and margins
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 31 May 2023 12:15:12 +0100
+
 mintsources (2.2.1) vera; urgency=medium
 
   * PPA: Initiate .gnupg dir before using gpg
