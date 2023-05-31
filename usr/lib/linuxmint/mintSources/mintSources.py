@@ -295,7 +295,7 @@ def expand_ppa_line(abrev, distro_codename):
     ppa_id = "%s-%s-%s" % (encode(ppa_owner), encode(ppa_name), distro_codename)
     source_path = f"/etc/apt/sources.list.d/{ppa_id}.list"
     key_path = f"/etc/apt/keyrings/{ppa_id}.gpg"
-    line = f"deb [arch=amd64 signed-by={key_path}] https://ppa.launchpadcontent.net/{ppa_owner}/{ppa_name}/ubuntu {distro_codename} main"
+    line = f"deb [signed-by={key_path}] https://ppa.launchpadcontent.net/{ppa_owner}/{ppa_name}/ubuntu {distro_codename} main"
     return (line, source_path, key_path)
 
 def expand_http_line(line, distro_codename):
