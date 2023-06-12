@@ -1,3 +1,9 @@
+mintsources (2.2.3) victoria; urgency=medium
+
+  * Add support for Linux Mint 21.2 Victoria
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 12 Jun 2023 09:45:36 +0100
+
 mintsources (2.2.2) victoria; urgency=medium
 
   [ hduelme ]
