@@ -848,7 +848,7 @@ class Application(object):
         self._interface_loaded = False
         self._currently_applying_sources = False
 
-        self.os_codename = xapp.os.get_os_release_codename()
+        self.os_codename = xapp.os.get_os_release_info()["VERSION_CODENAME"]
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintsources.glade"
 
@@ -1945,7 +1945,7 @@ class Application(object):
             return None
 
 if __name__ == "__main__":
-    os_codename = xapp.os.get_os_release_codename()
+    os_codename = xapp.os.get_os_release_info()["VERSION_CODENAME"]
     config_dir = "/usr/share/mintsources/%s" % os_codename
     if not os.path.exists(config_dir):
         print ("OS codename: '%s'." % os_codename)

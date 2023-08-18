@@ -6,13 +6,13 @@
 import datetime
 import fileinput
 import json
-import lsb_release
 import os
 import pycurl
 import random
 import re
 import sys
 import urllib.request as urllibrequest
+import xapp.os
 
 MIRROR_LIST = "/usr/share/mint-mirrors/linuxmint.list"
 SOURCES_LIST = "/etc/apt/sources.list.d/official-package-repositories.list"
@@ -38,7 +38,7 @@ class MirrorManager():
         self.exit_if(not os.path.exists(MIRROR_LIST), "No mirrors found at %s. Exiting." % MIRROR_LIST)
 
         self.mirror = None
-        codename = lsb_release.get_distro_information()['CODENAME']
+        codename = xapp.os.get_os_release_info()["VERSION_CODENAME"]
         with open(SOURCES_LIST, 'r') as sources_file:
             for line in sources_file:
                 line = line.strip()
