@@ -26,6 +26,7 @@ from aptsources.sourceslist import SourcesList
 from io import BytesIO
 from CountryInformation import CountryInformation
 
+import xapp.os
 import apt_pkg
 import mintcommon.aptdaemon
 
@@ -847,7 +848,7 @@ class Application(object):
         self._interface_loaded = False
         self._currently_applying_sources = False
 
-        self.lsb_codename = subprocess.getoutput("lsb_release -sc")
+        self.os_codename = xapp.os.get_os_release_codename()
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintsources.glade"
 
@@ -869,7 +870,7 @@ class Application(object):
         self.apt = mintcommon.aptdaemon.APT(self._main_window)
 
         config_parser = configparser.RawConfigParser()
-        config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % self.lsb_codename)
+        config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % self.os_codename)
         self.config = {}
         self.optional_components = []
         self.system_keys = []
@@ -1805,7 +1806,7 @@ class Application(object):
 
         # Update official packages repositories
         os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")
-        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r', encoding="utf-8", errors="ignore").read()
+        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.os_codename, 'r', encoding="utf-8", errors="ignore").read()
         template = template.replace("$codename", self.config["general"]["codename"])
         template = template.replace("$basecodename", self.config["general"]["base_codename"])
         template = template.replace("$optionalcomponents", ' '.join(selected_components))
@@ -1818,7 +1819,7 @@ class Application(object):
         # Update official sources repositories
         os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
         if (self.builder.get_object("source_code_switch").get_active()):
-            template = open('/usr/share/mintsources/%s/official-source-repositories.list' % self.lsb_codename, 'r', encoding="utf-8", errors="ignore").read()
+            template = open('/usr/share/mintsources/%s/official-source-repositories.list' % self.os_codename, 'r', encoding="utf-8", errors="ignore").read()
             template = template.replace("$codename", self.config["general"]["codename"])
             template = template.replace("$basecodename", self.config["general"]["base_codename"])
             template = template.replace("$optionalcomponents", ' '.join(selected_components))
@@ -1830,7 +1831,7 @@ class Application(object):
         # Update dbgsym repositories
         os.system("rm -f /etc/apt/sources.list.d/official-dbgsym-repositories.list")
         if (self.builder.get_object("debug_symbol_switch").get_active()):
-            template = open('/usr/share/mintsources/%s/official-dbgsym-repositories.list' % self.lsb_codename, 'r', encoding="utf-8", errors="ignore").read()
+            template = open('/usr/share/mintsources/%s/official-dbgsym-repositories.list' % self.os_codename, 'r', encoding="utf-8", errors="ignore").read()
             template = template.replace("$codename", self.config["general"]["codename"])
             template = template.replace("$basecodename", self.config["general"]["base_codename"])
             template = template.replace("$optionalcomponents", ' '.join(selected_components))
@@ -1846,7 +1847,7 @@ class Application(object):
         os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
         os.system("rm -f /etc/apt/sources.list.d/official-dbgsym-repositories.list")
 
-        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.lsb_codename, 'r', encoding="utf-8", errors="ignore").read()
+        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.os_codename, 'r', encoding="utf-8", errors="ignore").read()
         template = template.replace("$codename", self.config["general"]["codename"])
         template = template.replace("$basecodename", self.config["general"]["base_codename"])
         template = template.replace("$optionalcomponents", '')
@@ -1944,16 +1945,16 @@ class Application(object):
             return None
 
 if __name__ == "__main__":
-    lsb_codename = subprocess.getoutput("lsb_release -sc")
-    config_dir = "/usr/share/mintsources/%s" % lsb_codename
+    os_codename = xapp.os.get_os_release_codename()
+    config_dir = "/usr/share/mintsources/%s" % os_codename
     if not os.path.exists(config_dir):
-        print ("LSB codename: '%s'." % lsb_codename)
+        print ("OS codename: '%s'." % os_codename)
         if os.path.exists("/etc/linuxmint/info"):
             print ("Version of base-files: '%s'." % subprocess.getoutput("dpkg-query -f '${Version}' -W base-files"))
-            print ("Your LSB codename isn't a valid Linux Mint codename.")
+            print ("Your OS codename isn't a valid Linux Mint codename.")
         else:
             print ("This codename isn't currently supported.")
-        print ("Please check your LSB information with \"lsb_release -a\".")
+        print ("Please check your OS release information with \"cat /etc/os-release\" (identified as VERSION_CODENAME).")
         sys.exit(1)
 
     args = sys.argv[1:]
@@ -1962,7 +1963,7 @@ if __name__ == "__main__":
         if not ppa_line:
             sys.exit(1)
         config_parser = configparser.RawConfigParser()
-        config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % lsb_codename)
+        config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % os_codename)
         codename = config_parser.get("general", "base_codename")
         use_ppas = config_parser.get("general", "use_ppas")
         if "-r" in args:
