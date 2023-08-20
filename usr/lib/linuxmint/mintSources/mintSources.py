@@ -26,7 +26,6 @@ from aptsources.sourceslist import SourcesList
 from io import BytesIO
 from CountryInformation import CountryInformation
 
-import xapp.os
 import apt_pkg
 import mintcommon.aptdaemon
 
@@ -832,7 +831,10 @@ class MirrorSelectionDialog(object):
         return res
 
 class Application(object):
-    def __init__(self):
+    def __init__(self, os_codename):
+
+        self.os_codename = os_codename
+
         parser = argparse.ArgumentParser(description="Software sources for Linux Mint")
         parser.add_argument("-n", "--no-update", action="store_true", help="Disable cache refresh prompting")
         args = parser.parse_known_args()
@@ -847,8 +849,6 @@ class Application(object):
         # Prevent settings from being saved until the interface is fully loaded
         self._interface_loaded = False
         self._currently_applying_sources = False
-
-        self.os_codename = xapp.os.get_os_release_info()["VERSION_CODENAME"]
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintsources.glade"
 
@@ -1945,8 +1945,12 @@ class Application(object):
             return None
 
 if __name__ == "__main__":
-    os_codename = xapp.os.get_os_release_info()["VERSION_CODENAME"]
-    config_dir = "/usr/share/mintsources/%s" % os_codename
+
+    os_codename = "unknown"
+    with open("/etc/os-release") as f:
+        config = dict([line.strip().split("=") for line in f])
+        os_codename = config['VERSION_CODENAME']
+    config_dir = f"/usr/share/mintsources/{os_codename}"
     if not os.path.exists(config_dir):
         print ("OS codename: '%s'." % os_codename)
         if os.path.exists("/etc/linuxmint/info"):
@@ -1971,6 +1975,6 @@ if __name__ == "__main__":
         else:
             add_ppa(ppa_line, codename, "-y" in args, use_ppas)
     else:
-        Application().run()
+        Application(os_codename).run()
 
     exit(1 if sources_changed else 0)
