@@ -1,3 +1,15 @@
+mintsources (2.2.4) faye; urgency=medium
+
+  [ Michael Webster ]
+  * Use new xapp.os function to retrieve the release codename.
+  * Dont use lsb_release in mint-switch-to-local-mirror.
+
+  [ Clement Lefebvre ]
+  * Remove mint-switch-to-local-mirror
+  * Read os-release directly
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sun, 20 Aug 2023 10:54:00 +0200
+
 mintsources (2.2.3) victoria; urgency=medium
 
   * Add support for Linux Mint 21.2 Victoria
