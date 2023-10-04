@@ -10658,7 +10658,7 @@
 		"demonym": "Turkish",
 		"landlocked": false,
 		"borders": ["ARM", "AZE", "BGR", "GEO", "GRC", "IRN", "IRQ", "SYR"],
-		"networkNeighbors": [],
+		"networkNeighbors": ["DEU", "NLD", "FRA"],
 		"area": 783562
 	},
 	{
