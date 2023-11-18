@@ -1,3 +1,9 @@
+mintsources (2.2.6) virginia; urgency=medium
+
+  * Add support for Mint 21.3 Virginia
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sat, 18 Nov 2023 17:11:12 +0000
+
 mintsources (2.2.5) faye; urgency=medium
 
   * Add support for LMDE 6 Faye
