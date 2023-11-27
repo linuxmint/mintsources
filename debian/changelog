@@ -1,3 +1,10 @@
+mintsources (2.2.7) virginia; urgency=medium
+
+  [ Cem Temuçin ]
+  * Adding faster networkNeighbors for Turkey (#247)
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 27 Nov 2023 13:54:42 +0000
+
 mintsources (2.2.6) virginia; urgency=medium
 
   * Add support for Mint 21.3 Virginia
