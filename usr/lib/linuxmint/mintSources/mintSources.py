@@ -1182,7 +1182,7 @@ class Application(object):
         trusted = apt_pkg.config.find_file("Dir::Etc::trusted")
         trustedparts = apt_pkg.config.find_dir("Dir::Etc::trustedparts")
         lists = apt_pkg.config.find_dir("Dir::State::lists")
-        if not os.path.isfile(trusted) or not os.path.isdir(trustedparts) or not os.path.isdir(lists):
+        if not os.path.isdir(trustedparts) or not os.path.isdir(lists):
             self.show_confirmation_dialog(_("Error with your APT configuration, you may have to reload the cache first."), affirmation=True)
             return
 
