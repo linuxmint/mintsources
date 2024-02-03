@@ -657,7 +657,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkBox" id="ppas_page">
+                      <object class="GtkBox" id="additional_sources_page">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="margin-left">12</property>
@@ -676,7 +676,7 @@
                                 <property name="can-focus">True</property>
                                 <property name="shadow-type">in</property>
                                 <child>
-                                  <object class="GtkTreeView" id="treeview_ppa">
+                                  <object class="GtkTreeView" id="treeview_sources">
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
                                     <child internal-child="selection">
@@ -701,7 +701,7 @@
                                     <property name="can-focus">False</property>
                                     <property name="homogeneous">True</property>
                                     <child>
-                                      <object class="GtkButton" id="button_ppa_add">
+                                      <object class="GtkButton" id="button_source_add">
                                         <property name="label" translatable="yes">Add</property>
                                         <property name="visible">True</property>
                                         <property name="can-focus">True</property>
@@ -714,7 +714,7 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkButton" id="button_ppa_edit">
+                                      <object class="GtkButton" id="button_source_edit">
                                         <property name="label" translatable="yes">Edit</property>
                                         <property name="visible">True</property>
                                         <property name="sensitive">False</property>
@@ -728,144 +728,7 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkButton" id="button_ppa_remove">
-                                        <property name="label" translatable="yes">Remove</property>
-                                        <property name="visible">True</property>
-                                        <property name="sensitive">False</property>
-                                        <property name="can-focus">True</property>
-                                        <property name="receives-default">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">2</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkButton" id="button_ppa_examine">
-                                        <property name="label" translatable="yes">Open</property>
-                                        <property name="visible">True</property>
-                                        <property name="sensitive">False</property>
-                                        <property name="can-focus">True</property>
-                                        <property name="receives-default">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">3</property>
-                                      </packing>
-                                    </child>
-                                    <style>
-                                      <class name="linked"/>
-                                    </style>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">1</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <style>
-                                  <class name="inline-toolbar"/>
-                                </style>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">2</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">2</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="name">ppas</property>
-                        <property name="title" translatable="yes">PPAs</property>
-                        <property name="icon-name">package-x-generic-symbolic</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkBox" id="additional_repositories_page">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="margin-left">12</property>
-                        <property name="margin-right">12</property>
-                        <property name="margin-top">12</property>
-                        <property name="margin-bottom">12</property>
-                        <property name="orientation">vertical</property>
-                        <child>
-                          <object class="GtkBox">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="orientation">vertical</property>
-                            <child>
-                              <object class="GtkScrolledWindow">
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <property name="shadow-type">in</property>
-                                <child>
-                                  <object class="GtkTreeView" id="treeview_repository">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <child internal-child="selection">
-                                      <object class="GtkTreeSelection"/>
-                                    </child>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkBox">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <child type="center">
-                                  <object class="GtkBox">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="homogeneous">True</property>
-                                    <child>
-                                      <object class="GtkButton" id="button_repository_add">
-                                        <property name="label" translatable="yes">Add</property>
-                                        <property name="visible">True</property>
-                                        <property name="can-focus">True</property>
-                                        <property name="receives-default">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkButton" id="button_repository_edit">
-                                        <property name="label" translatable="yes">Edit</property>
-                                        <property name="visible">True</property>
-                                        <property name="sensitive">False</property>
-                                        <property name="can-focus">True</property>
-                                        <property name="receives-default">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">True</property>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkButton" id="button_repository_remove">
+                                      <object class="GtkButton" id="button_source_remove">
                                         <property name="label" translatable="yes">Remove</property>
                                         <property name="visible">True</property>
                                         <property name="sensitive">False</property>
@@ -911,9 +774,9 @@
                       </object>
                       <packing>
                         <property name="name">additional_repositories</property>
-                        <property name="title" translatable="yes">Additional Repositories</property>
+                        <property name="title" translatable="yes">Other Repositories</property>
                         <property name="icon-name">package-x-generic-symbolic</property>
-                        <property name="position">2</property>
+                        <property name="position">1</property>
                       </packing>
                     </child>
                     <child>
@@ -1035,7 +898,7 @@
                         <property name="name">authentication_keys</property>
                         <property name="title" translatable="yes">Authentication Keys</property>
                         <property name="icon-name">dialog-password-symbolic</property>
-                        <property name="position">3</property>
+                        <property name="position">2</property>
                       </packing>
                     </child>
                     <child>
@@ -1136,7 +999,7 @@
                         <property name="name">maintenance</property>
                         <property name="title" translatable="yes">Maintenance</property>
                         <property name="icon-name">preferences-other-symbolic</property>
-                        <property name="position">4</property>
+                        <property name="position">3</property>
                       </packing>
                     </child>
                   </object>
