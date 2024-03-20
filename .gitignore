@@ -1,0 +1,7 @@
+debian/.debhelper
+debian/files
+debian/*substvars*
+debian/*debhelper*
+debian/mintsources
+debian/software-properties-gtk
+debian/software-properties-common
