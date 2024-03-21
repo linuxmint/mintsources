@@ -67,7 +67,7 @@ def run_async(func):
 # Used as a decorator to run things in the main loop, from another thread
 def idle(func):
     def wrapper(*args):
-        GObject.idle_add(func, *args)
+        GLib.idle_add(func, *args)
     return wrapper
 
 def signal_handler(signum, _):
