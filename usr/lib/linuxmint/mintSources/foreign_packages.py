@@ -9,7 +9,7 @@ import locale
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Vte', '2.91')
-from gi.repository import Gtk, Vte, GLib, GObject
+from gi.repository import Gtk, Vte, GLib
 
 import apt
 import mintcommon.aptdaemon
@@ -36,7 +36,7 @@ def run_async(func):
 # Used as a decorator to run things in the main loop, from another thread
 def idle(func):
     def wrapper(*args):
-        GObject.idle_add(func, *args)
+        GLib.idle_add(func, *args)
     return wrapper
 
 # Returns a tuple containing two lists
