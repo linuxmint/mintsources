@@ -22,7 +22,9 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('XApp', '1.0')
 from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject, Pango, XApp
 
-from aptsources.sourceslist import SourcesList
+import aptsources.sourceslist
+import repolib
+
 from io import BytesIO
 from CountryInformation import CountryInformation
 
@@ -162,16 +164,13 @@ def add_ppa(line, codename, forceYes, use_ppas):
 
         (deb_line, file, key_path) = expand_ppa_line(line.strip(), codename)
         deb_line = expand_http_line(deb_line, codename)
-        debsrc_line = 'deb-src' + deb_line[3:]
 
         # Add the key if not in keyring
         add_remote_key(ppa_info["signing_key_fingerprint"], path=key_path)
 
         # Add the PPA
-        sources_enabled = os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list")
         with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
             text_file.write("%s\n" % deb_line)
-            text_file.write("%s%s\n" % ("" if sources_enabled else "# ", debsrc_line))
 
     elif line.startswith("deb ") | line.startswith("http"):
         line = expand_http_line(line, codename)
@@ -228,7 +227,7 @@ def repo_exists(line):
     r = re.compile(r'^[#\s]*(\S+)\s*(?:\[.*\])? \w+:/(\S+?)/? (.+)')
     match_line = r.match(line.strip())
     if match_line:
-        repositories = SourcesList().list
+        repositories = aptsources.sourceslist.SourcesList().list
         for repository in repositories:
             match_repo = r.match(repository.line.strip())
             if not match_repo:
@@ -363,103 +362,72 @@ class Mirror():
         self.url = url
         self.name = name
 
-class Repository():
-    def __init__(self, application, line, file, selected, base_mirror_names = None, base_name = None):
+class Source():
+    def __init__(self, application, repo):
         self.application = application
-        self.line = line
-        self.file = file
-        self.selected = selected
-        self.base_mirror_names = base_mirror_names
-        self.base_name = base_name
+        self.repo = repo
+        self.filename = str(repo.file.path)
 
-    def modify_source_file(self, target_line):
-        with open(self.file, "r", encoding="utf-8", errors="ignore") as readfile:
-            content = readfile.readlines()
-        line = next((s for s in content if s.strip().endswith(self.line)), None)
-        if not line:
-            # failed to find the line in the file, either the file got modified exernally
-            # or the user previously edited the last "deb" or "deb-src" out and we silently
-            # deleted it below - FIXME: UI will remain inconsistent until user deletes
-            return
-        if target_line:
-            content[content.index(line)] = "%s%s\n" % ("" if self.selected else "# ", target_line)
-        else:
-            content.remove(line)
-
-        # If the file no longer contains any "deb" instances, delete it as well
-        if not next((s for s in content if "deb " in s or "deb-src " in s), None):
-            os.unlink(self.file)
-        else:
-            with open(self.file, "w", encoding="utf-8", errors="ignore") as writefile:
-                writefile.writelines(content)
-
-        self.application.enable_reload_button()
-
-    def switch(self):
-        self.selected = (not self.selected)
-        self.modify_source_file(self.line)
-
-    def edit(self, newline):
-        self.modify_source_file(newline)
-        self.line = newline
-
-    def delete(self):
-        self.modify_source_file(None)
-
-    def get_ppa_name(self):
-        name = self.line
-        for element in self.line.split():
-            if "http://" in element or "https://" in element:
-                name = element
-                name = name.replace("http://ppa.launchpad.net/", "")
-                name = name.replace("https://ppa.launchpadcontent.net/", "")
-                name = name.replace("/ubuntu", "")
-                name = name.replace("/ppa", "")
-                if self.line.startswith("deb-src"):
-                    suffix = _("Sources")
-                    name = "%s (%s)" % (name, suffix)
-                break
-        return "<b>%s</b>\n<small>%s</small>\n<small>%s</small>" % (name, self.line, self.file)
-
-    def get_repository_name(self):
-        line = self.line.strip()
-        name = line
-        release = ""
-        if line.startswith("deb cdrom:"):
-            name = _("CD-ROM (Installation Disc)")
+        # set name
+        self.name = repo.name
+        uri = repo.uris[0]
+        if "cdrom:" in uri:
+            self.name = _("CD-ROM (Installation Disc)")
+        elif "file://" in uri:
+            self.name = _("Local Repository")
         else:
             try:
-                elements = self.line.split(" ")
-                for i, s in enumerate(elements):
-                    if "://" in s:
-                        #release = " / " + " ".join(elements[i+1:])
-                        release = " / " + elements[i+1]
-                        protocol, element = s.split("://", 1)
-                        if not element.endswith("/"):
-                            element += "/"
-                        if protocol == "file":
-                            name = _("Local Repository")
-                            release = ""
-                        elif element in self.base_mirror_names:
-                            name = self.base_name
+                if "://" in uri:
+                    protocol, element = uri.split("://", 1)
+                    if not element.endswith("/"):
+                        element += "/"
+                    self.name = element.split("/")[0]
+                    subparts = self.name.split(".")
+                    if len(subparts) > 2:
+                        if subparts[-2] != "co":
+                            self.name = subparts[-2].capitalize()
                         else:
-                            name = element.split("/")[0]
-                            subparts = name.split(".")
-                            if len(subparts) > 2:
-                                if subparts[-2] != "co":
-                                    name = subparts[-2].capitalize()
-                                else:
-                                    name = subparts[-3].capitalize()
-                            name = name.replace("Linuxmint", "Linux Mint")
-                            name = name.replace("01", "Intel")
-                            name = name.replace("Steampowered", "Steam")
-                        break
+                            self.name = subparts[-3].capitalize()
+                    self.name = self.name.replace("Linuxmint", "Linux Mint")
+                    self.name = self.name.replace("01", "Intel")
+                    self.name = self.name.replace("Steampowered", "Steam")
             except:
                 pass
-            if self.line.startswith("deb-src"):
-                name = "%s (%s)" % (name, _("Sources"))
 
-        return "<b>%s</b>%s\n<small><i>%s</i></small>\n<small><i>%s</i></small>" % (name, release, self.line, self.file)
+        # PPA handling
+        self.is_ppa = False
+        self.ppa_owner = None
+        self.ppa_name = None
+        if "://ppa.launchpad" in uri:
+            self.is_ppa = True
+            self.name = uri.replace("http://ppa.launchpad.net/", "")
+            self.name = self.name.replace("https://ppa.launchpadcontent.net/", "")
+            self.name = self.name.replace("/ubuntu", "")
+            self.name = self.name.replace("/ppa", "")
+            self.ppa_owner, self.ppa_name = self.name.split("/")
+
+        # set UI name
+        uris = " ".join(self.repo.uris)
+        suites = " ".join(self.repo.suites)
+        components = " ".join(self.repo.components)
+        self.ui_name = f"<b>{self.name}</b>\n<small><i>{uris} {suites} {components}\n{self.filename}</i></small>"
+
+    def is_enabled(self):
+        return self.repo.enabled == repolib.AptSourceEnabled.TRUE
+
+    def switch(self):
+        if self.is_enabled():
+            self.repo.enabled = False
+        else:
+            self.repo.enabled = True
+        self.repo.save()
+        self.application.enable_reload_button()
+
+    def delete(self):
+        ident = self.repo.ident
+        print("Removing ident", ident)
+        self.repo.file.remove_source(ident)
+        self.application.enable_reload_button()
 
 class ComponentSwitchBox(Gtk.Box):
     def __init__(self, application, component, window):
@@ -951,7 +919,7 @@ class Application(object):
         self.refresh_ppa_model()
 
         # Add repositories
-        self._repository_model = Gtk.ListStore(object, bool, str)
+        self._repository_model = Gtk.ListStore(object, bool, str) # source, selected, name
         self._repository_treeview = self.builder.get_object("treeview_repository")
         self._repository_treeview.set_model(self._repository_model)
         self._repository_treeview.set_headers_clickable(True)
@@ -1008,12 +976,10 @@ class Application(object):
         self.builder.get_object("button_base_mirror").connect("clicked", self.select_new_base_mirror)
 
         self.builder.get_object("button_ppa_add").connect("clicked", self.add_ppa)
-        self.builder.get_object("button_ppa_edit").connect("clicked", self.edit_ppa)
         self.builder.get_object("button_ppa_remove").connect("clicked", self.remove_ppa)
         self.builder.get_object("button_ppa_examine").connect("clicked", self.examine_ppa)
 
         self.builder.get_object("button_repository_add").connect("clicked", self.add_repository)
-        self.builder.get_object("button_repository_edit").connect("clicked", self.edit_repository)
         self.builder.get_object("button_repository_remove").connect("clicked", self.remove_repository)
 
         self.builder.get_object("button_keys_add").connect("clicked", self.add_key)
@@ -1035,50 +1001,31 @@ class Application(object):
 
     def refresh_repository_model(self):
         self._repository_model.clear()
-        if len(self.repositories):
-            for repository in self.repositories:
-                self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
+        for source in self.sources:
+            self._repository_model.append((source, source.is_enabled(), source.ui_name))
 
     def refresh_ppa_model(self):
         self._ppa_model.clear()
-        if (len(self.ppas) > 0):
-            for repository in self.ppas:
-                self._ppa_model.append((repository, repository.selected, repository.get_ppa_name()))
+        for ppa in self.ppas:
+            self._ppa_model.append((ppa, ppa.is_enabled(), ppa.ui_name))
 
     def read_source_lists(self):
+        repolib.load_all_sources()
         self.repositories = []
         self.ppas = []
-        source_files = []
-        if os.path.exists("/etc/apt/sources.list"):
-            source_files.append("/etc/apt/sources.list")
-        for file in os.listdir("/etc/apt/sources.list.d"):
-            if file.endswith(".list"):
-                source_files.append("/etc/apt/sources.list.d/%s" % file)
-
-        if "/etc/apt/sources.list.d/official-package-repositories.list" in source_files:
-            source_files.remove("/etc/apt/sources.list.d/official-package-repositories.list")
-
-        if "/etc/apt/sources.list.d/official-source-repositories.list" in source_files:
-            source_files.remove("/etc/apt/sources.list.d/official-source-repositories.list")
-
-        if "/etc/apt/sources.list.d/official-dbgsym-repositories.list" in source_files:
-            source_files.remove("/etc/apt/sources.list.d/official-dbgsym-repositories.list")
-
-        for source_file in source_files:
-            with open(source_file, "r", encoding="utf-8", errors="ignore") as file:
-                for line in file.readlines():
-                    line = line.strip()
-                    if line != "":
-                        selected = True
-                        if line.startswith("#"):
-                            line = line.replace('#', '').strip()
-                            selected = False
-                        if line.startswith("deb"):
-                            repository = Repository(self, line, source_file, selected, self.base_mirror_names, self.base_name)
-                            if "://ppa.launchpad" in line and self.config["general"]["use_ppas"] != "false":
-                                self.ppas.append(repository)
-                            else:
-                                self.repositories.append(repository)
+        self.sources = []
+        for name in repolib.sources:
+            repo = repolib.sources[name]
+            if repo.file.name in ['official-package-repositories',
+                             'official-source-repositories',
+                             'official-dbgsym-repositories']:
+                continue
+            selected = repo.enabled
+            source = Source(self, repo)
+            if "://ppa.launchpad" in repo.uris[0] and self.config["general"]["use_ppas"] != "false":
+                self.ppas.append(source)
+            else:
+                self.sources.append(source)
 
     def set_button_text(self, label, text):
         label.set_text(text)
@@ -1422,36 +1369,38 @@ class Application(object):
                 self.format_string(ppa_info["displayname"]),
                 self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
             if self.show_confirm_ppa_dialog(ppa_info["displayname"], info_text):
-                (deb_line, file, key_path) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
-                deb_line = expand_http_line(deb_line, self.config["general"]["base_codename"])
-                debsrc_line = 'deb-src' + deb_line[3:]
+                (line, file, key_path) = expand_ppa_line(line.strip(), self.config["general"]["base_codename"])
+                if file.endswith(".list"):
+                    file = file[:-5]
+                line = expand_http_line(line, self.config["general"]["base_codename"])
 
                 # Add the key if not in keyring
                 add_remote_key(ppa_info["signing_key_fingerprint"], path=key_path)
                 self.load_keys()
 
-                # Add the PPA in sources.list.d
-                sources_enabled = self.builder.get_object("source_code_switch").get_active()
-                with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
-                    text_file.write("%s\n" % deb_line)
-                    text_file.write("%s%s\n" % ("" if sources_enabled else "# ", debsrc_line))
-
-                # Add the package line to the UI or replace it if it exists
-                def add_to_ui(line, selected=True):
-                    repo = next((repo for repo in self.ppas if (repo.line == line and repo.file == file)), None)
-                    if repo:
-                        iter = next((item.iter for item in self._ppa_model if line in self._ppa_model.get_value(item.iter, 2).split("\n")), None)
-                        if iter:
-                            self._ppa_model.remove(iter)
-                        self.ppas.remove(repo)
-                    repository = Repository(self, line, file, selected)
-                    self.ppas.append(repository)
-                    tree_iter = self._ppa_model.append((repository, selected, repository.get_ppa_name()))
-
-                add_to_ui(deb_line)
-                add_to_ui(debsrc_line, sources_enabled)
-
-                self.enable_reload_button()
+                if repo_malformed(line):
+                    self.show_confirmation_dialog(_("Malformed input, repository not added."), affirmation=True)
+                else:
+                    if not repo_exists(line):
+                        # Add the repository in sources.list.d
+                        new_file = repolib.SourceFile(name=file)
+                        new_file.format = repolib.SourceFormat.LEGACY
+                        new_source = repolib.Source()
+                        new_source.load_from_data([line])
+                        new_source.generate_default_ident()
+                        new_source.generate_default_name()
+                        print("New ident", new_source.ident)
+                        new_source.enabled = True
+                        new_file.add_source(new_source)
+                        new_file.save()
+                        new_source.save()
+                        repolib.load_all_sources()
+                        source = Source(self, new_source)
+                        self.ppas.append(source)
+                        tree_iter = self._ppa_model.append((source, source.is_enabled(), source.ui_name))
+                        self.enable_reload_button()
+                    else:
+                        self.show_confirmation_dialog(_("This repository is already configured, you cannot add it a second time."), affirmation=True)
 
 
     def format_string(self, text):
@@ -1459,16 +1408,6 @@ class Application(object):
             text = ""
         text = text.replace("<", "&lt;").replace(">", "&gt;")
         return text
-
-    def edit_ppa(self, widget):
-        selection = self._ppa_treeview.get_selection()
-        (model, indexes) = selection.get_selected_rows()
-        iter = model.get_iter(indexes[0])
-        repository = model.get(iter, 0)[0]
-        url = self.show_entry_dialog(_("Edit the URL of the PPA"), repository.line)
-        if url is not None:
-            repository.edit(url)
-            model.set_value(iter, 2, repository.get_ppa_name())
 
     def remove_ppa(self, widget):
         if (self.show_confirmation_dialog(_("Are you sure you want to permanently remove the selected PPAs?"), yes_no=True)):
@@ -1478,23 +1417,23 @@ class Application(object):
             for index in indexes:
                 iters.append(model.get_iter(index))
             for iter in iters:
-                repository = model.get(iter, 0)[0]
+                source = model.get(iter, 0)[0]
                 model.remove(iter)
-                repository.delete()
-                self.ppas.remove(repository)
+                source.delete()
+                self.ppas.remove(source)
                 # If the source path was deleted, also delete the key path
-                if not os.path.exists(repository.file):
-                    print(f"{repository.file} deleted")
-                    path = repository.file
+                if not os.path.exists(source.filename):
+                    print(f"{source.filename} deleted")
+                    path = source.filename
                     path = path.replace("/etc/apt/sources.list.d/", "/etc/apt/keyrings/")
                     path = path.replace(".list", ".gpg")
+                    print(f"path '{path}'")
                     if os.path.exists(path):
                         os.unlink(path)
                         print(f"{path} deleted")
 
     def ppa_selected(self, selection):
         selection_count = selection.count_selected_rows()
-        self.builder.get_object("button_ppa_edit").set_sensitive(selection_count == 1)
         self.builder.get_object("button_ppa_remove").set_sensitive(selection_count >= 1)
 
         self.builder.get_object("button_ppa_examine").set_sensitive(False)
@@ -1504,7 +1443,7 @@ class Application(object):
                 iter = model.get_iter(indexes[0])
                 repository = model.get_value(iter, 0)
                 ppa_name = model.get_value(iter, 2)
-                if repository.selected and "://ppa.launchpad" in repository.line:
+                if repository.is_enabled() and "://ppa.launchpad" in repository.repo.uris[0]:
                     self.builder.get_object("button_ppa_examine").set_sensitive(True)
             except Exception as detail:
                 print (detail)
@@ -1519,32 +1458,23 @@ class Application(object):
             selection = self._ppa_treeview.get_selection()
             (model, indexes) = selection.get_selected_rows()
             iter = model.get_iter(indexes[0])
-            repository = model.get_value(iter, 0)
+            source = model.get_value(iter, 0)
             ppa_name = model.get_value(iter, 2)
-            if repository.selected and "://ppa.launchpad" in repository.line:
-                elements = repository.line.split()
-                for element in repository.line.split():
-                    if element.startswith("http") and element.endswith("/ubuntu"):
-                        line = element
-                        line = line.replace("http://ppa.launchpad.net/", "")
-                        line = line.replace("https://ppa.launchpadcontent.net/", "")
-                        line = line[:-7]
-                        ppa_owner, ppa_name = line.split("/")
-                        ppa_file = f"/var/lib/apt/lists/ppa.launchpadcontent.net_{ppa_owner}_{ppa_name}_ubuntu_dists_{codename}_main_binary-{arch}_Packages"
-                        legacy_ppa_file = f"/var/lib/apt/lists/ppa.launchpad.net_{ppa_owner}_{ppa_name}_ubuntu_dists_{codename}_main_binary-{arch}_Packages"
-                        if os.path.exists(ppa_file):
-                            subprocess.Popen(["/usr/lib/linuxmint/mintSources/ppa_browser.py", codename, ppa_file, ppa_owner, ppa_name])
-                        elif os.path.exists(legacy_ppa_file):
-                            subprocess.Popen(["/usr/lib/linuxmint/mintSources/ppa_browser.py", codename, legacy_ppa_file, ppa_owner, ppa_name])
-                        else:
-                            print ("%s not found!" % ppa_file)
-                            self.show_error_dialog(_("The content of this PPA is not available. Please refresh the cache and try again."))
+            if source.is_enabled() and source.is_ppa:
+                ppa_file = f"/var/lib/apt/lists/ppa.launchpadcontent.net_{source.ppa_owner}_{source.ppa_name}_ubuntu_dists_{codename}_main_binary-{arch}_Packages"
+                legacy_ppa_file = f"/var/lib/apt/lists/ppa.launchpad.net_{source.ppa_owner}_{source.ppa_name}_ubuntu_dists_{codename}_main_binary-{arch}_Packages"
+                if os.path.exists(ppa_file):
+                    subprocess.Popen(["/usr/lib/linuxmint/mintSources/ppa_browser.py", codename, ppa_file, source.ppa_owner, source.ppa_name])
+                elif os.path.exists(legacy_ppa_file):
+                    subprocess.Popen(["/usr/lib/linuxmint/mintSources/ppa_browser.py", codename, legacy_ppa_file, source.ppa_owner, source.ppa_name])
+                else:
+                    print ("%s not found!" % ppa_file)
+                    self.show_error_dialog(_("The content of this PPA is not available. Please refresh the cache and try again."))
         except Exception as detail:
             print (detail)
 
     def repo_selected(self, selection):
         selection_count = selection.count_selected_rows()
-        self.builder.get_object("button_repository_edit").set_sensitive(selection_count == 1)
         self.builder.get_object("button_repository_remove").set_sensitive(selection_count >= 1)
 
     def add_repository(self, widget):
@@ -1565,25 +1495,24 @@ class Application(object):
         else:
             if not repo_exists(line):
                 # Add the repository in sources.list.d
-                with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
-                    f.write("%s\n" % line)
-                # Add the line in the UI
-                repository = Repository(self, line, additional_repositories_file, True, self.base_mirror_names, self.base_name)
-                self.repositories.append(repository)
-                tree_iter = self._repository_model.append((repository, repository.selected, repository.get_repository_name()))
+                new_file = repolib.SourceFile(name="additional-repositories")
+                new_file.format = repolib.SourceFormat.LEGACY
+                new_source = repolib.Source()
+                new_source.load_from_data([line])
+                new_source.generate_default_ident()
+                new_source.generate_default_name()
+                print("New ident", new_source.ident)
+                new_source.enabled = True
+                new_file.add_source(new_source)
+                new_file.save()
+                new_source.save()
+                repolib.load_all_sources()
+                source = Source(self, new_source)
+                self.sources.append(source)
+                tree_iter = self._repository_model.append((source, source.is_enabled(), source.ui_name))
                 self.enable_reload_button()
             else:
                 self.show_confirmation_dialog(_("This repository is already configured, you cannot add it a second time."), affirmation=True)
-
-    def edit_repository(self, widget):
-        selection = self._repository_treeview.get_selection()
-        (model, indexes) = selection.get_selected_rows()
-        iter = model.get_iter(indexes[0])
-        repository = model.get(iter, 0)[0]
-        url = self.show_entry_dialog(_("Edit the URL of the repository"), repository.line)
-        if url is not None:
-            repository.edit(url)
-            model.set_value(iter, 2, repository.get_repository_name())
 
     def remove_repository(self, widget):
         if (self.show_confirmation_dialog(_("Are you sure you want to permanently remove the selected repositories?"), yes_no=True)):
@@ -1593,10 +1522,10 @@ class Application(object):
             for index in indexes:
                 iters.append(model.get_iter(index))
             for iter in iters:
-                repository = model.get(iter, 0)[0]
+                source = model.get(iter, 0)[0]
                 model.remove(iter)
-                repository.delete()
-                self.repositories.remove(repository)
+                source.delete()
+                self.sources.remove(source)
 
     def show_confirmation_dialog(self, message, affirmation=None, yes_no=False):
         buttons = Gtk.ButtonsType.OK_CANCEL
@@ -1695,7 +1624,7 @@ class Application(object):
 
     def datafunction_checkbox(self, column, cell, model, iter, data):
         cell.set_property("activatable", True)
-        if (model.get_value(iter, 0).selected):
+        if (model.get_value(iter, 0).is_enabled()):
             cell.set_property("active", True)
         else:
             cell.set_property("active", False)
@@ -1705,7 +1634,7 @@ class Application(object):
         if iter is not None:
             repository = self._ppa_model.get_value(iter, 0)
             repository.switch()
-            self.builder.get_object("button_ppa_examine").set_sensitive(repository.selected)
+            self.builder.get_object("button_ppa_examine").set_sensitive(repository.is_enabled())
 
     def repository_toggled(self, renderer, path):
         iter = self._repository_model.get_iter(path)
