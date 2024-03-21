@@ -1337,6 +1337,43 @@ class Application(object):
         selection_count = selection.count_selected_rows()
         self.builder.get_object("button_keys_remove").set_sensitive(selection_count >= 1)
 
+    def add_repository(self, widget):
+        start_line = ""
+        default_line = "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"]
+        clipboard_text = self.get_clipboard_text("deb")
+        if clipboard_text is not None:
+            start_line = clipboard_text
+        else:
+            start_line = default_line
+
+        line = self.show_entry_dialog(_("Please enter the name of the repository you want to add:"), start_line)
+        if not line or line == default_line:
+            return
+        line = expand_http_line(line, self.config["general"]["base_codename"])
+        if repo_malformed(line):
+            self.show_confirmation_dialog(_("Malformed input, repository not added."), affirmation=True)
+        else:
+            if not repo_exists(line):
+                # Add the repository in sources.list.d
+                new_file = repolib.SourceFile(name="additional-repositories")
+                new_file.format = repolib.SourceFormat.LEGACY
+                new_source = repolib.Source()
+                new_source.load_from_data([line])
+                new_source.generate_default_ident()
+                new_source.generate_default_name()
+                print("New ident", new_source.ident)
+                new_source.enabled = True
+                new_file.add_source(new_source)
+                new_file.save()
+                new_source.save()
+                repolib.load_all_sources()
+                source = Source(self, new_source)
+                self.sources.append(source)
+                tree_iter = self._repository_model.append((source, source.is_enabled(), source.ui_name))
+                self.enable_reload_button()
+            else:
+                self.show_confirmation_dialog(_("This repository is already configured, you cannot add it a second time."), affirmation=True)
+
     def add_ppa(self, widget):
         default_line = "ppa:ppa-owner/ppa-name"
         start_line = default_line
@@ -1363,8 +1400,6 @@ class Application(object):
                 self.show_error_dialog(error_msg)
                 return
 
-            image = Gtk.Image()
-            image.set_from_icon_name("process-stop-symbolic", Gtk.IconSize.DIALOG)
             info_text = "%s\n\n%s\n\n%s\n\n%s" % (line,
                 self.format_string(ppa_info["displayname"]),
                 self.format_string(ppa_info["description"]), str(ppa_info["web_link"]))
@@ -1409,6 +1444,19 @@ class Application(object):
         text = text.replace("<", "&lt;").replace(">", "&gt;")
         return text
 
+    def remove_repository(self, widget):
+        if (self.show_confirmation_dialog(_("Are you sure you want to permanently remove the selected repositories?"), yes_no=True)):
+            selection = self._repository_treeview.get_selection()
+            (model, indexes) = selection.get_selected_rows()
+            iters = []
+            for index in indexes:
+                iters.append(model.get_iter(index))
+            for iter in iters:
+                source = model.get(iter, 0)[0]
+                model.remove(iter)
+                source.delete()
+                self.sources.remove(source)
+
     def remove_ppa(self, widget):
         if (self.show_confirmation_dialog(_("Are you sure you want to permanently remove the selected PPAs?"), yes_no=True)):
             selection = self._ppa_treeview.get_selection()
@@ -1432,18 +1480,20 @@ class Application(object):
                         os.unlink(path)
                         print(f"{path} deleted")
 
+    def repo_selected(self, selection):
+        selection_count = selection.count_selected_rows()
+        self.builder.get_object("button_repository_remove").set_sensitive(selection_count >= 1)
+
     def ppa_selected(self, selection):
         selection_count = selection.count_selected_rows()
         self.builder.get_object("button_ppa_remove").set_sensitive(selection_count >= 1)
-
         self.builder.get_object("button_ppa_examine").set_sensitive(False)
         if (selection_count == 1):
             try:
                 (model, indexes) = selection.get_selected_rows()
                 iter = model.get_iter(indexes[0])
-                repository = model.get_value(iter, 0)
-                ppa_name = model.get_value(iter, 2)
-                if repository.is_enabled() and "://ppa.launchpad" in repository.repo.uris[0]:
+                source = model.get_value(iter, 0)
+                if source.is_enabled() and source.is_ppa:
                     self.builder.get_object("button_ppa_examine").set_sensitive(True)
             except Exception as detail:
                 print (detail)
@@ -1472,60 +1522,6 @@ class Application(object):
                     self.show_error_dialog(_("The content of this PPA is not available. Please refresh the cache and try again."))
         except Exception as detail:
             print (detail)
-
-    def repo_selected(self, selection):
-        selection_count = selection.count_selected_rows()
-        self.builder.get_object("button_repository_remove").set_sensitive(selection_count >= 1)
-
-    def add_repository(self, widget):
-        start_line = ""
-        default_line = "deb http://packages.domain.com/ %s main" % self.config["general"]["base_codename"]
-        clipboard_text = self.get_clipboard_text("deb")
-        if clipboard_text is not None:
-            start_line = clipboard_text
-        else:
-            start_line = default_line
-
-        line = self.show_entry_dialog(_("Please enter the name of the repository you want to add:"), start_line)
-        if not line or line == default_line:
-            return
-        line = expand_http_line(line, self.config["general"]["base_codename"])
-        if repo_malformed(line):
-            self.show_confirmation_dialog(_("Malformed input, repository not added."), affirmation=True)
-        else:
-            if not repo_exists(line):
-                # Add the repository in sources.list.d
-                new_file = repolib.SourceFile(name="additional-repositories")
-                new_file.format = repolib.SourceFormat.LEGACY
-                new_source = repolib.Source()
-                new_source.load_from_data([line])
-                new_source.generate_default_ident()
-                new_source.generate_default_name()
-                print("New ident", new_source.ident)
-                new_source.enabled = True
-                new_file.add_source(new_source)
-                new_file.save()
-                new_source.save()
-                repolib.load_all_sources()
-                source = Source(self, new_source)
-                self.sources.append(source)
-                tree_iter = self._repository_model.append((source, source.is_enabled(), source.ui_name))
-                self.enable_reload_button()
-            else:
-                self.show_confirmation_dialog(_("This repository is already configured, you cannot add it a second time."), affirmation=True)
-
-    def remove_repository(self, widget):
-        if (self.show_confirmation_dialog(_("Are you sure you want to permanently remove the selected repositories?"), yes_no=True)):
-            selection = self._repository_treeview.get_selection()
-            (model, indexes) = selection.get_selected_rows()
-            iters = []
-            for index in indexes:
-                iters.append(model.get_iter(index))
-            for iter in iters:
-                source = model.get(iter, 0)[0]
-                model.remove(iter)
-                source.delete()
-                self.sources.remove(source)
 
     def show_confirmation_dialog(self, message, affirmation=None, yes_no=False):
         buttons = Gtk.ButtonsType.OK_CANCEL
