@@ -731,7 +731,7 @@
                                     </child>
                                     <child>
                                       <object class="GtkButton" id="button_ppa_examine">
-                                        <property name="label" translatable="yes">Open</property>
+                                        <property name="label" translatable="yes">Browse...</property>
                                         <property name="visible">True</property>
                                         <property name="sensitive">False</property>
                                         <property name="can-focus">True</property>
