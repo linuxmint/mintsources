@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-21 15:47+0000\n"
+"POT-Creation-Date: 2024-03-21 22:01+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,104 +17,104 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:85
+#: usr/lib/linuxmint/mintSources/mintSources.py:86
 msgid "You are about to remove the following PPA:"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:88
-#: usr/lib/linuxmint/mintSources/mintSources.py:154
+#: usr/lib/linuxmint/mintSources/mintSources.py:89
+#: usr/lib/linuxmint/mintSources/mintSources.py:155
 #, python-format
 msgid " More info: %s"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:92
-#: usr/lib/linuxmint/mintSources/mintSources.py:158
+#: usr/lib/linuxmint/mintSources/mintSources.py:93
+#: usr/lib/linuxmint/mintSources/mintSources.py:159
 msgid "Press Enter to continue or Ctrl+C to cancel"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:96
-#: usr/lib/linuxmint/mintSources/mintSources.py:162
+#: usr/lib/linuxmint/mintSources/mintSources.py:97
+#: usr/lib/linuxmint/mintSources/mintSources.py:163
 msgid "Unable to prompt for response.  Please run with -y"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:100
+#: usr/lib/linuxmint/mintSources/mintSources.py:101
 msgid "Cancelling..."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:103
+#: usr/lib/linuxmint/mintSources/mintSources.py:104
 #, python-format
 msgid "Cannot get info about PPA: '%s'."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:111
+#: usr/lib/linuxmint/mintSources/mintSources.py:112
 #, python-format
 msgid "failed to remove PPA: '%s'"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:130
+#: usr/lib/linuxmint/mintSources/mintSources.py:131
 #, python-format
 msgid "failed to remove repository: '%s'"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:137
+#: usr/lib/linuxmint/mintSources/mintSources.py:138
 msgid "Adding PPAs is not supported"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:144
+#: usr/lib/linuxmint/mintSources/mintSources.py:145
 #, python-format
 msgid "Cannot add PPA: '%s'."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:148
+#: usr/lib/linuxmint/mintSources/mintSources.py:149
 msgid "Adding private PPAs is not supported currently"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:151
+#: usr/lib/linuxmint/mintSources/mintSources.py:152
 msgid "You are about to add the following PPA:"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:178
+#: usr/lib/linuxmint/mintSources/mintSources.py:179
 #: usr/lib/linuxmint/mintSources/mintSources.py:1354
 #: usr/lib/linuxmint/mintSources/mintSources.py:1417
 msgid "Malformed input, repository not added."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:181
+#: usr/lib/linuxmint/mintSources/mintSources.py:182
 msgid "Repository already exists."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:250
+#: usr/lib/linuxmint/mintSources/mintSources.py:251
 msgid "Connection timed out, check your connection or try again later."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:252
+#: usr/lib/linuxmint/mintSources/mintSources.py:253
 msgid "Failed to establish a secure connection."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:254
+#: usr/lib/linuxmint/mintSources/mintSources.py:255
 #, python-format
 msgid "Failed to download the PPA: %s."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:263
-#: usr/lib/linuxmint/mintSources/mintSources.py:267
+#: usr/lib/linuxmint/mintSources/mintSources.py:264
+#: usr/lib/linuxmint/mintSources/mintSources.py:268
 msgid "No supported PPA of this name was found."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:275
+#: usr/lib/linuxmint/mintSources/mintSources.py:276
 #, python-format
 msgid "This PPA does not support %s"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:375
+#: usr/lib/linuxmint/mintSources/mintSources.py:376
 msgid "CD-ROM (Installation Disc)"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:377
+#: usr/lib/linuxmint/mintSources/mintSources.py:378
 msgid "Local Repository"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:457
+#: usr/lib/linuxmint/mintSources/mintSources.py:458
 msgid ""
 "Linux Mint uses Romeo to publish packages which are not tested. Once these "
 "packages are tested, they are then moved to the official repositories. "
@@ -122,44 +122,44 @@ msgid ""
 "repository. Are you sure you want to enable Romeo?"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:489
+#: usr/lib/linuxmint/mintSources/mintSources.py:490
 msgid "Select a mirror"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:501
+#: usr/lib/linuxmint/mintSources/mintSources.py:502
 msgid "Country"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:507
+#: usr/lib/linuxmint/mintSources/mintSources.py:508
 msgid "Mirror"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:512
+#: usr/lib/linuxmint/mintSources/mintSources.py:513
 msgid "Speed"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:543
+#: usr/lib/linuxmint/mintSources/mintSources.py:544
 msgid "Worldwide"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:630
-#: usr/lib/linuxmint/mintSources/mintSources.py:644
+#: usr/lib/linuxmint/mintSources/mintSources.py:631
+#: usr/lib/linuxmint/mintSources/mintSources.py:645
 msgid "kB/s"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:633
+#: usr/lib/linuxmint/mintSources/mintSources.py:634
 msgid "MB/s"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:636
+#: usr/lib/linuxmint/mintSources/mintSources.py:637
 msgid "GB/s"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:684
+#: usr/lib/linuxmint/mintSources/mintSources.py:685
 msgid "Obsolete"
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintSources.py:687
+#: usr/lib/linuxmint/mintSources/mintSources.py:688
 msgid "Unreachable"
 msgstr ""
 
@@ -258,7 +258,6 @@ msgid "Open.."
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintSources.py:1307
-#: usr/lib/linuxmint/mintSources/mintSources.py:1696
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:4
 msgid "Cancel"
 msgstr ""
@@ -306,18 +305,6 @@ msgstr ""
 msgid ""
 "The content of this PPA is not available. Please refresh the cache and try "
 "again."
-msgstr ""
-
-#: usr/lib/linuxmint/mintSources/mintSources.py:1692
-msgid "Your configuration changed"
-msgstr ""
-
-#: usr/lib/linuxmint/mintSources/mintSources.py:1692
-msgid "Click OK to update your APT cache"
-msgstr ""
-
-#: usr/lib/linuxmint/mintSources/mintSources.py:1697
-msgid "OK"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/ppa_browser.py:82
@@ -481,19 +468,31 @@ msgid "Maintenance"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:29
-msgid "Select Mirror"
+msgid "Click here to update the APT cache"
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:30
-msgid "Apply"
+msgid "Updating cache..."
 msgstr ""
 
 #: usr/lib/linuxmint/mintSources/mintsources.glade.h:31
+msgid "Error"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:32
+msgid "Select Mirror"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:33
+msgid "Apply"
+msgstr ""
+
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:34
 msgid ""
 "This PPA provides the following packages. Please select the ones you want to "
 "install."
 msgstr ""
 
-#: usr/lib/linuxmint/mintSources/mintsources.glade.h:32
+#: usr/lib/linuxmint/mintSources/mintsources.glade.h:35
 msgid "Install"
 msgstr ""
