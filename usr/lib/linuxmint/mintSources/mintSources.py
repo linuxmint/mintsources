@@ -20,7 +20,9 @@ import argparse
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('XApp', '1.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf, GLib, GObject, Pango, XApp
+gi.require_version('PackageKitGlib', '1.0')
+from gi.repository import Gtk, Gdk, Gio, GdkPixbuf, GLib, Pango, XApp
+from gi.repository import PackageKitGlib
 
 import aptsources.sourceslist
 import repolib
@@ -29,7 +31,6 @@ from io import BytesIO
 from CountryInformation import CountryInformation
 
 import apt_pkg
-import mintcommon.aptdaemon
 
 BUTTON_LABEL_MAX_LENGTH = 30
 
@@ -484,7 +485,7 @@ class MirrorSelectionDialog(object):
         self._ui_builder = ui_builder
 
         self._dialog = ui_builder.get_object("mirror_selection_dialog")
-        self._dialog.set_transient_for(application._main_window)
+        self._dialog.set_transient_for(application.main_window)
 
         self._dialog.set_title(_("Select a mirror"))
 
@@ -823,19 +824,18 @@ class Application(object):
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain("mintsources")
         self.builder.add_from_file(glade_file)
-        self._main_window = self.builder.get_object("main_window")
-        self._info_box = self.builder.get_object("box_infobar")
-        self._info_revealer = self.builder.get_object("info_revealer")
+        self.main_window = self.builder.get_object("main_window")
+        self.status_stack = self.builder.get_object("status_stack")
 
-        self._main_window.set_title(_("Software Sources"))
+        self.main_window.set_title(_("Software Sources"))
 
-        self._main_window.set_icon_name("software-sources")
+        self.main_window.set_icon_name("software-sources")
 
-        self.scale = self._main_window.get_scale_factor()
+        self.scale = self.main_window.get_scale_factor()
 
         self._official_repositories_page = self.builder.get_object("official_repositories_page")
 
-        self.apt = mintcommon.aptdaemon.APT(self._main_window)
+        self.builder.get_object("reload_button").connect("clicked", self.update_cache)
 
         config_parser = configparser.RawConfigParser()
         config_parser.read("/usr/share/mintsources/%s/mintsources.conf" % self.os_codename)
@@ -869,7 +869,7 @@ class Application(object):
         if (len(self.optional_components) > 0):
             for i in range(len(self.optional_components)):
                 component = self.optional_components[i]
-                cb = ComponentSwitchBox(self, component, self._main_window)
+                cb = ComponentSwitchBox(self, component, self.main_window)
                 component.set_widget(cb)
                 self.builder.get_object("box_optional_components").pack_start(cb, True, False, 0)
 
@@ -968,7 +968,7 @@ class Application(object):
 
         self.builder.get_object("revert_button").connect("clicked", self.revert_to_default_sources)
 
-        self._main_window.connect("delete_event", lambda w,e: Gtk.main_quit())
+        self.main_window.connect("delete_event", lambda w,e: Gtk.main_quit())
 
         self.mirror_selection_dialog = MirrorSelectionDialog(self, self.builder)
 
@@ -1133,7 +1133,7 @@ class Application(object):
             self.show_confirmation_dialog(_("Error with your APT configuration, you may have to reload the cache first."), affirmation=True)
             return
 
-        self._main_window.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
+        self.main_window.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
         Gdk.flush()
 
         # Run gpg --list-keys to initiate gpg folders in ~/.gnupg
@@ -1234,7 +1234,7 @@ class Application(object):
         if tempdir:
             tempdir.cleanup()
 
-        self._main_window.get_window().set_cursor(None)
+        self.main_window.get_window().set_cursor(None)
 
         keys_added = [x.uri for x in repositories if x.added]
         keys_missing = [x.uri for x in repositories if (x.missing and not x.added)]
@@ -1302,7 +1302,7 @@ class Application(object):
 
     def add_key(self, widget):
         dialog = Gtk.FileChooserDialog(_("Open.."),
-                               self._main_window,
+                               self.main_window,
                                Gtk.FileChooserAction.OPEN,
                                (_("Cancel"), Gtk.ResponseType.CANCEL,
                                 _("Open"), Gtk.ResponseType.OK))
@@ -1533,13 +1533,13 @@ class Application(object):
             confirmation_button = Gtk.ResponseType.YES
 
         if affirmation is None:
-            d = Gtk.MessageDialog(parent=self._main_window,
+            d = Gtk.MessageDialog(parent=self.main_window,
                               message_type=Gtk.MessageType.WARNING,
                               buttons=buttons,
                               text=message,
                               modal=True)
         else:
-            d = Gtk.MessageDialog(parent=self._main_window,
+            d = Gtk.MessageDialog(parent=self.main_window,
                               message_type=Gtk.MessageType.INFO,
                               buttons=Gtk.ButtonsType.OK,
                               text=message,
@@ -1564,7 +1564,7 @@ class Application(object):
         s.set_shadow_type(Gtk.ShadowType.OUT)
         default_button = Gtk.ResponseType.ACCEPT
         confirmation_button = Gtk.ResponseType.ACCEPT
-        d = Gtk.Dialog(transient_for=self._main_window, modal=True, destroy_with_parent=True)
+        d = Gtk.Dialog(transient_for=self.main_window, modal=True, destroy_with_parent=True)
         d.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT, Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
         d.set_size_request(550, 400)
         d.get_content_area().pack_start(s, True, True, 12)
@@ -1582,7 +1582,7 @@ class Application(object):
             return False
 
     def show_error_dialog(self, message):
-        d = Gtk.MessageDialog(parent=self._main_window,
+        d = Gtk.MessageDialog(parent=self.main_window,
                               message_type=Gtk.MessageType.ERROR,
                               buttons=Gtk.ButtonsType.OK,
                               text=message,
@@ -1596,7 +1596,7 @@ class Application(object):
             return False
 
     def show_entry_dialog(self, message, default=''):
-        d = Gtk.MessageDialog(parent=self._main_window,
+        d = Gtk.MessageDialog(parent=self.main_window,
                               message_type=Gtk.MessageType.OTHER,
                               buttons=Gtk.ButtonsType.OK_CANCEL,
                               text=message,
@@ -1653,7 +1653,7 @@ class Application(object):
             self.apply_official_sources()
 
     def run(self):
-        self._main_window.show_all()
+        self.main_window.show()
         Gtk.main()
 
     def revert_to_default_sources(self, widget):
@@ -1680,38 +1680,31 @@ class Application(object):
             global sources_changed
             sources_changed = True
             return
+        self.status_stack.show()
+        self.status_stack.set_visible_child_name("page_update")
 
-        if not self._info_revealer.get_reveal_child():
-            if self._info_box.get_children() == []:
-                infobar = Gtk.InfoBar()
-                infobar.set_message_type(Gtk.MessageType.INFO)
-                box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                image = Gtk.Image.new_from_icon_name("dialog-information-symbolic", Gtk.IconSize.LARGE_TOOLBAR)
-                box.pack_start(image, False, False, 0)
-                info_label = Gtk.Label()
-                infobar_message = "<b>%s</b>\n%s" % (_("Your configuration changed"), _("Click OK to update your APT cache"))
-                info_label.set_markup(infobar_message)
-                box.pack_start(info_label, False, False, 0)
-                infobar.get_content_area().pack_start(box, False, False, 0)
-                infobar.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
-                infobar.add_button(_("OK"), Gtk.ResponseType.OK)
-                infobar.connect("response", self._on_infobar_response)
-                infobar.show_all()
-                self._info_box.pack_start(infobar, True, True, 0)
+    def update_cache(self, widget):
+        self.status_stack.set_visible_child_name("page_progress")
+        self.main_window.set_sensitive(False)
+        task = PackageKitGlib.Task()
+        task.refresh_cache_async(True, Gio.Cancellable(), self.on_cache_update_progress, (None, ), self.on_cache_update_finished, (None, ))
 
-            self._info_revealer.set_reveal_child(True)
-            self.builder.get_object("ppas_page").set_margin_bottom(50)
-            self.builder.get_object("additional_repositories_page").set_margin_bottom(50)
-            self.builder.get_object("authentication_keys_page").set_margin_bottom(50)
+    def on_cache_update_progress(self, progress, ptype, data=None):
+        if ptype == PackageKitGlib.ProgressType.PERCENTAGE:
+            prog_value = progress.get_property('percentage')
+            self.builder.get_object("progressbar").set_fraction(prog_value / 100.0)
+            XApp.set_window_progress(self.main_window, prog_value)
 
-    def _on_infobar_response(self, infobar, response_id):
-        self._info_revealer.set_reveal_child(False)
-        self.builder.get_object("ppas_page").set_margin_bottom(12)
-        self.builder.get_object("additional_repositories_page").set_margin_bottom(12)
-        self.builder.get_object("authentication_keys_page").set_margin_bottom(12)
-
-        if response_id == Gtk.ResponseType.OK:
-            self.apt.update_cache()
+    def on_cache_update_finished(self, task, result, data=None):
+        try:
+            task.generic_finish(result)
+            self.status_stack.hide()
+        except GLib.Error as e:
+            self.status_stack.set_visible_child_name("page_error")
+            self.builder.get_object("error_label").set_text(e.message)
+        self.main_window.set_sensitive(True)
+        self.builder.get_object("progressbar").set_fraction(0.0)
+        XApp.set_window_progress(self.main_window, 0)
 
     def apply_official_sources(self, widget=None, gparam=None):
         # As long as the interface isn't fully loaded, don't save anything

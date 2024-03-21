@@ -298,25 +298,27 @@
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkOverlay">
+          <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
+            <child>
+              <object class="XAppStackSidebar">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="stack">main_stack</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
             <child>
               <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <child>
-                  <object class="XAppStackSidebar">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="stack">main_stack</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
+                <property name="border-width">12</property>
+                <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkStack" id="main_stack">
                     <property name="visible">True</property>
@@ -326,8 +328,6 @@
                       <object class="GtkBox" id="official_repositories_page">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-left">12</property>
-                        <property name="margin-right">24</property>
                         <property name="margin-top">12</property>
                         <property name="margin-bottom">12</property>
                         <property name="orientation">vertical</property>
@@ -371,7 +371,6 @@
                                       <object class="GtkGrid">
                                         <property name="visible">True</property>
                                         <property name="can-focus">False</property>
-                                        <property name="margin-left">18</property>
                                         <property name="row-spacing">6</property>
                                         <property name="column-spacing">12</property>
                                         <child>
@@ -543,7 +542,6 @@
                                   <object class="GtkBox" id="box_optional_components">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
-                                    <property name="margin-left">18</property>
                                     <property name="orientation">vertical</property>
                                     <property name="spacing">6</property>
                                     <child>
@@ -662,8 +660,6 @@
                       <object class="GtkBox" id="ppas_page">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-left">12</property>
-                        <property name="margin-right">12</property>
                         <property name="margin-top">12</property>
                         <property name="margin-bottom">12</property>
                         <property name="orientation">vertical</property>
@@ -785,8 +781,6 @@
                       <object class="GtkBox" id="additional_repositories_page">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-left">12</property>
-                        <property name="margin-right">12</property>
                         <property name="margin-top">12</property>
                         <property name="margin-bottom">12</property>
                         <property name="orientation">vertical</property>
@@ -894,8 +888,6 @@
                       <object class="GtkBox" id="authentication_keys_page">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-left">12</property>
-                        <property name="margin-right">12</property>
                         <property name="margin-top">12</property>
                         <property name="margin-bottom">12</property>
                         <property name="orientation">vertical</property>
@@ -1016,8 +1008,6 @@
                       <object class="GtkBox" id="maintenance_page">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-left">18</property>
-                        <property name="margin-right">18</property>
                         <property name="margin-top">18</property>
                         <property name="margin-bottom">18</property>
                         <property name="orientation">vertical</property>
@@ -1117,40 +1107,168 @@
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkStack" id="status_stack">
+                    <property name="can-focus">False</property>
+                    <child>
+                      <object class="GtkBox" id="page_update">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="spacing">12</property>
+                        <child>
+                          <object class="GtkButton" id="reload_button">
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <property name="relief">none</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="spacing">6</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon-name">view-refresh-symbolic</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="halign">start</property>
+                                    <property name="label" translatable="yes">Click here to update the APT cache</property>
+                                    <attributes>
+                                      <attribute name="weight" value="bold"/>
+                                    </attributes>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="pack-type">end</property>
+                            <property name="position">4</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="name">page_update</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkProgressBar" id="progressbar">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="text" translatable="yes">Updating cache...</property>
+                        <property name="show-text">True</property>
+                      </object>
+                      <packing>
+                        <property name="name">page_progress</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkBox" id="page_error">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="halign">center</property>
+                        <property name="spacing">12</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="icon-name">dialog-error</property>
+                            <property name="icon_size">5</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">6</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Error</property>
+                                <attributes>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="error_label">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="wrap">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="name">page_error</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
                     <property name="position">1</property>
                   </packing>
                 </child>
               </object>
               <packing>
-                <property name="index">-1</property>
-              </packing>
-            </child>
-            <child type="overlay">
-              <object class="GtkRevealer" id="info_revealer">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="valign">end</property>
-                <property name="transition-type">slide-up</property>
-                <child>
-                  <object class="GtkBox" id="box_infobar">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <placeholder/>
-                    </child>
-                  </object>
-                </child>
-              </object>
-              <packing>
-                <property name="index">1</property>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </object>
           <packing>
             <property name="expand">True</property>
             <property name="fill">True</property>
-            <property name="position">2</property>
+            <property name="position">0</property>
           </packing>
         </child>
       </object>
