@@ -27,7 +27,7 @@
 <message xml:lang="es">Fuentes de software</message>
 <message xml:lang="et">Tarkvaraallikad</message>
 <message xml:lang="eu">Software-jatorriak</message>
-<message xml:lang="fa">منابع برنامه ها</message>
+<message xml:lang="fa">منابع نرم‌افزاری</message>
 <message xml:lang="fi">Ohjelmistolähteet</message>
 <message xml:lang="fr">Sources de logiciels</message>
 <message xml:lang="fr_CA">Sources de logiciels</message>
@@ -45,6 +45,7 @@
 <message xml:lang="is">Hugbúnaðarupptök</message>
 <message xml:lang="it">Origini software</message>
 <message xml:lang="ja">ソフトウェアソース</message>
+<message xml:lang="ka">პროგრამების წყაროები</message>
 <message xml:lang="kab">Iɣbula n iseɣẓanen</message>
 <message xml:lang="kk">БҚ қайнар көздері</message>
 <message xml:lang="km">ប្រភព​កម្មវិធី</message>
@@ -83,7 +84,7 @@
 <message xml:lang="th">แหล่งที่มาของซอฟต์แวร์</message>
 <message xml:lang="tr">Yazılım Kaynakları</message>
 <message xml:lang="uk">Джерела програмного забезпечення</message>
-<message xml:lang="uz">Дастур манбалари</message>
+<message xml:lang="uz">Dastur manbalari</message>
 <message xml:lang="vi">Nguồn Phần mềm</message>
 <message xml:lang="zh_CN">软件源</message>
 <message xml:lang="zh_HK">軟件來源</message>
