@@ -1,3 +1,27 @@
+mintsources (2.3.0) wilma; urgency=medium
+
+  [ Clement Lefebvre ]
+  * Add .gitignore
+  * infobar: place the action button on the right
+  * ui: Center windows
+  * Add support for deb822 format
+  * Rename PPA browse button
+  * Reorganize code
+  * Rename CLI functions
+  * Add repolib dependency
+  * Redesign the update mechanism
+  * Add gir1.2-packagekitglib-1.0 dependency
+  * Fix deprecation
+  * l10n: Update POT
+
+  [ Michael Webster ]
+  * polkit: Remove restrictions for remote/non-active sessions.
+
+  [ Clement Lefebvre ]
+  * l10n: Generate desktop files
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 04 Jun 2024 14:07:54 +0100
+
 mintsources (2.2.9) virginia; urgency=medium
 
   * Add support for Mint 22 Wilma
