@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 -->
+<!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
   <requires lib="xapp" version="0.0"/>
@@ -1113,6 +1113,7 @@
                 <child>
                   <object class="GtkStack" id="status_stack">
                     <property name="can-focus">False</property>
+                    <property name="vhomogeneous">False</property>
                     <child>
                       <object class="GtkBox" id="page_update">
                         <property name="visible">True</property>
@@ -1229,6 +1230,7 @@
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="wrap">True</property>
+                                <property name="selectable">True</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
