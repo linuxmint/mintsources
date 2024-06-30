@@ -404,7 +404,6 @@ class Source():
             self.name = uri.replace("http://ppa.launchpad.net/", "")
             self.name = self.name.replace("https://ppa.launchpadcontent.net/", "")
             self.name = self.name.replace("/ubuntu", "")
-            self.name = self.name.replace("/ppa", "")
             self.ppa_owner, self.ppa_name = self.name.split("/")
 
         # set UI name
