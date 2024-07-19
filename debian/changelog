@@ -1,3 +1,10 @@
+mintsources (2.3.1) wilma; urgency=medium
+
+  * Make the refresh button more noticeable
+  * ppa: Fix crash when the PPA has no name
+
+ -- Clement Lefebvre <root@linuxmint.com>  Fri, 19 Jul 2024 12:27:09 +0100
+
 mintsources (2.3.0) wilma; urgency=medium
 
   [ Clement Lefebvre ]
