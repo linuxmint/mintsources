@@ -23,6 +23,7 @@ Depends: python3-apt,
          iso-flag-png,
          inxi,
          lsb-release,
+         mint-mirrors,
          ${misc:Depends},
 Replaces: software-properties-common (<< 1),
           software-properties-gtk (<< 1)
