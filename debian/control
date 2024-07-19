@@ -2,7 +2,7 @@ Source: mintsources
 Section: admin
 Priority: optional
 Maintainer: Clement Lefebvre <root@linuxmint.com>
-Build-Depends: debhelper-compat (= 13), python3
+Build-Depends: debhelper-compat (= 13), dh-python, python3
 Standards-Version: 3.9.5
 
 Package: mintsources
@@ -25,6 +25,7 @@ Depends: python3-apt,
          inxi,
          lsb-release,
          ${misc:Depends},
+         ${python3:Depends},
 Replaces: software-properties-common (<< 1),
           software-properties-gtk (<< 1)
 Description: Software Sources configuration tool
