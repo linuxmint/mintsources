@@ -1123,7 +1123,6 @@
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="receives-default">True</property>
-                            <property name="relief">none</property>
                             <child>
                               <object class="GtkBox">
                                 <property name="visible">True</property>
@@ -1148,9 +1147,6 @@
                                     <property name="can-focus">False</property>
                                     <property name="halign">start</property>
                                     <property name="label" translatable="yes">Click here to update the APT cache</property>
-                                    <attributes>
-                                      <attribute name="weight" value="bold"/>
-                                    </attributes>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -1160,6 +1156,9 @@
                                 </child>
                               </object>
                             </child>
+                            <style>
+                              <class name="suggested-action"/>
+                            </style>
                           </object>
                           <packing>
                             <property name="expand">False</property>
