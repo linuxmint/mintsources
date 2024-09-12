@@ -16,13 +16,13 @@ import sys
 import tempfile
 import threading
 import argparse
+import aptkit.client
+import aptkit.enums
 
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('XApp', '1.0')
-gi.require_version('PackageKitGlib', '1.0')
 from gi.repository import Gtk, Gdk, Gio, GdkPixbuf, GLib, Pango, XApp
-from gi.repository import PackageKitGlib
 
 import aptsources.sourceslist
 import repolib
@@ -1690,22 +1690,24 @@ class Application(object):
     def update_cache(self, widget):
         self.status_stack.set_visible_child_name("page_progress")
         self.main_window.set_sensitive(False)
-        task = PackageKitGlib.Task()
-        task.refresh_cache_async(True, Gio.Cancellable(), self.on_cache_update_progress, (None, ), self.on_cache_update_finished, (None, ))
+        client = aptkit.client.AptClient()
+        transaction = client.update_cache()
+        transaction.connect("progress-changed", self.on_cache_update_progress)
+        transaction.connect("error", self.on_cache_update_error)
+        transaction.connect("finished", self.on_cache_update_finished)
+        transaction.run()
 
-    def on_cache_update_progress(self, progress, ptype, data=None):
-        if ptype == PackageKitGlib.ProgressType.PERCENTAGE:
-            prog_value = progress.get_property('percentage')
-            self.builder.get_object("progressbar").set_fraction(prog_value / 100.0)
-            XApp.set_window_progress(self.main_window, prog_value)
+    def on_cache_update_progress(self, transaction, progress):
+        self.builder.get_object("progressbar").set_fraction(progress / 100.0)
+        XApp.set_window_progress(self.main_window, progress)
 
-    def on_cache_update_finished(self, task, result, data=None):
-        try:
-            task.generic_finish(result)
+    def on_cache_update_error(self, transaction, error_code, error_details):
+        self.status_stack.set_visible_child_name("page_error")
+        self.builder.get_object("error_label").set_text(error_details)
+
+    def on_cache_update_finished(self, transaction, exit_state):
+        if exit_state != aptkit.enums.EXIT_FAILED:
             self.status_stack.hide()
-        except GLib.Error as e:
-            self.status_stack.set_visible_child_name("page_error")
-            self.builder.get_object("error_label").set_text(e.message)
         self.main_window.set_sensitive(True)
         self.builder.get_object("progressbar").set_fraction(0.0)
         XApp.set_window_progress(self.main_window, 0)
