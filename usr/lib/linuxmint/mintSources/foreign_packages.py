@@ -12,7 +12,7 @@ gi.require_version('Vte', '2.91')
 from gi.repository import Gtk, Vte, GLib
 
 import apt
-import mintcommon.aptdaemon
+import aptkit.simpleclient
 
 # i18n
 APP = 'mintsources'
@@ -158,8 +158,6 @@ class Foreign_Browser():
             treeview.append_column(col)
             col.set_sort_column_id(PKG_REPO_VERSION)
 
-        self.apt = mintcommon.aptdaemon.APT(self.window)
-
         self.builder.get_object("stack1").set_visible_child_name("spin_page")
         self.builder.get_object("spinner").set_size_request(32, 32)
         self.builder.get_object("spinner").start()
@@ -259,8 +257,9 @@ class Foreign_Browser():
             self.builder.get_object("box_vte").add(terminal)
             self.builder.get_object("box_vte").show_all()
         else:
-            self.apt.set_finished_callback(self.exit)
-            self.apt.remove_packages(foreign_packages)
+            apt = aptkit.simpleclient.SimpleAPTClient(self.window)
+            apt.set_finished_callback(self.exit)
+            apt.remove_packages(foreign_packages)
 
     def exit(self, transaction=None, exit_state=None):
         sys.exit(0)

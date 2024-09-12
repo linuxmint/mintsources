@@ -10,7 +10,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 import apt
-import mintcommon.aptdaemon
+import aptkit.simpleclient
 
 # i18n
 APP = 'mintsources'
@@ -67,8 +67,6 @@ class PPA_Browser():
         col.set_sort_column_id(2)
 
         cache = apt.Cache()
-        self.apt = mintcommon.aptdaemon.APT(self.window)
-
         packages = subprocess.getoutput("grep 'Package:' %s | sort | awk {'print $2;'}" % ppa_file).split("\n")
         for package in packages:
             if package in cache:
@@ -115,8 +113,9 @@ class PPA_Browser():
         self.install_button.set_sensitive(len(self.packages_to_install) > 0)
 
     def install (self, button):
-        self.apt.set_finished_callback(self.exit)
-        self.apt.install_packages(self.packages_to_install)
+        apt = aptkit.simpleclient.SimpleAPTClient(self.window)
+        apt.set_finished_callback(self.exit)
+        apt.install_packages(self.packages_to_install)
 
     def exit(self, transaction=None, exit_state=None):
         sys.exit(0)
