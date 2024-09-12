@@ -8,8 +8,7 @@ import locale
 
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('Vte', '2.91')
-from gi.repository import Gtk, Vte, GLib
+from gi.repository import Gtk, GLib
 
 import apt
 import aptkit.simpleclient
@@ -177,6 +176,7 @@ class Foreign_Browser():
 
     @idle
     def update_ui(self, orphans, foreigns):
+        self.model.clear()
         if self.downgrade_mode:
             # downgrade mode
             # Find packages which candidate isn't available
@@ -204,6 +204,7 @@ class Foreign_Browser():
 
         self.builder.get_object("spinner").stop()
         self.builder.get_object("stack1").set_visible_child_name("main_page")
+        self.window.set_sensitive(True)
 
     def datafunction_checkbox(self, column, cell, model, iter, data):
         cell.set_property("activatable", True)
@@ -241,28 +242,16 @@ class Foreign_Browser():
             if (self.model.get_value(iter, PKG_CHECKED)):
                 foreign_packages.append(self.model.get_value(iter, PKG_ID))
             iter = self.model.iter_next(iter)
+        apt = aptkit.simpleclient.SimpleAPTClient(self.window)
+        apt.set_finished_callback(self.reload)
+        self.window.set_sensitive(False)
         if self.downgrade_mode:
-            self.builder.get_object("stack1").set_visible_child_name("vte")
-            terminal = Vte.Terminal()
-            terminal.spawn_sync(Vte.PtyFlags.DEFAULT, os.environ['HOME'], ["/bin/dash"], [], GLib.SpawnFlags.DO_NOT_REAP_CHILD, None, None,)
-            cmd = "apt-get install %s\n" % " ".join(foreign_packages)
-            # try/catch VTE call due to regressions and obscure documentation
-            try:
-                # Mint 19.x
-                terminal.feed_child(cmd, -1)
-            except:
-                # LMDE 4
-                terminal.feed_child(cmd.encode("UTF-8"))
-            terminal.show()
-            self.builder.get_object("box_vte").add(terminal)
-            self.builder.get_object("box_vte").show_all()
+            apt.downgrade_packages(foreign_packages)
         else:
-            apt = aptkit.simpleclient.SimpleAPTClient(self.window)
-            apt.set_finished_callback(self.exit)
             apt.remove_packages(foreign_packages)
 
-    def exit(self, transaction=None, exit_state=None):
-        sys.exit(0)
+    def reload(self, transaction=None, exit_state=None):
+        self.load_foreign_packages()
 
     def select_all (self, button):
         iter = self.model.get_iter_first()
