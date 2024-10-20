@@ -1,3 +1,10 @@
+mintsources (2.3.1.1) wilma; urgency=medium
+
+  * geoip: Add more debug info
+  * geoip: Switch to ip2location.io keyless API
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sun, 20 Oct 2024 19:13:17 +0200
+
 mintsources (2.3.1) wilma; urgency=medium
 
   * Make the refresh button more noticeable
