@@ -733,14 +733,21 @@ class MirrorSelectionDialog(object):
             self.default_mirror = self.config["mirrors"]["default"]
 
         # Try to find out where we're located...
+        self.local_country_code = None
         try:
             lookup = requests.get('https://geoip.ubuntu.com/lookup').text
             cur_country_code = re.search('<CountryCode>(.*)</CountryCode>', lookup).group(1)
-            if cur_country_code == 'None': cur_country_code = None
+            if cur_country_code != 'None':
+                self.local_country_code = cur_country_code
         except Exception as detail:
-            cur_country_code = None  # no internet connection
+            print("GeoIP lookup failed!", detail)
 
-        self.local_country_code = cur_country_code or os.environ.get('LANG', 'US').split('.')[0].split('_')[-1]  # fallback to LANG location or 'US'
+        if self.local_country_code is None:
+            # fallback to LANG location or 'US'
+            print("No GeoIP, falling back to locale.")
+            self.local_country_code = os.environ.get('LANG', 'US').split('.')[0].split('_')[-1]
+
+        print("Using country code:", self.local_country_code)
 
         self.bordering_countries = []
         self.network_neighbors = []
