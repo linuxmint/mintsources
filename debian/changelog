@@ -1,3 +1,26 @@
+mintsources (2.3.2) xia; urgency=medium
+
+  [ Clement Lefebvre ]
+  * Switch to aptkit
+  * foreign-packages: Replace VTE with Aptkit
+  * cache update: Move to aptkit
+
+  [ Michael Webster ]
+  * ui: Make error text selectable, don't require status stack members to be the same height.
+  * debian/control: aptkit not apt-kit.
+
+  [ Clement Lefebvre ]
+  * geoip: Add more debug info
+  * geoip: Switch to ip2location.io keyless API
+
+  [ Oliver Kästner ]
+  * Packaging: bump debhelper-compat, misc improvements (#252)
+
+  [ Clement Lefebvre ]
+  * Add support for Mint 22.1 Xia
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 20 Nov 2024 11:47:51 +0000
+
 mintsources (2.3.1) wilma; urgency=medium
 
   * Make the refresh button more noticeable
