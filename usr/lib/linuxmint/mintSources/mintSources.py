@@ -421,10 +421,7 @@ class Source():
         return self.repo.enabled == repolib.AptSourceEnabled.TRUE
 
     def switch(self):
-        if self.is_enabled():
-            self.repo.enabled = False
-        else:
-            self.repo.enabled = True
+        self.repo.enabled = not self.is_enabled()
         self.repo.save()
         self.application.enable_reload_button()
 
@@ -918,7 +915,7 @@ class Application(object):
         r = Gtk.CellRendererToggle()
         r.connect("toggled", self.ppa_toggled)
         col = Gtk.TreeViewColumn(_("Enabled"), r)
-        col.set_cell_data_func(r, self.datafunction_checkbox)
+        col.set_cell_data_func(r, self.datafunction_checkbox, self._ppa_treeview)
         self._ppa_treeview.append_column(col)
         col.set_sort_column_id(1)
 
@@ -943,7 +940,7 @@ class Application(object):
         r = Gtk.CellRendererToggle()
         r.connect("toggled", self.repository_toggled)
         col = Gtk.TreeViewColumn(_("Enabled"), r)
-        col.set_cell_data_func(r, self.datafunction_checkbox)
+        col.set_cell_data_func(r, self.datafunction_checkbox, self._repository_treeview)
         self._repository_treeview.append_column(col)
         col.set_sort_column_id(1)
 
@@ -1631,10 +1628,8 @@ class Application(object):
 
     def datafunction_checkbox(self, column, cell, model, iter, data):
         cell.set_property("activatable", True)
-        if (model.get_value(iter, 0).is_enabled()):
-            cell.set_property("active", True)
-        else:
-            cell.set_property("active", False)
+        cell.set_property("active", model.get_value(iter, 0).is_enabled())
+        data.queue_draw()
 
     def ppa_toggled(self, renderer, path):
         iter = self._ppa_model.get_iter(path)
