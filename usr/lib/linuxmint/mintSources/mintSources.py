@@ -56,21 +56,6 @@ _ = gettext.gettext
 
 os.umask(0o022)
 
-# Used as a decorator to run things in the background
-def run_async(func):
-    def wrapper(*args, **kwargs):
-        thread = threading.Thread(target=func, args=args, kwargs=kwargs)
-        thread.daemon = True
-        thread.start()
-        return thread
-    return wrapper
-
-# Used as a decorator to run things in the main loop, from another thread
-def idle(func):
-    def wrapper(*args):
-        GLib.idle_add(func, *args)
-    return wrapper
-
 def signal_handler(signum, _):
     print("")
     sys.exit(128 + signum)
@@ -502,6 +487,9 @@ class MirrorSelectionDialog(object):
 
         self._mirrors_model.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN, Gtk.SortType.DESCENDING)
 
+        # Since GtkListStore sorts the mirrors internally, we need a copy of the iterators in their original order
+        self._mirrors_iters = []
+
         r = Gtk.CellRendererPixbuf()
         col = Gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_FLAG_COLUMN)
         col.set_cell_data_func(r, self.data_func_surface)
@@ -542,6 +530,8 @@ class MirrorSelectionDialog(object):
 
     def _update_list(self):
         self._mirrors_model.clear()
+        self._mirrors_iters.clear()
+
         for mirror in self.visible_mirrors:
             if mirror.country_code == "WD":
                 flag = FLAG_PATH % '_united_nations'
@@ -565,7 +555,10 @@ class MirrorSelectionDialog(object):
                 mirror.name
             ))
 
-        self._all_speed_tests()
+        iter = self._mirrors_model.get_iter_first()
+        while iter is not None:
+            self._mirrors_iters.append(iter)
+            iter = self._mirrors_model.iter_next(iter)
 
     def get_url_last_modified(self, url):
         try:
@@ -610,24 +603,6 @@ class MirrorSelectionDialog(object):
     def check_base_mirror_up_to_date(self, url):
         return self.check_mirror_up_to_date(url, 14)
 
-    @run_async
-    def _all_speed_tests(self):
-        model_iters = [] # Don't iterate through iters directly.. we're modifying their orders..
-        iter = self._mirrors_model.get_iter_first()
-        while iter is not None:
-            model_iters.append(iter)
-            iter = self._mirrors_model.iter_next(iter)
-
-        for iter in model_iters:
-            try:
-                if iter is not None:
-                    mirror = self._mirrors_model.get_value(iter, MirrorSelectionDialog.MIRROR_COLUMN)
-                    if mirror in self.visible_mirrors:
-                        url = self._mirrors_model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
-                        self._speed_test (iter, url)
-            except Exception as e:
-                pass # null types will occur here...
-
     def _get_speed_label(self, speed):
         if speed > 0:
             divider = (1024 * 1.0)
@@ -649,7 +624,8 @@ class MirrorSelectionDialog(object):
             represented_speed = ("0 %s") % _("kB/s")
         return represented_speed
 
-    def _speed_test(self, iter, url):
+    def _speed_test_thread(self, task, source_object, task_data, cancellable):
+        url = self.current_speed_test_mirror
         download_speed = 0
         try:
             up_to_date = False
@@ -679,9 +655,24 @@ class MirrorSelectionDialog(object):
             print ("Error '%s' on url %s" % (error, url))
             download_speed = 0
 
+        task.return_value(download_speed)
+
+    def speed_test_finished_cb(self, source, task, iter):
+        if not Gio.Task.is_valid(task, source):
+            return
+
+        if task.had_error():
+            return
+
+        # Get speed test result
+        download_speed = task.propagate_value().value
+
+        # Add the result to the model
         self.show_speed_test_result(iter, download_speed)
 
-    @idle
+        # Run speed test for the next mirror
+        self._create_speed_test_gtask()
+
     def show_speed_test_result(self, iter, download_speed):
         if (iter is not None): # recheck as it can get null
             if download_speed == -1:
@@ -693,6 +684,18 @@ class MirrorSelectionDialog(object):
             else:
                 self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
                 self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
+
+    def _create_speed_test_gtask(self):
+        if not self._mirrors_iters:
+            return
+
+        iter = self._mirrors_iters.pop(0)
+        self._gtask = Gio.Task.new(self._dialog, Gio.Cancellable(), self.speed_test_finished_cb, iter)
+        self._gtask.set_return_on_cancel(True)
+
+        # This must only be set here and read inside the speed test thread
+        self.current_speed_test_mirror = self._mirrors_model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
+        self._gtask.run_in_thread(self._speed_test_thread)
 
     def run(self, mirrors, config, is_base):
 
@@ -795,6 +798,8 @@ class MirrorSelectionDialog(object):
             self.default_mirror_age = (now - self.default_mirror_date).days
 
         self._update_list()
+        self._create_speed_test_gtask()
+
         self._dialog.show_all()
         retval = self._dialog.run()
         if retval == Gtk.ResponseType.APPLY:
@@ -806,6 +811,8 @@ class MirrorSelectionDialog(object):
                 res = None
         else:
             res = None
+
+        self._gtask.get_cancellable().cancel()
         self._dialog.hide()
         self._mirrors_model.clear()
         return res
