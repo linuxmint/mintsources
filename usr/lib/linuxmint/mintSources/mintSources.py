@@ -708,7 +708,7 @@ class MirrorSelectionDialog(object):
         # Try to find out where we're located...
         self.local_country_code = None
         try:
-            lookup = requests.get('https://api.ip2location.io').json()
+            lookup = requests.get('https://api.ip2location.io', timeout=10).json()
             cur_country_code = lookup['country_code']
             if cur_country_code != 'None':
                 self.local_country_code = cur_country_code
