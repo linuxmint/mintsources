@@ -598,6 +598,9 @@ class MirrorSelectionDialog(object):
         return self.check_mirror_up_to_date(url, 2)
 
     def check_base_mirror_up_to_date(self, url):
+        # If the default mirror is unavailable it's likely temporary, assume the mirror is ok.
+        if self.default_mirror_age is None:
+            return True
         return self.check_mirror_up_to_date(url, 14)
 
     def _get_speed_label(self, speed):
