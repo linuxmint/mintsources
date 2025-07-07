@@ -457,16 +457,101 @@ class ComponentSwitchBox(Gtk.Box):
     def set_active(self, active):
         self.switch.set_active(active)
 
-class MirrorSelectionDialog(object):
-    MIRROR_COLUMN = 0
-    MIRROR_URL_COLUMN = 1
-    MIRROR_COUNTRY_FLAG_COLUMN = 2
-    MIRROR_SPEED_COLUMN = 3
-    MIRROR_SPEED_LABEL_COLUMN = 4
-    MIRROR_TOOLTIP_COLUMN = 5
-    MIRROR_NAME_COLUMN = 6
+class MirrorAssistant(object):
+    PAGE_CHOOSE_MAIN = 0
+    PAGE_CHOOSE_BASE = 1
+    PAGE_CONFIRM = 2
 
     def __init__(self, application, ui_builder):
+        self._currently_applying_sources = False
+        self.builder = ui_builder
+        self.window = ui_builder.get_object("mirror_assistant")
+        self.window.set_title(_("Mirror Assistant"))
+        self.window.set_icon_name("software-sources")
+
+        self.scale = self.window.get_scale_factor()
+
+        self.window.connect("delete_event", self.delete_event)
+        self.window.connect("cancel", self.cancel_event)
+
+        self.window.connect("prepare", self.handle_page)
+
+        self._main_mirrors_list = MirrorSelectionList(self, self.builder, "mirrors_treeview_main")
+        self._base_mirrors_list = MirrorSelectionList(self, self.builder, "mirrors_treeview_base")
+
+        self._main_mirrors_list._treeview.connect("cursor-changed", self.handle_mirror_select)
+        self._base_mirrors_list._treeview.connect("cursor-changed", self.handle_mirror_select)
+
+    def cancel_event(self, widget):
+        Gtk.main_quit()
+        return True
+
+    def delete_event(self, event, user_data):
+        Gtk.main_quit()
+        return True
+
+    def handle_mirror_select(self, user_data):
+        if self._main_mirrors_list._treeview.get_selection() is None:
+            self.window.set_page_complete(self.window.get_nth_page(self.window.get_current_page()), False)
+        else:
+            self.window.set_page_complete(self.window.get_nth_page(self.window.get_current_page()), True)
+
+    def handle_page(self, page, user_data):
+        print("On page " + str(self.window.get_current_page()))
+        if self.window.get_current_page() == self.PAGE_CHOOSE_MAIN:
+            self._main_mirrors_list.run(self._mirrors, self._config, False)
+        else:
+        #     # Get mirror URL
+        #     model, path = self._main_mirrors_list._treeview.get_selection().get_selected_rows()
+        #     iter = model.get_iter(path[0])
+        #     url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
+        #     if url is not None and self.selected_main_mirror != url:
+        #         self.selected_main_mirror = url
+        #         Application.apply_official_sources()
+            try:
+                self._main_mirrors_list._gtask.get_cancellable().cancel()
+                self._main_mirrors_list._mirrors_model.clear()
+            except:
+                pass
+        #
+        #     if self._currently_applying_sources:
+        #         return
+        #
+        #     # Check which components are selected
+        #     selected_components = []
+        #     for component in self.optional_components:
+        #         if component.selected:
+        #             selected_components.append(component.name)
+        #
+        #     Application.update_repositories(selected_components)
+
+        if self.window.get_current_page() == self.PAGE_CHOOSE_BASE:
+            self._base_mirrors_list.run(self._base_mirrors, self._config, True)
+        else:
+            # model, path = self._main_mirrors_list._treeview.get_selection().get_selected_rows()
+            # iter = model.get_iter(path[0])
+            # url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
+            # if url is not None and self.selected_main_mirror != url:
+            #     self.selected_main_mirror = url
+            #     Application.apply_official_sources()
+            try:
+                self._main_mirrors_list._gtask.get_cancellable().cancel()
+                self._main_mirrors_list._mirrors_model.clear()
+                self._base_mirrors_list._gtask.get_cancellable().cancel()
+                self._base_mirrors_list._mirrors_model.clear()
+            except:
+                pass
+
+
+    def run(self, mirrors, base_mirrors, config):
+        self._mirrors = mirrors
+        self._base_mirrors = base_mirrors
+        self._config = config
+        self.window.show()
+        Gtk.main()
+
+class MirrorSelectionDialog(object):
+    def __init__(self, application, ui_builder, treeview_id):
         self._application = application
         self._ui_builder = ui_builder
 
@@ -475,36 +560,72 @@ class MirrorSelectionDialog(object):
 
         self._dialog.set_title(_("Select a mirror"))
 
+        self._mirrors_list = MirrorSelectionList(application, ui_builder, treeview_id)
+
+    def run(self, mirrors, config, is_base):
+        self._mirrors_list.run(mirrors, config, is_base)
+
+        self._dialog.show_all()
+        retval = self._dialog.run()
+        if retval == Gtk.ResponseType.APPLY:
+            try:
+                model, path = self._treeview.get_selection().get_selected_rows()
+                iter = model.get_iter(path[0])
+                res = model.get(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)[0]
+            except:
+                res = None
+        else:
+            res = None
+
+        self._mirrors_list._gtask.get_cancellable().cancel()
+        self._mirrors_list._mirrors_model.clear()
+        self._dialog.hide()
+        return res
+
+class MirrorSelectionList(object):
+    MIRROR_COLUMN = 0
+    MIRROR_URL_COLUMN = 1
+    MIRROR_COUNTRY_FLAG_COLUMN = 2
+    MIRROR_SPEED_COLUMN = 3
+    MIRROR_SPEED_LABEL_COLUMN = 4
+    MIRROR_TOOLTIP_COLUMN = 5
+    MIRROR_NAME_COLUMN = 6
+
+    def __init__(self, application, ui_builder, treeview_id):
+        self._application = application
+        self._ui_builder = ui_builder
+
         self._mirrors_model = Gtk.ListStore(object, str, GdkPixbuf.Pixbuf, float, str, str, str)
         # mirror, name, flag, speed, speed label, country code (used to sort by flag), mirror name
-        self._treeview = ui_builder.get_object("mirrors_treeview")
+        self._treeview = ui_builder.get_object(treeview_id)
+        self._dialog = self._treeview.get_parent()
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
         self._treeview.connect("row-activated", self._row_activated)
 
-        self._mirrors_model.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN, Gtk.SortType.DESCENDING)
+        self._mirrors_model.set_sort_column_id(MirrorSelectionList.MIRROR_SPEED_COLUMN, Gtk.SortType.DESCENDING)
 
         # Since GtkListStore sorts the mirrors internally, we need a copy of the iterators in their original order
         self._mirrors_iters = []
 
         r = Gtk.CellRendererPixbuf()
-        col = Gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionDialog.MIRROR_COUNTRY_FLAG_COLUMN)
+        col = Gtk.TreeViewColumn(_("Country"), r, pixbuf = MirrorSelectionList.MIRROR_COUNTRY_FLAG_COLUMN)
         col.set_cell_data_func(r, self.data_func_surface)
         self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_TOOLTIP_COLUMN)
+        col.set_sort_column_id(MirrorSelectionList.MIRROR_TOOLTIP_COLUMN)
 
         r = Gtk.CellRendererText()
-        col = Gtk.TreeViewColumn(_("Mirror"), r, text = MirrorSelectionDialog.MIRROR_NAME_COLUMN)
+        col = Gtk.TreeViewColumn(_("Mirror"), r, text = MirrorSelectionList.MIRROR_NAME_COLUMN)
         self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_NAME_COLUMN)
+        col.set_sort_column_id(MirrorSelectionList.MIRROR_NAME_COLUMN)
 
         r = Gtk.CellRendererText()
-        col = Gtk.TreeViewColumn(_("Speed"), r, text = MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN)
+        col = Gtk.TreeViewColumn(_("Speed"), r, text = MirrorSelectionList.MIRROR_SPEED_LABEL_COLUMN)
         self._treeview.append_column(col)
-        col.set_sort_column_id(MirrorSelectionDialog.MIRROR_SPEED_COLUMN)
+        col.set_sort_column_id(MirrorSelectionList.MIRROR_SPEED_COLUMN)
         col.set_min_width(int(1.1 * SPEED_PIX_WIDTH))
 
-        self._treeview.set_tooltip_column(MirrorSelectionDialog.MIRROR_TOOLTIP_COLUMN)
+        self._treeview.set_tooltip_column(MirrorSelectionList.MIRROR_TOOLTIP_COLUMN)
 
         self.country_info = CountryInformation()
 
@@ -512,7 +633,7 @@ class MirrorSelectionDialog(object):
             self.countries = json.load(data_file)
 
     def data_func_surface(self, column, cell, model, iter_, *args):
-        pixbuf = model.get_value(iter_, MirrorSelectionDialog.MIRROR_COUNTRY_FLAG_COLUMN)
+        pixbuf = model.get_value(iter_, MirrorSelectionList.MIRROR_COUNTRY_FLAG_COLUMN)
         surface = Gdk.cairo_surface_create_from_pixbuf(pixbuf, self._application.scale)
         cell.set_property("surface", surface)
 
@@ -677,13 +798,13 @@ class MirrorSelectionDialog(object):
         if (iter is not None): # recheck as it can get null
             if download_speed == -1:
                 # don't remove from model as this is not thread-safe
-                self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Obsolete"))
+                self._mirrors_model.set_value(iter, MirrorSelectionList.MIRROR_SPEED_LABEL_COLUMN, _("Obsolete"))
             if download_speed == 0:
                 # don't remove from model as this is not thread-safe
-                self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Unreachable"))
+                self._mirrors_model.set_value(iter, MirrorSelectionList.MIRROR_SPEED_LABEL_COLUMN, _("Unreachable"))
             else:
-                self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_COLUMN, download_speed)
-                self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
+                self._mirrors_model.set_value(iter, MirrorSelectionList.MIRROR_SPEED_COLUMN, download_speed)
+                self._mirrors_model.set_value(iter, MirrorSelectionList.MIRROR_SPEED_LABEL_COLUMN, self._get_speed_label(download_speed))
 
     def _create_speed_test_gtask(self):
         if not self._mirrors_iters:
@@ -694,7 +815,7 @@ class MirrorSelectionDialog(object):
         self._gtask.set_return_on_cancel(True)
 
         # This must only be set here and read inside the speed test thread
-        self.current_speed_test_mirror = self._mirrors_model.get_value(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)
+        self.current_speed_test_mirror = self._mirrors_model.get_value(iter, MirrorSelectionList.MIRROR_URL_COLUMN)
         self._gtask.run_in_thread(self._speed_test_thread)
 
     def run(self, mirrors, config, is_base):
@@ -799,23 +920,6 @@ class MirrorSelectionDialog(object):
 
         self._update_list()
         self._create_speed_test_gtask()
-
-        self._dialog.show_all()
-        retval = self._dialog.run()
-        if retval == Gtk.ResponseType.APPLY:
-            try:
-                model, path = self._treeview.get_selection().get_selected_rows()
-                iter = model.get_iter(path[0])
-                res = model.get(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)[0]
-            except:
-                res = None
-        else:
-            res = None
-
-        self._gtask.get_cancellable().cancel()
-        self._dialog.hide()
-        self._mirrors_model.clear()
-        return res
 
 class Application(object):
     def __init__(self, os_codename):
@@ -988,7 +1092,7 @@ class Application(object):
 
         self.main_window.connect("delete_event", lambda w,e: Gtk.main_quit())
 
-        self.mirror_selection_dialog = MirrorSelectionDialog(self, self.builder)
+        self.mirror_selection_dialog = MirrorSelectionDialog(self, self.builder, "mirrors_treeview")
 
         self.builder.get_object("button_mirror").connect("clicked", self.select_new_mirror)
         self.builder.get_object("button_base_mirror").connect("clicked", self.select_new_base_mirror)
@@ -1672,6 +1776,11 @@ class Application(object):
         self.main_window.show()
         Gtk.main()
 
+    def run_mirror_assistant(self):
+
+        self.mirror_assistant = MirrorAssistant(self, self.builder)
+        self.mirror_assistant.run(self.mirrors, self.base_mirrors, self.config)
+
     def revert_to_default_sources(self, widget):
         self.selected_mirror = self.config["mirrors"]["default"]
         self.builder.get_object("label_mirror_name").set_text(self.selected_mirror)
@@ -1910,6 +2019,8 @@ if __name__ == "__main__":
             remove_ppa_cli(ppa_line, codename, "-y" in args)
         else:
             add_ppa_cli(ppa_line, codename, "-y" in args, use_ppas)
+    elif len(args) == 1 and args[0] == "setup":
+        Application(os_codename).run_mirror_assistant()
     else:
         Application(os_codename).run()
 
