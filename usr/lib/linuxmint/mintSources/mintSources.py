@@ -503,19 +503,12 @@ class MirrorAssistant(object):
         if self.window.get_current_page() == self.PAGE_CHOOSE_MAIN:
             self._init_main_mirrors_task = Gio.Task.new(self.window, Gio.Cancellable(), self._load_main_mirrors_finished, iter)
             self._init_main_mirrors_task.run_in_thread(self._thread_load_main_mirrors)
-        else:
-
 
         if self.window.get_current_page() == self.PAGE_CHOOSE_BASE:
             self._init_base_mirrors_task = Gio.Task.new(self.window, Gio.Cancellable(),
                                                         self._load_base_mirrors_finished, iter)
             self._init_base_mirrors_task.run_in_thread(self._thread_load_base_mirrors)
-        else:
-            try:
-                self._base_mirrors_list._gtask.get_cancellable().cancel()
-                self._base_mirrors_list._mirrors_model.clear()
-            except:
-                pass
+
         #     # model, path = self._main_mirrors_list._treeview.get_selection().get_selected_rows()
         #     # iter = model.get_iter(path[0])
         #     # url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
