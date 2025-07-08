@@ -529,7 +529,6 @@ class MirrorAssistant(object):
             try:
                 iter = model.get_iter(path[0])
                 self._selected_main_url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
-                print("Marked " + str(self._selected_main_url) + " as main mirror.")
             except IndexError:
                 pass
         elif self._base_mirrors_list._treeview.get_selection().get_selected_rows() is not None:
@@ -540,7 +539,6 @@ class MirrorAssistant(object):
             try:
                 iter = model.get_iter(path[0])
                 self._selected_base_url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
-                print("Marked " + str(self._selected_base_url) + " as base mirror.")
             except IndexError:
                 pass
         else:
@@ -558,7 +556,6 @@ class MirrorAssistant(object):
 
             # Save main mirror selection
             if self._selected_main_url is not None:
-                print("Saving main mirror: " + str(self._selected_main_url))
                 application.selected_mirror = self._selected_main_url
                 application.apply_official_sources()
 
@@ -571,7 +568,6 @@ class MirrorAssistant(object):
 
             # Save base mirror selection
             if self._selected_base_url is not None:
-                print("Saving base mirror: " + str(self._selected_base_url))
                 application.selected_base_mirror = self._selected_base_url
                 application.apply_official_sources()
 
