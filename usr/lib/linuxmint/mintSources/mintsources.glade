@@ -1328,20 +1328,40 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScrolledWindow">
+          <object class="GtkBox">
             <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="margin-top">6</property>
-            <property name="hscrollbar-policy">never</property>
-            <property name="shadow-type">in</property>
+            <property name="can-focus">False</property>
+            <property name="orientation">vertical</property>
             <child>
-              <object class="GtkTreeView" id="mirrors_treeview_main">
-                <property name="visible">True</property>
+              <object class="GtkScrolledWindow">
                 <property name="can-focus">True</property>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection"/>
+                <property name="margin-top">6</property>
+                <property name="hscrollbar-policy">never</property>
+                <property name="shadow-type">in</property>
+                <child>
+                  <object class="GtkTreeView" id="mirrors_treeview_main">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                  </object>
                 </child>
               </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSpinner" id="mirrors_main_spinner">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="active">True</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
             </child>
           </object>
           <packing>
@@ -1387,20 +1407,40 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScrolledWindow">
+          <object class="GtkBox">
             <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="margin-top">6</property>
-            <property name="hscrollbar-policy">never</property>
-            <property name="shadow-type">in</property>
+            <property name="can-focus">False</property>
+            <property name="orientation">vertical</property>
             <child>
-              <object class="GtkTreeView" id="mirrors_treeview_base">
-                <property name="visible">True</property>
+              <object class="GtkScrolledWindow">
                 <property name="can-focus">True</property>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection"/>
+                <property name="margin-top">6</property>
+                <property name="hscrollbar-policy">never</property>
+                <property name="shadow-type">in</property>
+                <child>
+                  <object class="GtkTreeView" id="mirrors_treeview_base">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                  </object>
                 </child>
               </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSpinner" id="mirrors_base_spinner">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="active">True</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
             </child>
           </object>
           <packing>
@@ -1559,7 +1599,6 @@
           <object class="GtkScrolledWindow">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
-            <property name="margin-left">6</property>
             <property name="margin-right">6</property>
             <property name="margin-top">6</property>
             <property name="hscrollbar-policy">never</property>

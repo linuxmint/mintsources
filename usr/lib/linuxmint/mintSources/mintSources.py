@@ -501,49 +501,73 @@ class MirrorAssistant(object):
     def handle_page(self, page, user_data):
         print("On page " + str(self.window.get_current_page()))
         if self.window.get_current_page() == self.PAGE_CHOOSE_MAIN:
-            self._main_mirrors_list.run(self._mirrors, self._config, False)
+            self._init_main_mirrors_task = Gio.Task.new(self.window, Gio.Cancellable(), self._load_main_mirrors_finished, iter)
+            self._init_main_mirrors_task.run_in_thread(self._thread_load_main_mirrors)
         else:
-        #     # Get mirror URL
-        #     model, path = self._main_mirrors_list._treeview.get_selection().get_selected_rows()
-        #     iter = model.get_iter(path[0])
-        #     url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
-        #     if url is not None and self.selected_main_mirror != url:
-        #         self.selected_main_mirror = url
-        #         Application.apply_official_sources()
-            try:
-                self._main_mirrors_list._gtask.get_cancellable().cancel()
-                self._main_mirrors_list._mirrors_model.clear()
-            except:
-                pass
-        #
-        #     if self._currently_applying_sources:
-        #         return
-        #
-        #     # Check which components are selected
-        #     selected_components = []
-        #     for component in self.optional_components:
-        #         if component.selected:
-        #             selected_components.append(component.name)
-        #
-        #     Application.update_repositories(selected_components)
+
 
         if self.window.get_current_page() == self.PAGE_CHOOSE_BASE:
-            self._base_mirrors_list.run(self._base_mirrors, self._config, True)
+            self._init_base_mirrors_task = Gio.Task.new(self.window, Gio.Cancellable(),
+                                                        self._load_base_mirrors_finished, iter)
+            self._init_base_mirrors_task.run_in_thread(self._thread_load_base_mirrors)
         else:
-            # model, path = self._main_mirrors_list._treeview.get_selection().get_selected_rows()
-            # iter = model.get_iter(path[0])
-            # url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
-            # if url is not None and self.selected_main_mirror != url:
-            #     self.selected_main_mirror = url
-            #     Application.apply_official_sources()
             try:
-                self._main_mirrors_list._gtask.get_cancellable().cancel()
-                self._main_mirrors_list._mirrors_model.clear()
                 self._base_mirrors_list._gtask.get_cancellable().cancel()
                 self._base_mirrors_list._mirrors_model.clear()
             except:
                 pass
+        #     # model, path = self._main_mirrors_list._treeview.get_selection().get_selected_rows()
+        #     # iter = model.get_iter(path[0])
+        #     # url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
+        #     # if url is not None and self.selected_main_mirror != url:
+        #     #     self.selected_main_mirror = url
+        #     #     Application.apply_official_sources()
+        #     try:
+        #         self._main_mirrors_list._gtask.get_cancellable().cancel()
+        #         self._main_mirrors_list._mirrors_model.clear()
+        #         self._base_mirrors_list._gtask.get_cancellable().cancel()
+        #         self._base_mirrors_list._mirrors_model.clear()
+        #     except:
+        #         pass
 
+    def _thread_load_main_mirrors(self, task, source_object, task_data, cancellable):
+        return self._main_mirrors_list.run(self._mirrors, self._config, False)
+
+    def _thread_load_base_mirrors(self, task, source_object, task_data, cancellable):
+        return self._base_mirrors_list.run(self._base_mirrors, self._config, True)
+
+    def _load_main_mirrors_finished(self, source, task, iter):
+        if not Gio.Task.is_valid(task, source):
+            return
+
+        if task.had_error():
+            return
+
+        # Make loader invisible and table visible
+        self.builder.get_object("mirrors_main_spinner").set_visible(False)
+        self.builder.get_object("mirrors_treeview_main").get_parent().set_visible(True)
+
+    def _load_base_mirrors_finished(self, source, task, iter):
+        if not Gio.Task.is_valid(task, source):
+            return
+
+        if task.had_error():
+            return
+
+        # Make loader invisible and table visible
+        self.builder.get_object("mirrors_base_spinner").set_visible(False)
+        self.builder.get_object("mirrors_treeview_base").get_parent().set_visible(True)
+
+    def load_base_mirrors_finished(self, source, task, iter):
+        if not Gio.Task.is_valid(task, source):
+            return
+
+        if task.had_error():
+            return
+
+        # Make loader invisible and table visible
+        self.builder.get_object("mirrors_base_spinner").set_visible(False)
+        self.builder.get_object("mirrors_treeview_base").get_parent().set_visible(True)
 
     def run(self, mirrors, base_mirrors, config):
         self._mirrors = mirrors
@@ -565,7 +589,23 @@ class MirrorSelectionDialog(object):
         self._mirrors_list = MirrorSelectionList(application, ui_builder, treeview_id)
 
     def run(self, mirrors, config, is_base):
-        return self._mirrors_list.run(mirrors, config, is_base)
+        self._mirrors_list.run(mirrors, config, is_base)
+
+        self._dialog.show_all()
+        retval = self._dialog.run()
+        if retval == Gtk.ResponseType.APPLY:
+            try:
+                model, path = self._mirrors_list._treeview.get_selection().get_selected_rows()
+                iter = model.get_iter(path[0])
+                res = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
+            except:
+                res = None
+        else:
+            res = None
+
+        self._mirrors_list.close()
+        self._dialog.hide()
+        return res
 
 class MirrorSelectionList(object):
     MIRROR_COLUMN = 0
@@ -906,22 +946,9 @@ class MirrorSelectionList(object):
         self._update_list()
         self._create_speed_test_gtask()
 
-        self._dialog.show_all()
-        retval = self._dialog.run()
-        if retval == Gtk.ResponseType.APPLY:
-            try:
-                model, path = self._treeview.get_selection().get_selected_rows()
-                iter = model.get_iter(path[0])
-                res = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
-            except:
-                res = None
-        else:
-            res = None
-
+    def close(self):
         self._gtask.get_cancellable().cancel()
-        self._dialog.hide()
         self._mirrors_model.clear()
-        return res
 
 class Application(object):
     def __init__(self, os_codename):
