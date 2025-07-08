@@ -490,9 +490,26 @@ class MirrorAssistant(object):
         application._interface_loaded = True
 
     def apply(self, user_data):
-        Application.update_cache(application, None)
+        self.builder.get_object("mirror_assistant_confirm_message").set_visible(False)
+        self.builder.get_object("mirror_assistant_updating_message").set_visible(True)
+        client = aptkit.client.AptClient()
+        transaction = client.update_cache()
+        transaction.connect("progress-changed", self.on_cache_update_progress)
+        transaction.connect("error", self.on_cache_update_error)
+        transaction.connect("finished", self.on_cache_update_finished)
+        transaction.run()
+
+    def on_cache_update_progress(self, transaction, progress):
+        self.builder.get_object("mirror_assistant_update_progress").set_fraction(progress / 100.0)
+        XApp.set_window_progress(self.window, progress)
+
+    def on_cache_update_error(self, transaction, error_code, error_details):
+        self.builder.get_object("mirror_assistant_updating_message").set_visible(False)
+        self.builder.get_object("mirror_assistant_error_text").set_text(error_details)
+        self.builder.get_object("mirror_assistant_error_message").set_visible(True)
+
+    def on_cache_update_finished(self, transaction, exit_state):
         Gtk.main_quit()
-        return True
 
     def cancel_event(self, widget):
         Gtk.main_quit()
