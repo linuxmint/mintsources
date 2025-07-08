@@ -1342,6 +1342,9 @@
                   <object class="GtkTreeView" id="mirrors_treeview_main">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection"/>
+                    </child>
                   </object>
                 </child>
               </object>
@@ -1371,6 +1374,9 @@
           </packing>
         </child>
       </object>
+      <packing>
+        <property name="has-padding">False</property>
+      </packing>
     </child>
     <child>
       <object class="GtkBox">
@@ -1421,6 +1427,9 @@
                   <object class="GtkTreeView" id="mirrors_treeview_base">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection"/>
+                    </child>
                   </object>
                 </child>
               </object>
@@ -1450,6 +1459,9 @@
           </packing>
         </child>
       </object>
+      <packing>
+        <property name="has-padding">False</property>
+      </packing>
     </child>
     <child>
       <object class="GtkBox">
@@ -1649,7 +1661,7 @@
       <placeholder/>
     </child>
     <child internal-child="action_area">
-      <object class="GtkBox">
+      <object class="GtkBox" id="mirror_assistant_action_buttons">
         <property name="can-focus">False</property>
         <property name="halign">end</property>
         <property name="margin-left">6</property>

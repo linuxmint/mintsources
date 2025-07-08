@@ -491,6 +491,7 @@ class MirrorAssistant(object):
 
     def apply(self, user_data):
         self.builder.get_object("mirror_assistant_confirm_message").set_visible(False)
+        self.builder.get_object("mirror_assistant_action_buttons").set_visible(False)
         self.builder.get_object("mirror_assistant_updating_message").set_visible(True)
         client = aptkit.client.AptClient()
         transaction = client.update_cache()
