@@ -20,6 +20,8 @@ import aptkit.client
 import aptkit.enums
 
 import gi
+from gi.overrides.GObject import GType
+
 gi.require_version('Gtk', '3.0')
 gi.require_version('XApp', '1.0')
 from gi.repository import Gtk, Gdk, Gio, GdkPixbuf, GLib, Pango, XApp
@@ -563,24 +565,7 @@ class MirrorSelectionDialog(object):
         self._mirrors_list = MirrorSelectionList(application, ui_builder, treeview_id)
 
     def run(self, mirrors, config, is_base):
-        self._mirrors_list.run(mirrors, config, is_base)
-
-        self._dialog.show_all()
-        retval = self._dialog.run()
-        if retval == Gtk.ResponseType.APPLY:
-            try:
-                model, path = self._treeview.get_selection().get_selected_rows()
-                iter = model.get_iter(path[0])
-                res = model.get(iter, MirrorSelectionDialog.MIRROR_URL_COLUMN)[0]
-            except:
-                res = None
-        else:
-            res = None
-
-        self._mirrors_list._gtask.get_cancellable().cancel()
-        self._mirrors_list._mirrors_model.clear()
-        self._dialog.hide()
-        return res
+        return self._mirrors_list.run(mirrors, config, is_base)
 
 class MirrorSelectionList(object):
     MIRROR_COLUMN = 0
@@ -598,7 +583,7 @@ class MirrorSelectionList(object):
         self._mirrors_model = Gtk.ListStore(object, str, GdkPixbuf.Pixbuf, float, str, str, str)
         # mirror, name, flag, speed, speed label, country code (used to sort by flag), mirror name
         self._treeview = ui_builder.get_object(treeview_id)
-        self._dialog = self._treeview.get_parent()
+        self._dialog = self._treeview.get_ancestor(GType.from_name("GtkDialog"))
         self._treeview.set_model(self._mirrors_model)
         self._treeview.set_headers_clickable(True)
         self._treeview.connect("row-activated", self._row_activated)
@@ -920,6 +905,23 @@ class MirrorSelectionList(object):
 
         self._update_list()
         self._create_speed_test_gtask()
+
+        self._dialog.show_all()
+        retval = self._dialog.run()
+        if retval == Gtk.ResponseType.APPLY:
+            try:
+                model, path = self._treeview.get_selection().get_selected_rows()
+                iter = model.get_iter(path[0])
+                res = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
+            except:
+                res = None
+        else:
+            res = None
+
+        self._gtask.get_cancellable().cancel()
+        self._dialog.hide()
+        self._mirrors_model.clear()
+        return res
 
 class Application(object):
     def __init__(self, os_codename):
