@@ -1374,9 +1374,6 @@
           </packing>
         </child>
       </object>
-      <packing>
-        <property name="has-padding">False</property>
-      </packing>
     </child>
     <child>
       <object class="GtkBox">
@@ -1459,9 +1456,6 @@
           </packing>
         </child>
       </object>
-      <packing>
-        <property name="has-padding">False</property>
-      </packing>
     </child>
     <child>
       <object class="GtkBox">
@@ -1633,7 +1627,6 @@
       <packing>
         <property name="page-type">confirm</property>
         <property name="complete">True</property>
-        <property name="has-padding">False</property>
       </packing>
     </child>
     <child>
