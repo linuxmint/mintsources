@@ -465,7 +465,9 @@ class MirrorAssistant(object):
     PAGE_CONFIRM = 2
 
     def __init__(self, application, ui_builder):
-        self._currently_applying_sources = False
+        self._selected_main_url = None
+        self._selected_base_url = None
+
         self.builder = ui_builder
         self.window = ui_builder.get_object("mirror_assistant")
         self.window.set_title(_("Mirror Assistant"))
@@ -477,12 +479,20 @@ class MirrorAssistant(object):
         self.window.connect("cancel", self.cancel_event)
 
         self.window.connect("prepare", self.handle_page)
+        self.window.connect("apply", self.apply)
 
         self._main_mirrors_list = MirrorSelectionList(self, self.builder, "mirrors_treeview_main")
         self._base_mirrors_list = MirrorSelectionList(self, self.builder, "mirrors_treeview_base")
 
         self._main_mirrors_list._treeview.connect("cursor-changed", self.handle_mirror_select)
         self._base_mirrors_list._treeview.connect("cursor-changed", self.handle_mirror_select)
+
+        application._interface_loaded = True
+
+    def apply(self, user_data):
+        Application.update_cache(application, None)
+        Gtk.main_quit()
+        return True
 
     def cancel_event(self, widget):
         Gtk.main_quit()
@@ -493,41 +503,66 @@ class MirrorAssistant(object):
         return True
 
     def handle_mirror_select(self, user_data):
-        if self._main_mirrors_list._treeview.get_selection() is None:
-            self.window.set_page_complete(self.window.get_nth_page(self.window.get_current_page()), False)
-        else:
+        if self._main_mirrors_list._treeview.get_selection().get_selected_rows() is not None:
+            # Allow advancing to next page
             self.window.set_page_complete(self.window.get_nth_page(self.window.get_current_page()), True)
+            # Note chosen URL
+            model, path = self._main_mirrors_list._treeview.get_selection().get_selected_rows()
+            try:
+                iter = model.get_iter(path[0])
+                self._selected_main_url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
+                print("Marked " + str(self._selected_main_url) + " as main mirror.")
+            except IndexError:
+                pass
+        elif self._base_mirrors_list._treeview.get_selection().get_selected_rows() is not None:
+            # Allow advancing to next page
+            self.window.set_page_complete(self.window.get_nth_page(self.window.get_current_page()), True)
+            model, path = self._base_mirrors_list._treeview.get_selection().get_selected_rows()
+            # Note chosen URL
+            try:
+                iter = model.get_iter(path[0])
+                self._selected_base_url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
+                print("Marked " + str(self._selected_base_url) + " as base mirror.")
+            except IndexError:
+                pass
+        else:
+            # Deny advancing to next page
+            self.window.set_page_complete(self.window.get_nth_page(self.window.get_current_page()), False)
 
     def handle_page(self, page, user_data):
-        print("On page " + str(self.window.get_current_page()))
         if self.window.get_current_page() == self.PAGE_CHOOSE_MAIN:
+
+            # Load main mirrors
             self._init_main_mirrors_task = Gio.Task.new(self.window, Gio.Cancellable(), self._load_main_mirrors_finished, iter)
             self._init_main_mirrors_task.run_in_thread(self._thread_load_main_mirrors)
 
-        if self.window.get_current_page() == self.PAGE_CHOOSE_BASE:
+        elif self.window.get_current_page() == self.PAGE_CHOOSE_BASE:
+
+            # Save main mirror selection
+            if self._selected_main_url is not None:
+                print("Saving main mirror: " + str(self._selected_main_url))
+                application.selected_mirror = self._selected_main_url
+                application.apply_official_sources()
+
+            # Load base mirrors
             self._init_base_mirrors_task = Gio.Task.new(self.window, Gio.Cancellable(),
                                                         self._load_base_mirrors_finished, iter)
             self._init_base_mirrors_task.run_in_thread(self._thread_load_base_mirrors)
 
-        #     # model, path = self._main_mirrors_list._treeview.get_selection().get_selected_rows()
-        #     # iter = model.get_iter(path[0])
-        #     # url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
-        #     # if url is not None and self.selected_main_mirror != url:
-        #     #     self.selected_main_mirror = url
-        #     #     Application.apply_official_sources()
-        #     try:
-        #         self._main_mirrors_list._gtask.get_cancellable().cancel()
-        #         self._main_mirrors_list._mirrors_model.clear()
-        #         self._base_mirrors_list._gtask.get_cancellable().cancel()
-        #         self._base_mirrors_list._mirrors_model.clear()
-        #     except:
-        #         pass
+        elif self.window.get_current_page() == self.PAGE_CONFIRM:
+
+            # Save base mirror selection
+            if self._selected_base_url is not None:
+                print("Saving base mirror: " + str(self._selected_base_url))
+                application.selected_base_mirror = self._selected_base_url
+                application.apply_official_sources()
 
     def _thread_load_main_mirrors(self, task, source_object, task_data, cancellable):
-        return self._main_mirrors_list.run(self._mirrors, self._config, False)
+
+        self._main_mirrors_list.run(self._mirrors, self._config, False)
 
     def _thread_load_base_mirrors(self, task, source_object, task_data, cancellable):
-        return self._base_mirrors_list.run(self._base_mirrors, self._config, True)
+        self._base_mirrors_list.run(self._base_mirrors, self._config, True)
 
     def _load_main_mirrors_finished(self, source, task, iter):
         if not Gio.Task.is_valid(task, source):
@@ -540,6 +575,13 @@ class MirrorAssistant(object):
         self.builder.get_object("mirrors_main_spinner").set_visible(False)
         self.builder.get_object("mirrors_treeview_main").get_parent().set_visible(True)
 
+        model, path = self._main_mirrors_list._treeview.get_selection().get_selected_rows()
+        try:
+            iter = model.get_iter(path[0])
+            self._selected_main_url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
+        except IndexError:
+            pass
+
     def _load_base_mirrors_finished(self, source, task, iter):
         if not Gio.Task.is_valid(task, source):
             return
@@ -550,6 +592,13 @@ class MirrorAssistant(object):
         # Make loader invisible and table visible
         self.builder.get_object("mirrors_base_spinner").set_visible(False)
         self.builder.get_object("mirrors_treeview_base").get_parent().set_visible(True)
+
+        model, path = self._base_mirrors_list._treeview.get_selection().get_selected_rows()
+        try:
+            iter = model.get_iter(path[0])
+            self._selected_base_url = model.get(iter, MirrorSelectionList.MIRROR_URL_COLUMN)[0]
+        except IndexError:
+            pass
 
     def load_base_mirrors_finished(self, source, task, iter):
         if not Gio.Task.is_valid(task, source):
@@ -2013,6 +2062,7 @@ class Application(object):
 
 if __name__ == "__main__":
 
+    application = None
     os_codename = "unknown"
     with open("/etc/os-release") as f:
         config = dict([line.strip().split("=") for line in f])
@@ -2042,8 +2092,10 @@ if __name__ == "__main__":
         else:
             add_ppa_cli(ppa_line, codename, "-y" in args, use_ppas)
     elif len(args) == 1 and args[0] == "setup":
-        Application(os_codename).run_mirror_assistant()
+        application = Application(os_codename)
+        application.run_mirror_assistant()
     else:
-        Application(os_codename).run()
+        application = Application(os_codename)
+        application.run()
 
     exit(1 if sources_changed else 0)
