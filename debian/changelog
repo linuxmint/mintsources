@@ -1,3 +1,13 @@
+mintsources (2.3.4) zara; urgency=medium
+
+  [ Michael Webster ]
+  * Skip base mirror age comparison if the default server is not available.
+
+  [ Soner Tari ]
+  * Time out if IP Geolocation not reachable (#260)
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sun, 27 Jul 2025 12:44:30 +0200
+
 mintsources (2.3.3) zara; urgency=medium
 
   [ Mavroudis Chatzilazaridis ]
