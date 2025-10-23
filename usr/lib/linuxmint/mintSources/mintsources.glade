@@ -31,7 +31,7 @@
                   <object class="GtkImage" id="image_ppa_logo1">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="icon-name">xapp-package-x-generic-symbolic</property>
+                    <property name="icon-name">xsi-package-x-generic-symbolic</property>
                     <property name="icon_size">6</property>
                   </object>
                   <packing>
@@ -653,7 +653,7 @@
                       <packing>
                         <property name="name">official_repositories</property>
                         <property name="title" translatable="yes">Official Repositories</property>
-                        <property name="icon-name">xapp-package-x-generic-symbolic</property>
+                        <property name="icon-name">xsi-package-x-generic-symbolic</property>
                       </packing>
                     </child>
                     <child>
@@ -773,7 +773,7 @@
                       <packing>
                         <property name="name">ppas</property>
                         <property name="title" translatable="yes">PPAs</property>
-                        <property name="icon-name">xapp-package-x-generic-symbolic</property>
+                        <property name="icon-name">xsi-package-x-generic-symbolic</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
@@ -880,7 +880,7 @@
                       <packing>
                         <property name="name">additional_repositories</property>
                         <property name="title" translatable="yes">Additional Repositories</property>
-                        <property name="icon-name">xapp-package-x-generic-symbolic</property>
+                        <property name="icon-name">xsi-package-x-generic-symbolic</property>
                         <property name="position">2</property>
                       </packing>
                     </child>
@@ -1000,7 +1000,7 @@
                       <packing>
                         <property name="name">authentication_keys</property>
                         <property name="title" translatable="yes">Authentication Keys</property>
-                        <property name="icon-name">xapp-dialog-password-symbolic</property>
+                        <property name="icon-name">xsi-dialog-password-symbolic</property>
                         <property name="position">3</property>
                       </packing>
                     </child>
@@ -1099,7 +1099,7 @@
                       <packing>
                         <property name="name">maintenance</property>
                         <property name="title" translatable="yes">Maintenance</property>
-                        <property name="icon-name">xapp-toolbox-symbolic</property>
+                        <property name="icon-name">xsi-toolbox-symbolic</property>
                         <property name="position">4</property>
                       </packing>
                     </child>
@@ -1134,7 +1134,7 @@
                                   <object class="GtkImage">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
-                                    <property name="icon-name">xapp-view-refresh-symbolic</property>
+                                    <property name="icon-name">xsi-view-refresh-symbolic</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -1391,7 +1391,7 @@
               <object class="GtkImage" id="image_ppa_logo">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="icon-name">xapp-package-x-generic-symbolic</property>
+                <property name="icon-name">xsi-package-x-generic-symbolic</property>
                 <property name="icon_size">6</property>
               </object>
               <packing>
