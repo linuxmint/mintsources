@@ -2,6 +2,7 @@
 Name=Software Sources
 Name[am]=የሶፍትዌር ምንጮች
 Name[ar]=مصادر البرامج
+Name[ast]=Fontes de software
 Name[be]=Крыніцы праграм
 Name[bg]=Софтуерни източници
 Name[bn]=সফটওয়্যারের উৎসসমূহ
@@ -82,6 +83,7 @@ Name[zh_TW]=軟體來源
 Comment=Configure the sources for installable software and updates
 Comment[am]=ምንጮችን ማዋቀር ለሚገጠሙ ሶፍትዌር እና ማሻሻያዎች
 Comment[ar]=تكوين مصادر البرامج والتحديثات القابلة للتثبيت
+Comment[ast]=Configura les fontes pal software instalable y anovamientos
 Comment[be]=Наладзіць крыніцы ўсталявання праграм і абнаўленняў
 Comment[bg]=Настройка на източниците за инсталиране и актуализиране на софтуер
 Comment[bn]=ইনস্টলযোগ্য সফটওয়্যার ও আপডেটের জন্য উৎস কনফিগার করুন
