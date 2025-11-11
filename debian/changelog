@@ -1,3 +1,12 @@
+mintsources (2.3.7) zena; urgency=medium
+
+  * Switch to XApp symbolic icons
+  * Switch to XSI
+  * Add support for Mint 22.3 Zena
+  * l10n: Update files
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 11 Nov 2025 16:17:31 +0000
+
 mintsources (2.3.6) zara; urgency=medium
 
   * lmde: Fix debian.mirrors path
