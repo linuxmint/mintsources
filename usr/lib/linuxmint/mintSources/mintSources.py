@@ -1825,13 +1825,16 @@ class Application(object):
         self.update_flags()
 
     def update_flags(self):
-        mint_flag_path = FLAG_PATH % '_generic'
-        base_flag_path = FLAG_PATH % '_generic'
-
         selected_mirror = self.selected_mirror
         if selected_mirror[-1] == "/":
             selected_mirror = selected_mirror[:-1]
 
+        if "//packages.linuxmint.com" in selected_mirror:
+            mint_flag_path = FLAG_PATH % 'us'
+        else:
+            mint_flag_path = FLAG_PATH % '_generic'
+
+        base_flag_path = FLAG_PATH % '_generic'
         selected_base_mirror = self.selected_base_mirror
         if selected_base_mirror[-1] == "/":
             selected_base_mirror = selected_base_mirror[:-1]
