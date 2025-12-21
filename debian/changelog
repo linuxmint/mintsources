@@ -1,3 +1,13 @@
+mintsources (2.3.8) zena; urgency=medium
+
+  [ Benjamin Loison ]
+  * Add a missing space (#267)
+
+  [ Clement Lefebvre ]
+  * Assign a flag to the default mirrors
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sun, 21 Dec 2025 16:05:58 +0000
+
 mintsources (2.3.7) zena; urgency=medium
 
   * Switch to XApp symbolic icons
