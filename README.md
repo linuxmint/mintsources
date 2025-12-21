@@ -1,4 +1,4 @@
-#Mintsources
+# Mintsources
 
 This is a software configuration tool, mintsources, allows the user to adjust sofware repositories, select a mirror, include PPAs and do package management tasks.
 
