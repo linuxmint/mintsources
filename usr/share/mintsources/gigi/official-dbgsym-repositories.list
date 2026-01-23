@@ -1,1 +1,0 @@
-deb http://debug.mirrors.debian.org/debian-debug/ $basecodename-debug main contrib non-free non-free-firmware

@@ -1,7 +1,0 @@
-deb-src $mirror $codename main upstream import backport $optionalcomponents
-
-deb-src $basemirror/ $basecodename main contrib non-free
-deb-src $basemirror/ $basecodename-updates main contrib non-free
-deb-src http://security.debian.org/ $basecodename-security main contrib non-free
-
-deb-src $basemirror/ $basecodename-backports main contrib non-free

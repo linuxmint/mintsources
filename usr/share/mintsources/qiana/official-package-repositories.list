@@ -1,9 +1,0 @@
-deb $mirror $codename main upstream import $optionalcomponents
-
-deb http://extra.linuxmint.com qiana main
-
-deb $basemirror $basecodename main restricted universe multiverse
-deb $basemirror $basecodename-updates main restricted universe multiverse
-
-deb http://security.ubuntu.com/ubuntu/ $basecodename-security main restricted universe multiverse
-deb http://archive.canonical.com/ubuntu/ $basecodename partner
