@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Sources des logiciels MythicOS
+Comment=Gérer les dépôts et sources de logiciels
+Exec=software-sources
+Icon=software-sources
+Terminal=false
+Type=Application
+Categories=System;PackageManager;
