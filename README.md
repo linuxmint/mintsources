@@ -1,28 +1,21 @@
-# Mintsources
+# Software Sources MythicOS
 
-This is a software configuration tool, mintsources, allows the user to adjust sofware repositories, select a mirror, include PPAs and do package management tasks.
+**Software Sources MythicOS** est l'application officielle pour gérer facilement les dépôts de logiciels sur MythicOS.  
+Elle permet d'ajouter automatiquement votre dépôt MythicOS tout en conservant les dépôts Ubuntu et Linux Mint, et de mettre à jour la liste des paquets APT.
 
-![image](https://user-images.githubusercontent.com/2152854/126929235-5cd892c7-e951-4a5d-9067-770329f04427.png)
+---
 
+## Fonctionnalités
 
-## Build
-Get source code
-```
-git clone https://github.com/linuxmint/mintsources
-cd mintsources
-```
-Build
-```
-dpkg-buildpackage --no-sign
-```
-Install
-```
-cd ..
-sudo dpkg -i mintsources*.deb
-```
+- Ajout automatique du dépôt MythicOS : `https://packages.mythicos.hastag.fr/ stable main`  
+- Conservation des dépôts de base. 
+- Mise à jour automatique de la liste des paquets (`apt update`)  
+- Interface graphique via le fichier `.desktop`  
+- Lanceur terminal pour exécuter facilement le logiciel
 
-## Translations
-Please use Launchpad to translate Mintsources: https://translations.launchpad.net/linuxmint/latest/.
+---
 
-## License
-- Code: GPLv3
+## Installation
+
+Depuis le terminal
+sudo apt install software-sources
