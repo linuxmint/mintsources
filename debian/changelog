@@ -1,3 +1,9 @@
+mintsources (2.4.1) alfa; urgency=medium
+
+  * polkit: Fix broken action in 26.04
+
+ -- Clement Lefebvre <root@linuxmint.com>  Wed, 29 Apr 2026 12:31:17 +0100
+
 mintsources (2.4.0) alfa; urgency=medium
 
   [ Butterfly ]
