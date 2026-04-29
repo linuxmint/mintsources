@@ -300,6 +300,22 @@ def expand_http_line(line, distro_codename):
     line = "deb %s %s %s" % ( repo, distro_codename, areas )
     return line
 
+def repo_key_path(uri):
+    """
+    Returns the key path for a given repository URI for enabled sources.
+
+    NOTE: Must load all the sources with repolib.load_all_sources() once before
+    calling this.
+    """
+    uri = uri.removesuffix("/")
+    for source in repolib.sources.values():
+        if source.enabled == repolib.AptSourceEnabled.FALSE or not source.signed_by:
+            continue
+        for u in source.uris:
+            if uri == u.removesuffix("/"):
+                return source.signed_by
+    return None
+
 class CurlCallback:
     def __init__(self):
         self.contents = ''
@@ -1209,15 +1225,12 @@ class Application(object):
 
         r = re.compile(r"^gpg\:\s+using \S+ key (.+)$", re.MULTILINE | re.IGNORECASE)
         # try to verify all repository lists using gpg
+        repolib.load_all_sources()
         for repository in repositories:
             # if the repository is "signed-by", just check that the key file is present
             uri = repository.uri
-            if uri.endswith("/"):
-                uri = uri[:-1]
-            output = subprocess.getoutput(f"inxi -r | grep {uri}")
-            key_path = None
-            if "signed-by" in output:
-                key_path = output.split("signed-by=")[1].split("]")[0]
+            key_path = repo_key_path(uri)
+            if key_path:
                 print(f"{uri} is signed by {key_path}")
                 if os.path.exists(key_path):
                     print("  Key found.")
