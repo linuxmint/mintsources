@@ -16,6 +16,7 @@
 <message xml:lang="be">Крыніцы праграм</message>
 <message xml:lang="bg">Софтуерни източници</message>
 <message xml:lang="bn">সফটওয়্যারের উৎসসমূহ</message>
+<message xml:lang="br">Tarzhioù meziantoù</message>
 <message xml:lang="bs">Izvori softvera</message>
 <message xml:lang="ca">Orígens de programari</message>
 <message xml:lang="ca@valencia">Orígens de programari</message>
@@ -54,6 +55,7 @@
 <message xml:lang="ku">Çavkaniyên Bernameyan</message>
 <message xml:lang="ky">Программа булактары</message>
 <message xml:lang="la">Fontes Softwaris</message>
+<message xml:lang="lo">ແຫຼ່ງຊອບແວ</message>
 <message xml:lang="lt">Programinės įrangos saugyklos</message>
 <message xml:lang="lv">Programmatūras avoti</message>
 <message xml:lang="ml">സോഫ്റ്റ്‌വെയര്‍ സ്രോതസ്സുകള്‍</message>
@@ -63,6 +65,7 @@
 <message xml:lang="nds">Paketquellen</message>
 <message xml:lang="ne">सफ्टवेयर स्रोतहरु</message>
 <message xml:lang="nl">Pakketbronnen</message>
+<message xml:lang="nn">Programvarekjelder</message>
 <message xml:lang="oc">Fonts de mesa a jorn</message>
 <message xml:lang="om">Madda mosajjii</message>
 <message xml:lang="pa">ਸਾਫਟਵੇਅਰ ਸਰੋਤ</message>
@@ -81,6 +84,7 @@
 <message xml:lang="sr@latin">Izvori softvera</message>
 <message xml:lang="sv">Programkällor</message>
 <message xml:lang="ta">மென்பொருள் மூலங்கள்</message>
+<message xml:lang="te">సాఫ్ట్‌వేర్ మూలాలు</message>
 <message xml:lang="tg">Манбаъҳои нармафзор</message>
 <message xml:lang="th">แหล่งที่มาของซอฟต์แวร์</message>
 <message xml:lang="tr">Yazılım Kaynakları</message>
@@ -96,7 +100,7 @@
       <allow_inactive>auth_admin_keep</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/mintsources</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/software-sources</annotate>
     <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
   </action>
 
