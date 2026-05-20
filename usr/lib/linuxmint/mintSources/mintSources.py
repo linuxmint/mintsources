@@ -43,6 +43,9 @@ FLAG_SIZE = 16
 
 additional_repositories_file = "/etc/apt/sources.list.d/additional-repositories.list"
 
+# User agent used by pycurl requests
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
 # i18n
 APP = 'mintsources'
 LOCALE_DIR = "/usr/share/linuxmint/locale"
@@ -603,6 +606,7 @@ class MirrorSelectionDialog(object):
             c.setopt(pycurl.FOLLOWLOCATION, 1)
             c.setopt(pycurl.NOBODY, 1)
             c.setopt(pycurl.OPT_FILETIME, 1)
+            c.setopt(pycurl.USERAGENT, USER_AGENT)
             c.perform()
             filetime = c.getinfo(pycurl.INFO_FILETIME)
             if filetime < 0:
@@ -697,6 +701,7 @@ class MirrorSelectionDialog(object):
                 c.setopt(pycurl.FOLLOWLOCATION, 1)
                 c.setopt(pycurl.WRITEFUNCTION, buff.write)
                 c.setopt(pycurl.NOSIGNAL, 1)
+                c.setopt(pycurl.USERAGENT, USER_AGENT)
                 c.perform()
                 download_speed = c.getinfo(pycurl.SPEED_DOWNLOAD) # bytes/sec
             else:
