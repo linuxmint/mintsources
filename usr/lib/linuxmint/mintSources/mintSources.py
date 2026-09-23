@@ -382,19 +382,20 @@ def format_fingerprint(fingerprint):
     return "%s  %s" % (" ".join(groups[:5]), " ".join(groups[5:]))
 
 class Key():
-    def __init__(self, pub, uid="", paths=None, removable=True):
+    def __init__(self, pub, uid="", paths=None, removable=True, sources=None):
         self.pub = pub
         self.sub = ""
         self.uid = uid
         self.paths = paths or []
         self.removable = removable
+        self.sources = sources or []
 
     def delete(self):
         init_gnupg()
         for path in self.paths:
             armored = path.endswith(".asc")
             with tempfile.TemporaryDirectory(prefix="mintsources-") as tmpdir:
-                gpg, _ = import_to_temp_keyring(tmpdir, path)
+                gpg, imported = import_to_temp_keyring(tmpdir, path)
                 gpg.delete_keys(self.pub.replace(" ", ""))
                 remaining = [key["fingerprint"] for key in gpg.list_keys()]
                 data = gpg.export_keys(remaining, armor=armored) if remaining else None
@@ -407,7 +408,11 @@ class Key():
                 os.remove(path)
 
     def get_name(self):
-        return "%s\n<small>    %s</small>" % (GLib.markup_escape_text(self.uid), GLib.markup_escape_text(self.pub))
+        details = [self.pub] + self.paths
+        if self.sources:
+            details.append(_("Used by: %s") % ", ".join(sorted(set(self.sources))))
+        details = "".join(["\n<small>    %s</small>" % GLib.markup_escape_text(detail) for detail in details])
+        return "%s%s" % (GLib.markup_escape_text(self.uid), details)
 
 class Mirror():
     def __init__(self, country_code, url, name):
@@ -1354,14 +1359,14 @@ class Application(object):
     def get_keyrings(self):
         apt_pkg.init_config()
         trustedparts = apt_pkg.config.find_dir("Dir::Etc::trustedparts")
-        keyrings = [(path, True) for path in sorted(glob.glob("%s*" % trustedparts)) if os.path.isfile(path)]
+        keyrings = [(path, True, []) for path in sorted(glob.glob("%s*" % trustedparts)) if os.path.isfile(path)]
 
-        signed_by = set()
+        signed_by = {}
         for source in repolib.sources.values():
             if source.enabled == repolib.AptSourceEnabled.FALSE or not source.signed_by:
                 continue
-            signed_by.add(str(source.signed_by))
-        keyrings += [(path, False) for path in sorted(signed_by) if os.path.isfile(path)]
+            signed_by.setdefault(str(source.signed_by), []).append(source.name)
+        keyrings += [(path, False, signed_by[path]) for path in sorted(signed_by) if os.path.isfile(path)]
 
         return keyrings
 
@@ -1370,7 +1375,7 @@ class Application(object):
         gpg = gnupg.GPG()
         self.keys = []
         seen = {}
-        for path, removable in self.get_keyrings():
+        for path, removable, sources in self.get_keyrings():
             try:
                 scanned_keys = gpg.scan_keys(path)
             except Exception as e:
@@ -1383,9 +1388,10 @@ class Application(object):
                 if pub in seen:
                     if removable and seen[pub].removable:
                         seen[pub].paths.append(path)
+                    seen[pub].sources += sources
                     continue
                 uid = scanned_key["uids"][0] if scanned_key["uids"] else ""
-                key = Key(pub, uid, [path], removable)
+                key = Key(pub, uid, [path], removable, list(sources))
                 seen[pub] = key
                 self.keys.append(key)
 
