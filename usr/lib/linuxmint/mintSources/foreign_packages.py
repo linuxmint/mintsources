@@ -100,6 +100,7 @@ class Foreign_Browser():
     def __init__(self):
 
         self.downgrade_mode = (sys.argv[1] == "downgrade") # whether to downgrade or remove packages
+        self.transaction_running = False
 
         glade_file = "/usr/lib/linuxmint/mintSources/mintsources.glade"
 
@@ -236,6 +237,10 @@ class Foreign_Browser():
             self.action_button.set_sensitive(False)
 
     def install (self, button):
+        if self.transaction_running:
+            return
+        self.transaction_running = True
+        self.window.set_sensitive(False)
         foreign_packages = []
         iter = self.model.get_iter_first()
         while iter is not None:
@@ -244,13 +249,18 @@ class Foreign_Browser():
             iter = self.model.iter_next(iter)
         apt = aptkit.simpleclient.SimpleAPTClient(self.window)
         apt.set_finished_callback(self.reload)
-        self.window.set_sensitive(False)
+        apt.set_cancelled_callback(self.cancelled)
         if self.downgrade_mode:
             apt.downgrade_packages(foreign_packages)
         else:
             apt.remove_packages(foreign_packages)
 
+    def cancelled(self):
+        self.transaction_running = False
+        self.window.set_sensitive(True)
+
     def reload(self, transaction=None, exit_state=None):
+        self.transaction_running = False
         self.load_foreign_packages()
 
     def select_all (self, button):
