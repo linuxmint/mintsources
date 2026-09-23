@@ -178,6 +178,11 @@ def init_gnupg():
     # gpg commands fail until its folders exist in the user's home
     subprocess.run(["gpg", "--list-keys"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+def import_to_temp_keyring(tmpdir, filename):
+    gpg = gnupg.GPG(keyring=os.path.join(tmpdir, "keyring.gpg"))
+    with open(filename, "rb") as f:
+        return gpg, gpg.import_keys(f.read())
+
 def add_remote_key(fingerprint, path=None):
     try:
         os.system("mkdir -p /etc/apt/keyrings")
@@ -209,6 +214,26 @@ def add_remote_key(fingerprint, path=None):
     except subprocess.CalledProcessError:
         return False
     return True
+
+def add_local_key(filename):
+    init_gnupg()
+    if not gnupg.GPG().scan_keys(filename):
+        return None
+
+    with tempfile.TemporaryDirectory(prefix="mintsources-") as tmpdir:
+        gpg, imported = import_to_temp_keyring(tmpdir, filename)
+        if not imported.fingerprints:
+            return None
+        data = gpg.export_keys(imported.fingerprints, armor=False)
+
+    if not data:
+        return None
+
+    key_path = "/etc/apt/trusted.gpg.d/%s.gpg" % imported.fingerprints[0]
+    with open(key_path, "wb") as f:
+        f.write(data)
+    os.chmod(key_path, 0o644)
+    return key_path
 
 def repo_malformed(line):
     r = re.compile(r'(?:deb|deb-src)\s+(?:\[[^\]]+\]\s+)?\w+:/\S+?/?\s+\S+')
@@ -1366,11 +1391,23 @@ class Application(object):
                                 _("Open"), Gtk.ResponseType.OK))
         dialog.set_default_response(Gtk.ResponseType.OK)
         response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            subprocess.call(["apt-key", "add", dialog.get_filename()])
-            self.load_keys()
-            self.enable_reload_button()
+        filename = dialog.get_filename()
         dialog.destroy()
+        if response != Gtk.ResponseType.OK or filename is None:
+            return
+
+        try:
+            key_path = add_local_key(filename)
+        except OSError as e:
+            print("E: Could not import %s: %s" % (filename, e), file=sys.stderr)
+            key_path = None
+
+        if key_path is None:
+            self.show_confirmation_dialog(_("No key could be imported from this file."), affirmation=True)
+            return
+
+        self.load_keys()
+        self.enable_reload_button()
 
     def fetch_key(self, widget):
         fingerprint = self.show_entry_dialog(_("Please enter the fingerprint of the public key you want to download from keyserver.ubuntu.com:"), "")
