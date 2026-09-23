@@ -191,9 +191,7 @@ def add_remote_key(fingerprint, path=None):
         key = f"/etc/apt/keyrings/{fingerprint}.gpg"
         trusted_key = f"/etc/apt/trusted.gpg.d/{fingerprint}.gpg"
         keyserver = "hkps://keyserver.ubuntu.com:443"
-        # Run gpg --list-keys to initiate gpg folders in ~/.gnupg
-        # otherwise gpg commands fail when we import keys
-        subprocess.run(["gpg", "--list-keys"])
+        init_gnupg()
         proxy = os.environ.get('http_proxy')
         if proxy is not None and proxy != "":
             cmd = ["gpg", "--yes", "--honor-http-proxy", "--no-default-keyring", "--keyring", keyring, "--keyserver", keyserver, "--recv-keys", fingerprint]
@@ -392,7 +390,21 @@ class Key():
         self.removable = removable
 
     def delete(self):
-        subprocess.call(["apt-key", "del", self.pub])
+        init_gnupg()
+        for path in self.paths:
+            armored = path.endswith(".asc")
+            with tempfile.TemporaryDirectory(prefix="mintsources-") as tmpdir:
+                gpg, _ = import_to_temp_keyring(tmpdir, path)
+                gpg.delete_keys(self.pub.replace(" ", ""))
+                remaining = [key["fingerprint"] for key in gpg.list_keys()]
+                data = gpg.export_keys(remaining, armor=armored) if remaining else None
+
+            if data:
+                with open(path, "w" if armored else "wb") as f:
+                    f.write(data)
+                os.chmod(path, 0o644)
+            else:
+                os.remove(path)
 
     def get_name(self):
         return "%s\n<small>    %s</small>" % (GLib.markup_escape_text(self.uid), GLib.markup_escape_text(self.pub))
@@ -1211,9 +1223,7 @@ class Application(object):
         self.main_window.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
         Gdk.flush()
 
-        # Run gpg --list-keys to initiate gpg folders in ~/.gnupg
-        # otherwise gpg commands fail when we import keys
-        subprocess.run(["gpg", "--list-keys"])
+        init_gnupg()
 
         cmd_stub = ["gpg", "--no-default-keyring", "--no-options"]
         keyrings = [trusted] + glob.glob("%s*.gpg" % trustedparts)
