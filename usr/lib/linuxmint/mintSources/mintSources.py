@@ -3,6 +3,7 @@ import configparser
 import datetime
 import gettext
 import glob
+import gnupg
 import json
 import locale
 import os
@@ -172,6 +173,10 @@ def add_ppa_cli(line, codename, forceYes, use_ppas):
         else:
             with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
                 f.write("%s\n" % line)
+
+def init_gnupg():
+    # gpg commands fail until its folders exist in the user's home
+    subprocess.run(["gpg", "--list-keys"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def add_remote_key(fingerprint, path=None):
     try:
@@ -349,11 +354,17 @@ class Component():
     def set_widget(self, widget):
         self.widget = widget
 
+def format_fingerprint(fingerprint):
+    groups = [fingerprint[i:i + 4] for i in range(0, len(fingerprint), 4)]
+    return "%s  %s" % (" ".join(groups[:5]), " ".join(groups[5:]))
+
 class Key():
-    def __init__(self, pub):
+    def __init__(self, pub, uid="", paths=None, removable=True):
         self.pub = pub
         self.sub = ""
-        self.uid = ""
+        self.uid = uid
+        self.paths = paths or []
+        self.removable = removable
 
     def delete(self):
         subprocess.call(["apt-key", "del", self.pub])
@@ -1305,34 +1316,43 @@ class Application(object):
         else:
             self.show_confirmation_dialog(_("No missing keys were found."), affirmation=True)
 
-    def load_keys(self):
-        self.keys = []
-        key = None
-        output = subprocess.getoutput("apt-key list")
-        lines = []
-        for line in output.split("\n"):
-            line = line.strip()
-            if line.startswith("/etc/apt"):
-                continue
-            if line.startswith("-----"):
-                continue
-            if line == "":
-                continue
-            lines.append(line)
+    def get_keyrings(self):
+        apt_pkg.init_config()
+        trustedparts = apt_pkg.config.find_dir("Dir::Etc::trustedparts")
+        keyrings = [(path, True) for path in sorted(glob.glob("%s*" % trustedparts)) if os.path.isfile(path)]
 
-        for key_data in "\n".join(lines).split("pub   "):
-            key_data = key_data.split("\n")
-            if len(key_data) > 3:
-                extra = key_data[0]
-                pub = key_data[1]
-                name = key_data[2]
-                name = name.replace("uid ", "")
-                if "]" in name:
-                    name = name.split("]")[1].strip()
-                key = Key(pub)
-                key.uid = name
-                if pub not in self.system_keys:
-                    self.keys.append(key)
+        signed_by = set()
+        for source in repolib.sources.values():
+            if source.enabled == repolib.AptSourceEnabled.FALSE or not source.signed_by:
+                continue
+            signed_by.add(str(source.signed_by))
+        keyrings += [(path, False) for path in sorted(signed_by) if os.path.isfile(path)]
+
+        return keyrings
+
+    def load_keys(self):
+        init_gnupg()
+        gpg = gnupg.GPG()
+        self.keys = []
+        seen = {}
+        for path, removable in self.get_keyrings():
+            try:
+                scanned_keys = gpg.scan_keys(path)
+            except Exception as e:
+                print("W: Could not read keyring %s: %s" % (path, e), file=sys.stderr)
+                continue
+            for scanned_key in scanned_keys:
+                pub = format_fingerprint(scanned_key["fingerprint"])
+                if pub in self.system_keys:
+                    continue
+                if pub in seen:
+                    if removable and seen[pub].removable:
+                        seen[pub].paths.append(path)
+                    continue
+                uid = scanned_key["uids"][0] if scanned_key["uids"] else ""
+                key = Key(pub, uid, [path], removable)
+                seen[pub] = key
+                self.keys.append(key)
 
         self._keys_model.clear()
         for key in self.keys:
@@ -1368,12 +1388,15 @@ class Application(object):
                 iters.append(model.get_iter(index))
             for iter in iters:
                 key = model.get(iter, 0)[0]
-                key.delete()
+                if key.removable:
+                    key.delete()
             self.load_keys()
 
     def key_selected(self, selection):
-        selection_count = selection.count_selected_rows()
-        self.builder.get_object("button_keys_remove").set_sensitive(selection_count >= 1)
+        (model, indexes) = selection.get_selected_rows()
+        removable = [index for index in indexes if model.get(model.get_iter(index), 0)[0].removable]
+        self.builder.get_object("button_keys_remove").set_sensitive(len(removable) == len(indexes) and len(indexes) >= 1)
+
 
     def add_repository(self, widget):
         start_line = ""
