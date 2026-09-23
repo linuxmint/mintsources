@@ -21,6 +21,13 @@ cd ..
 sudo dpkg -i mintsources*.deb
 ```
 
+## Test
+
+Run the tests from the root of the project
+```
+python3 -m unittest
+```
+
 ## Translations
 Please use Launchpad to translate Mintsources: https://translations.launchpad.net/linuxmint/latest/.
 
