@@ -1182,6 +1182,8 @@ class Application(object):
         cmd_stub = ["gpg", "--no-default-keyring", "--no-options"]
         keyrings = [trusted] + glob.glob("%s*.gpg" % trustedparts)
         for keyring in keyrings:
+            if not keyring or not os.path.isfile(keyring):
+                continue
             cmd_stub.extend(["--keyring", keyring])
 
         # build repository list
