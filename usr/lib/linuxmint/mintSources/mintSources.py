@@ -1400,6 +1400,20 @@ class Application(object):
                                (_("Cancel"), Gtk.ResponseType.CANCEL,
                                 _("Open"), Gtk.ResponseType.OK))
         dialog.set_default_response(Gtk.ResponseType.OK)
+
+        key_filter = Gtk.FileFilter()
+        key_filter.set_name(_("Key files"))
+        for pattern in ["*.asc", "*.gpg", "*.key", "*.pgp", "*.pub"]:
+            key_filter.add_pattern(pattern)
+        for mime_type in ["application/pgp-keys", "application/pgp-encrypted"]:
+            key_filter.add_mime_type(mime_type)
+        dialog.add_filter(key_filter)
+
+        all_filter = Gtk.FileFilter()
+        all_filter.set_name(_("All files"))
+        all_filter.add_pattern("*")
+        dialog.add_filter(all_filter)
+
         response = dialog.run()
         filename = dialog.get_filename()
         dialog.destroy()
