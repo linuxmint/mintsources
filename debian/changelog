@@ -1,3 +1,19 @@
+mintsources (2.4.5) adrien; urgency=medium
+
+  [ Sunny ]
+  * Replace inxi with repolib (#271)
+
+  [ Michael Webster ]
+  * Skip empty and missing keyrings when verifying repositories
+  * List authentication keys with gnupg instead of apt-key
+  * Import authentication keys with gnupg instead of apt-key
+  * Remove authentication keys with gnupg instead of apt-key
+  * Filter the key import dialog to valid file types.
+  * Show the keyring and repository for each authentication key
+  * Don't start a second foreign package transaction
+
+ -- Clement Lefebvre <root@linuxmint.com>  Tue, 13 Oct 2026 15:14:26 +0100
+
 mintsources (2.4.4) adrien; urgency=medium
 
   * Add support for Mint 27 Adrien
