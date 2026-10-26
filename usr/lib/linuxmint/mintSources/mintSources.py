@@ -752,7 +752,7 @@ class MirrorSelectionDialog(object):
             if download_speed == -1:
                 # don't remove from model as this is not thread-safe
                 self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Obsolete"))
-            if download_speed == 0:
+            elif download_speed == 0:
                 # don't remove from model as this is not thread-safe
                 self._mirrors_model.set_value(iter, MirrorSelectionDialog.MIRROR_SPEED_LABEL_COLUMN, _("Unreachable"))
             else:
