@@ -1,3 +1,9 @@
+mintsources (2.4.6) adrien; urgency=medium
+
+  * l10n: Update POT
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 26 Oct 2026 13:41:05 +0000
+
 mintsources (2.4.5) adrien; urgency=medium
 
   [ Sunny ]
