@@ -268,7 +268,7 @@ def retrieve_ppa_url(url):
     except requests.exceptions.SSLError:
         raise PPAException(_("Failed to establish a secure connection."))
     except Exception as e:
-        raise PPAException(_("Failed to download the PPA: %s." % e))
+        raise PPAException(_("Failed to download the PPA: %s.") % e)
     return data
 
 def get_ppa_info_from_lp(owner_name, ppa_name, base_codename):
