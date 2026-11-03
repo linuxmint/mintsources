@@ -717,6 +717,7 @@ class MirrorSelectionDialog(object):
                 c.setopt(pycurl.CONNECTTIMEOUT, 5)
                 c.setopt(pycurl.TIMEOUT, 20)
                 c.setopt(pycurl.FOLLOWLOCATION, 1)
+                c.setopt(pycurl.FAILONERROR, 1)
                 c.setopt(pycurl.WRITEFUNCTION, buff.write)
                 c.setopt(pycurl.NOSIGNAL, 1)
                 c.setopt(pycurl.USERAGENT, USER_AGENT)
