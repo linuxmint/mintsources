@@ -233,6 +233,31 @@ def add_local_key(filename):
     os.chmod(key_path, 0o644)
     return key_path
 
+def find_official_file(name):
+    # The official repositories are either in DEB822 (.sources) or in the one-line-style (.list) format
+    for extension in ["sources", "list"]:
+        path = "/etc/apt/sources.list.d/%s.%s" % (name, extension)
+        if os.path.exists(path):
+            return path
+    return None
+
+def read_official_lines(path):
+    # Returns the repositories of an official file as one-line-style lines, whatever its format
+    with open(path, 'r', encoding="utf-8", errors="ignore") as f:
+        content = f.read()
+    if not path.endswith(".sources"):
+        return [line.strip() for line in content.splitlines()]
+    lines = []
+    for stanza in re.split(r"\n\s*\n", content):
+        fields = {}
+        for line in stanza.splitlines():
+            if ":" in line and not line.startswith("#"):
+                key, value = line.split(":", 1)
+                fields[key.strip().lower()] = value.strip()
+        for suite in fields.get("suites", "").split():
+            lines.append("%s %s %s %s" % (fields.get("types", ""), fields.get("uris", ""), suite, fields.get("components", "")))
+    return lines
+
 def repo_malformed(line):
     r = re.compile(r'(?:deb|deb-src)\s+(?:\[[^\]]+\]\s+)?\w+:/\S+?/?\s+\S+')
     match_line = r.match(line)
@@ -1053,7 +1078,7 @@ class Application(object):
 
         self.load_keys()
 
-        if not os.path.exists("/etc/apt/sources.list.d/official-package-repositories.list"):
+        if find_official_file("official-package-repositories") is None:
             print ("Sources missing, generating default sources list!")
             self.generate_missing_sources()
 
@@ -1173,14 +1198,11 @@ class Application(object):
         knownlines = set()
 
         # Parse official sources first
-        for listfile in glob.glob("/etc/apt/sources.list.d/official*.list"):
-            with open(listfile, encoding="utf-8", errors="ignore") as f:
-                lines = []
-                for line in f.readlines():
-                    line = line.strip()
-                    if line not in knownlines:
-                        if not line.startswith('#'):
-                            knownlines.add(line)
+        for listfile in glob.glob("/etc/apt/sources.list.d/official*.list") + glob.glob("/etc/apt/sources.list.d/official*.sources"):
+            for line in read_official_lines(listfile):
+                if line not in knownlines:
+                    if not line.startswith('#'):
+                        knownlines.add(line)
 
         # Now parse other sources and remove any duplicates
         found_duplicates = False
@@ -1852,68 +1874,51 @@ class Application(object):
                 selected_components.append(component.name)
 
         # Update official packages repositories
-        os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")
-        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.os_codename, 'r', encoding="utf-8", errors="ignore").read()
-        template = template.replace("$codename", self.config["general"]["codename"])
-        template = template.replace("$basecodename", self.config["general"]["base_codename"])
-        template = template.replace("$optionalcomponents", ' '.join(selected_components))
-        template = template.replace("$mirror", self.selected_mirror)
-        template = template.replace("$basemirror", self.selected_base_mirror)
-
-        with open("/etc/apt/sources.list.d/official-package-repositories.list", "w", encoding="utf-8", errors="ignore") as text_file:
-            text_file.write(template)
+        os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list /etc/apt/sources.list.d/official-package-repositories.sources")
+        self.write_official_file("official-package-repositories", ' '.join(selected_components), self.selected_mirror, self.selected_base_mirror)
 
         # Update official sources repositories
-        os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
+        os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list /etc/apt/sources.list.d/official-source-repositories.sources")
         if (self.builder.get_object("source_code_switch").get_active()):
-            template = open('/usr/share/mintsources/%s/official-source-repositories.list' % self.os_codename, 'r', encoding="utf-8", errors="ignore").read()
-            template = template.replace("$codename", self.config["general"]["codename"])
-            template = template.replace("$basecodename", self.config["general"]["base_codename"])
-            template = template.replace("$optionalcomponents", ' '.join(selected_components))
-            template = template.replace("$mirror", self.selected_mirror)
-            template = template.replace("$basemirror", self.selected_base_mirror)
-            with open("/etc/apt/sources.list.d/official-source-repositories.list", "w", encoding="utf-8", errors="ignore") as text_file:
-                text_file.write(template)
+            self.write_official_file("official-source-repositories", ' '.join(selected_components), self.selected_mirror, self.selected_base_mirror)
 
         # Update dbgsym repositories
-        os.system("rm -f /etc/apt/sources.list.d/official-dbgsym-repositories.list")
+        os.system("rm -f /etc/apt/sources.list.d/official-dbgsym-repositories.list /etc/apt/sources.list.d/official-dbgsym-repositories.sources")
         if (self.builder.get_object("debug_symbol_switch").get_active()):
-            template = open('/usr/share/mintsources/%s/official-dbgsym-repositories.list' % self.os_codename, 'r', encoding="utf-8", errors="ignore").read()
-            template = template.replace("$codename", self.config["general"]["codename"])
-            template = template.replace("$basecodename", self.config["general"]["base_codename"])
-            template = template.replace("$optionalcomponents", ' '.join(selected_components))
-            template = template.replace("$mirror", self.selected_mirror)
-            template = template.replace("$basemirror", self.selected_base_mirror)
-            with open("/etc/apt/sources.list.d/official-dbgsym-repositories.list", "w", encoding="utf-8", errors="ignore") as text_file:
-                text_file.write(template)
+            self.write_official_file("official-dbgsym-repositories", ' '.join(selected_components), self.selected_mirror, self.selected_base_mirror)
 
         self.enable_reload_button()
 
-    def generate_missing_sources(self):
-        os.system("rm -f /etc/apt/sources.list.d/official-package-repositories.list")
-        os.system("rm -f /etc/apt/sources.list.d/official-source-repositories.list")
-        os.system("rm -f /etc/apt/sources.list.d/official-dbgsym-repositories.list")
-
-        template = open('/usr/share/mintsources/%s/official-package-repositories.list' % self.os_codename, 'r', encoding="utf-8", errors="ignore").read()
+    def write_official_file(self, name, optional_components, mirror, base_mirror):
+        # The format of the template (DEB822 or one-line-style) defines the format of the file
+        extension = "sources"
+        template_path = '/usr/share/mintsources/%s/%s.sources' % (self.os_codename, name)
+        if not os.path.exists(template_path):
+            extension = "list"
+            template_path = '/usr/share/mintsources/%s/%s.list' % (self.os_codename, name)
+        template = open(template_path, 'r', encoding="utf-8", errors="ignore").read()
         template = template.replace("$codename", self.config["general"]["codename"])
         template = template.replace("$basecodename", self.config["general"]["base_codename"])
-        template = template.replace("$optionalcomponents", '')
-        template = template.replace("$mirror", self.config["mirrors"]["default"])
-        template = template.replace("$basemirror", self.config["mirrors"]["base_default"])
-
-        with open("/etc/apt/sources.list.d/official-package-repositories.list", "w", encoding="utf-8", errors="ignore") as text_file:
+        template = template.replace("$optionalcomponents", optional_components)
+        template = template.replace("$mirror", mirror)
+        template = template.replace("$basemirror", base_mirror)
+        with open("/etc/apt/sources.list.d/%s.%s" % (name, extension), "w", encoding="utf-8", errors="ignore") as text_file:
             text_file.write(template)
+
+    def generate_missing_sources(self):
+        for name in ["official-package-repositories", "official-source-repositories", "official-dbgsym-repositories"]:
+            os.system("rm -f /etc/apt/sources.list.d/%s.list /etc/apt/sources.list.d/%s.sources" % (name, name))
+        self.write_official_file("official-package-repositories", '', self.config["mirrors"]["default"], self.config["mirrors"]["base_default"])
 
     def detect_official_sources(self):
         self.selected_mirror = self.config["mirrors"]["default"]
         self.selected_base_mirror = self.config["mirrors"]["base_default"]
 
         # Detect source code and dbgsym repositories
-        self.builder.get_object("source_code_switch").set_active(os.path.exists("/etc/apt/sources.list.d/official-source-repositories.list"))
-        self.builder.get_object("debug_symbol_switch").set_active(os.path.exists("/etc/apt/sources.list.d/official-dbgsym-repositories.list"))
+        self.builder.get_object("source_code_switch").set_active(find_official_file("official-source-repositories") is not None)
+        self.builder.get_object("debug_symbol_switch").set_active(find_official_file("official-dbgsym-repositories") is not None)
 
-        listfile = open('/etc/apt/sources.list.d/official-package-repositories.list', 'r', encoding="utf-8", errors="ignore")
-        for line in listfile.readlines():
+        for line in read_official_lines(find_official_file("official-package-repositories")):
             if (self.config["detection"]["main_identifier"] in line):
                 for component in self.optional_components:
                     if component.name in line:
