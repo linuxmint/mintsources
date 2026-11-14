@@ -1,3 +1,20 @@
+mintsources (2.4.7) adrien; urgency=medium
+
+  [ calquera ]
+  * Fix gettext formatting in PPA download error (#287)
+
+  [ Pedro Barbosa ]
+  * mintSources.py: Show "Obsolete" for out of date mirrors (#285)
+  * mintSources.py: Don't rank mirrors that return HTTP errors in the speed test (#286)
+
+  [ Clement Lefebvre ]
+  * Support the official sources in DEB822 format
+  * mint 27: Switch APT format to DEB822
+  * Fix duplicates detection for DEB822
+  * Use the same format as official sources for new PPAs and extra repos
+
+ -- Clement Lefebvre <root@linuxmint.com>  Sat, 14 Nov 2026 11:11:10 +0000
+
 mintsources (2.4.6) adrien; urgency=medium
 
   * l10n: Update POT
