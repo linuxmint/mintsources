@@ -241,8 +241,8 @@ def find_official_file(name):
             return path
     return None
 
-def read_official_lines(path):
-    # Returns the repositories of an official file as one-line-style lines, whatever its format
+def read_sources_lines(path):
+    # Returns the repositories of a sources file as one-line-style lines, whatever its format
     with open(path, 'r', encoding="utf-8", errors="ignore") as f:
         content = f.read()
     if not path.endswith(".sources"):
@@ -254,8 +254,10 @@ def read_official_lines(path):
             if ":" in line and not line.startswith("#"):
                 key, value = line.split(":", 1)
                 fields[key.strip().lower()] = value.strip()
-        for suite in fields.get("suites", "").split():
-            lines.append("%s %s %s %s" % (fields.get("types", ""), fields.get("uris", ""), suite, fields.get("components", "")))
+        for repo_type in fields.get("types", "").split():
+            for uri in fields.get("uris", "").split():
+                for suite in fields.get("suites", "").split():
+                    lines.append("%s %s %s %s" % (repo_type, uri, suite, fields.get("components", "")))
     return lines
 
 def repo_malformed(line):
@@ -269,9 +271,11 @@ def repo_exists(line):
     r = re.compile(r'^[#\s]*(\S+)\s*(?:\[.*\])? \w+:/(\S+?)/? (.+)')
     match_line = r.match(line.strip())
     if match_line:
-        repositories = aptsources.sourceslist.SourcesList().list
+        repositories = [repository.line for repository in aptsources.sourceslist.SourcesList().list]
+        for path in glob.glob("/etc/apt/sources.list.d/*.sources"):
+            repositories += read_sources_lines(path)
         for repository in repositories:
-            match_repo = r.match(repository.line.strip())
+            match_repo = r.match(repository.strip())
             if not match_repo:
                 continue
             if match_repo.group(1, 2) == match_line.group(1, 2):
@@ -1199,7 +1203,7 @@ class Application(object):
 
         # Parse official sources first
         for listfile in glob.glob("/etc/apt/sources.list.d/official*.list") + glob.glob("/etc/apt/sources.list.d/official*.sources"):
-            for line in read_official_lines(listfile):
+            for line in read_sources_lines(listfile):
                 if line not in knownlines:
                     if not line.startswith('#'):
                         knownlines.add(line)
@@ -1918,7 +1922,7 @@ class Application(object):
         self.builder.get_object("source_code_switch").set_active(find_official_file("official-source-repositories") is not None)
         self.builder.get_object("debug_symbol_switch").set_active(find_official_file("official-dbgsym-repositories") is not None)
 
-        for line in read_official_lines(find_official_file("official-package-repositories")):
+        for line in read_sources_lines(find_official_file("official-package-repositories")):
             if (self.config["detection"]["main_identifier"] in line):
                 for component in self.optional_components:
                     if component.name in line:
