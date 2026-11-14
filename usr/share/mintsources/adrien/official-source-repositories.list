@@ -1,7 +1,0 @@
-deb-src $mirror $codename main upstream import backport $optionalcomponents
-
-deb-src $basemirror $basecodename main restricted universe multiverse
-deb-src $basemirror $basecodename-updates main restricted universe multiverse
-deb-src $basemirror $basecodename-backports main restricted universe multiverse
-
-deb-src http://security.ubuntu.com/ubuntu/ $basecodename-security main restricted universe multiverse
