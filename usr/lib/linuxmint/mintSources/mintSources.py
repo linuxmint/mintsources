@@ -46,6 +46,7 @@ FLAG_PATH = "/usr/share/iso-flag-png/%s.png"
 FLAG_SIZE = 16
 
 additional_repositories_file = "/etc/apt/sources.list.d/additional-repositories.list"
+additional_repositories_sources_file = "/etc/apt/sources.list.d/additional-repositories.sources"
 
 # User agent used by pycurl requests
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -94,6 +95,8 @@ def remove_ppa_cli(line, codename, forceYes):
 
         # Remove the PPA from sources.list.d
         (deb_line, file, key_path) = expand_ppa_line(line.strip(), codename)
+        if os.path.exists("%s.sources" % file[:-5]):
+            file = "%s.sources" % file[:-5]
         try:
             os.unlink(file)
             os.unlink(key_path)
@@ -102,10 +105,22 @@ def remove_ppa_cli(line, codename, forceYes):
 
     elif line.startswith("deb ") or line.startswith("http"):
         # Remove the repository from sources.list.d
+        line = expand_http_line(line, codename)
+        if os.path.exists(additional_repositories_sources_file):
+            removed_source = repolib.Source()
+            removed_source.load_from_data([line])
+            additional_repositories = repolib.SourceFile(name="additional-repositories")
+            for source in additional_repositories.sources:
+                if source.types == removed_source.types and \
+                   source.uris == removed_source.uris and \
+                   source.suites == removed_source.suites and \
+                   source.components == removed_source.components:
+                    additional_repositories.remove_source(source.ident)
+                    return
         try:
             with open(additional_repositories_file, "r", encoding="utf-8", errors="ignore") as readfile:
                 content = readfile.readlines()
-                line = "%s\n" % expand_http_line(line, codename)
+                line = "%s\n" % line
                 if line in content:
                     content.remove(line)
                 elif "# %s" % line in content:
@@ -159,8 +174,7 @@ def add_ppa_cli(line, codename, forceYes, use_ppas):
         add_remote_key(ppa_info["signing_key_fingerprint"], path=key_path)
 
         # Add the PPA
-        with open(file, "w", encoding="utf-8", errors="ignore") as text_file:
-            text_file.write("%s\n" % deb_line)
+        add_repository(os.path.basename(file)[:-5], deb_line)
 
     elif line.startswith("deb ") | line.startswith("http"):
         line = expand_http_line(line, codename)
@@ -171,8 +185,7 @@ def add_ppa_cli(line, codename, forceYes, use_ppas):
             print(_("Repository already exists."))
             #sys.exit(1) # from a result-oriented view it's not a fail
         else:
-            with open(additional_repositories_file, "a", encoding="utf-8", errors="ignore") as f:
-                f.write("%s\n" % line)
+            add_repository("additional-repositories", line)
 
 def init_gnupg():
     # gpg commands fail until its folders exist in the user's home
@@ -259,6 +272,25 @@ def read_sources_lines(path):
                 for suite in fields.get("suites", "").split():
                     lines.append("%s %s %s %s" % (repo_type, uri, suite, fields.get("components", "")))
     return lines
+
+def add_repository(name, line):
+    # New repositories are in DEB822 format if the official repositories are, unless they are added
+    # to a file which is already in the one-line-style format (repolib would convert that file).
+    new_file = repolib.SourceFile(name=name)
+    official_file = find_official_file("official-package-repositories")
+    if official_file is not None and official_file.endswith(".sources") and not os.path.exists("/etc/apt/sources.list.d/%s.list" % name):
+        new_file.format = repolib.SourceFormat.DEFAULT
+    else:
+        new_file.format = repolib.SourceFormat.LEGACY
+    new_source = repolib.Source()
+    new_source.load_from_data([line])
+    new_source.generate_default_ident()
+    new_source.generate_default_name()
+    new_source.enabled = True
+    new_file.add_source(new_source)
+    new_file.save()
+    new_source.save()
+    return new_source
 
 def repo_malformed(line):
     r = re.compile(r'(?:deb|deb-src)\s+(?:\[[^\]]+\]\s+)?\w+:/\S+?/?\s+\S+')
@@ -1510,17 +1542,8 @@ class Application(object):
         else:
             if not repo_exists(line):
                 # Add the repository in sources.list.d
-                new_file = repolib.SourceFile(name="additional-repositories")
-                new_file.format = repolib.SourceFormat.LEGACY
-                new_source = repolib.Source()
-                new_source.load_from_data([line])
-                new_source.generate_default_ident()
-                new_source.generate_default_name()
+                new_source = add_repository("additional-repositories", line)
                 print("New ident", new_source.ident)
-                new_source.enabled = True
-                new_file.add_source(new_source)
-                new_file.save()
-                new_source.save()
                 repolib.load_all_sources()
                 source = Source(self, new_source)
                 self.sources.append(source)
@@ -1573,17 +1596,8 @@ class Application(object):
                 else:
                     if not repo_exists(line):
                         # Add the repository in sources.list.d
-                        new_file = repolib.SourceFile(name=file)
-                        new_file.format = repolib.SourceFormat.LEGACY
-                        new_source = repolib.Source()
-                        new_source.load_from_data([line])
-                        new_source.generate_default_ident()
-                        new_source.generate_default_name()
+                        new_source = add_repository(os.path.basename(file), line)
                         print("New ident", new_source.ident)
-                        new_source.enabled = True
-                        new_file.add_source(new_source)
-                        new_file.save()
-                        new_source.save()
                         repolib.load_all_sources()
                         source = Source(self, new_source)
                         self.ppas.append(source)
@@ -1630,6 +1644,7 @@ class Application(object):
                     path = source.filename
                     path = path.replace("/etc/apt/sources.list.d/", "/etc/apt/keyrings/")
                     path = path.replace(".list", ".gpg")
+                    path = path.replace(".sources", ".gpg")
                     print(f"path '{path}'")
                     if os.path.exists(path):
                         os.unlink(path)
