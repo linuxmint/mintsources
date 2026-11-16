@@ -1,3 +1,9 @@
+mintsources (2.4.8) adrien; urgency=medium
+
+  * Fix signed-by for DEB822 Mint keyring
+
+ -- Clement Lefebvre <root@linuxmint.com>  Mon, 16 Nov 2026 20:41:24 +0000
+
 mintsources (2.4.7) adrien; urgency=medium
 
   [ calquera ]
