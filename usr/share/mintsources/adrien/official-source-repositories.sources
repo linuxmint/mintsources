@@ -4,7 +4,7 @@ Types: deb-src
 URIs: $mirror
 Suites: $codename
 Components: main upstream import backport $optionalcomponents
-Signed-By: /usr/share/keyrings/linuxmint-keyring.gpg
+Signed-By: /etc/apt/trusted.gpg.d/linuxmint-keyring.gpg
 
 Types: deb-src
 URIs: $basemirror
