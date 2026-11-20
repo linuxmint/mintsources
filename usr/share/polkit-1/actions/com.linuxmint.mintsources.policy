@@ -10,6 +10,7 @@
   <action id="com.linuxmint.mintsources">
     <icon_name>mintsources</icon_name>
 <message>Software Sources</message>
+<message xml:lang="af">Sagtewarebronne</message>
 <message xml:lang="am">የሶፍትዌር ምንጮች</message>
 <message xml:lang="ar">مصادر البرامج</message>
 <message xml:lang="ast">Fontes de software</message>
@@ -24,7 +25,7 @@
 <message xml:lang="cy">Ffynonellau Meddalwedd</message>
 <message xml:lang="da">Programkilder</message>
 <message xml:lang="de">Anwendungspaketquellen</message>
-<message xml:lang="el">Πηγές Λογισμικού</message>
+<message xml:lang="el">Πηγές λογισμικού</message>
 <message xml:lang="eo">Programaraj fontoj</message>
 <message xml:lang="es">Fuentes de software</message>
 <message xml:lang="et">Tarkvaraallikad</message>
@@ -49,7 +50,7 @@
 <message xml:lang="ja">ソフトウェアソース</message>
 <message xml:lang="ka">პროგრამების წყაროები</message>
 <message xml:lang="kab">Iɣbula n iseɣẓanen</message>
-<message xml:lang="kk">БҚ қайнар көздері</message>
+<message xml:lang="kk">Бағдарламалық қамтама көздері</message>
 <message xml:lang="km">ប្រភព​កម្មវិធី</message>
 <message xml:lang="ko">소프트웨어 소스</message>
 <message xml:lang="ku">Çavkaniyên Bernameyan</message>
@@ -88,6 +89,7 @@
 <message xml:lang="tg">Манбаъҳои нармафзор</message>
 <message xml:lang="th">แหล่งที่มาของซอฟต์แวร์</message>
 <message xml:lang="tr">Yazılım Kaynakları</message>
+<message xml:lang="ug">يۇمشاق دېتال مەنبەسى</message>
 <message xml:lang="uk">Джерела програмного забезпечення</message>
 <message xml:lang="uz">Dastur manbalari</message>
 <message xml:lang="vi">Nguồn Phần mềm</message>
